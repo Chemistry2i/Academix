@@ -1,0 +1,195 @@
+/* Academix - Header Styles */
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 260px;
+  right: 0;
+  height: 65px;
+  background: #fff;
+  border-bottom: 1px solid #e9ecef;
+  z-index: 999;
+  transition: left 0.3s ease;
+}
+
+.sidebar-collapsed .app-header {
+  left: 70px;
+}
+
+.sidebar-toggle {
+  color: #495057;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.sidebar-toggle:hover {
+  background: #f8f9fa;
+  color: #212529;
+}
+
+/* Search */
+.header-search .input-group {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.header-search .form-control:focus {
+  box-shadow: none;
+}
+
+/* Nav Icons */
+.nav-icon-wrapper {
+  position: relative;
+  padding: 0.5rem;
+  color: #495057;
+  transition: color 0.2s;
+}
+
+.nav-icon-wrapper:hover {
+  color: #0d6efd;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 0.65rem;
+  padding: 0.2rem 0.4rem;
+  transform: translate(25%, -25%);
+}
+
+.nav-icon-dropdown .dropdown-toggle::after {
+  display: none;
+}
+
+.nav-icon-dropdown .dropdown-menu {
+  min-width: 300px;
+  padding: 0;
+  border-radius: 10px;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
+}
+
+.nav-icon-dropdown .dropdown-header {
+  background: #f8f9fa;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  border-radius: 10px 10px 0 0;
+}
+
+/* Notification Items */
+.notification-item {
+  display: flex;
+  flex-direction: column;
+  padding: 0.25rem 0;
+}
+
+.notification-title {
+  font-size: 0.9rem;
+}
+
+.notification-time {
+  font-size: 0.75rem;
+}
+
+.dropdown-item.unread {
+  background: rgba(13, 110, 253, 0.05);
+  border-left: 3px solid #0d6efd;
+}
+
+/* Message Items */
+.message-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.message-avatar {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.message-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.message-sender {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.message-text {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6c757d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* User Dropdown */
+.user-dropdown .dropdown-toggle::after {
+  display: none;
+}
+
+.user-dropdown-toggle {
+  gap: 0.75rem;
+}
+
+.user-avatar-sm {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+
+.user-info-header {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.user-name-header {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #212529;
+  line-height: 1.2;
+}
+
+.user-role-header {
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+.user-dropdown .dropdown-menu {
+  min-width: 220px;
+  border-radius: 10px;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-user-info {
+  background: #f8f9fa;
+  border-radius: 10px 10px 0 0;
+}
+
+/* Responsive */
+@media (max-width: 991.98px) {
+  .app-header {
+    left: 0;
+  }
+}

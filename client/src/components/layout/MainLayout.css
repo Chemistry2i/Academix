@@ -1,0 +1,194 @@
+/* Academix - Main Layout Styles */
+
+/* App Layout */
+.app-layout {
+  min-height: 100vh;
+  background: #f4f6f9;
+}
+
+/* Main Wrapper */
+.main-wrapper {
+  margin-left: 260px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: margin-left 0.3s ease;
+}
+
+.sidebar-collapsed .main-wrapper {
+  margin-left: 70px;
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  padding-top: 65px; /* Header height */
+}
+
+.content-wrapper {
+  padding: 1.5rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* Footer */
+.app-footer {
+  padding: 1rem 1.5rem;
+  background: #fff;
+  border-top: 1px solid #e9ecef;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+/* Mobile Overlay */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+/* Responsive */
+@media (max-width: 991.98px) {
+  .main-wrapper {
+    margin-left: 0;
+  }
+
+  .sidebar-collapsed .main-wrapper {
+    margin-left: 0;
+  }
+
+  .content-wrapper {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .content-wrapper {
+    padding: 0.75rem;
+  }
+
+  .app-footer {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .app-footer .d-flex {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}
+
+/* Page Transitions */
+.content-wrapper {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Card Styles */
+.card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+  background: #fff;
+  border-bottom: 1px solid #e9ecef;
+  padding: 1rem 1.25rem;
+  font-weight: 600;
+}
+
+/* Table Styles */
+.table > :not(caption) > * > * {
+  padding: 0.875rem 1rem;
+}
+
+.table-light {
+  --bs-table-bg: #f8f9fa;
+}
+
+/* Form Styles */
+.form-control:focus,
+.form-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+.form-label {
+  font-weight: 500;
+  margin-bottom: 0.375rem;
+}
+
+/* Button Styles */
+.btn {
+  border-radius: 6px;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+}
+
+.btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+/* Badge Styles */
+.badge {
+  font-weight: 500;
+  padding: 0.35em 0.65em;
+}
+
+/* Alert Styles */
+.alert {
+  border: none;
+  border-radius: 8px;
+}
+
+/* Modal Styles */
+.modal-content {
+  border: none;
+  border-radius: 12px;
+}
+
+.modal-header {
+  border-bottom: 1px solid #e9ecef;
+  padding: 1rem 1.25rem;
+}
+
+.modal-footer {
+  border-top: 1px solid #e9ecef;
+  padding: 1rem 1.25rem;
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
