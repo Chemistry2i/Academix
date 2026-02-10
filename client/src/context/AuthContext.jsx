@@ -227,6 +227,19 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  // Verify email
+  const verifyEmail = useCallback(async (token) => {
+    try {
+      const response = await authService.verifyEmail(token);
+      return response;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to verify email',
+      };
+    }
+  }, []);
+
   // Change password
   const changePassword = useCallback(async (currentPassword, newPassword) => {
     try {
@@ -248,6 +261,7 @@ export const AuthProvider = ({ children }) => {
     clearError,
     forgotPassword,
     resetPassword,
+    verifyEmail,
     changePassword,
   };
 

@@ -1,16 +1,20 @@
-// Academix - Forgot Password Page
+// Academix - Reset Password Page
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Alert } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
-import { FaEnvelope, FaArrowLeft, FaCheckCircle, FaGraduationCap } from 'react-icons/fa';
+import { FaLock, FaEye, FaEyeSlash, FaArrowLeft, FaCheckCircle, FaGraduationCap } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/common';
 import { APP_NAME } from '../../config/constants';
 import './Auth.css';
 
-const ForgotPassword = () => {
-  const { forgotPassword } = useAuth();
+const ResetPassword = () => {
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+  const { resetPassword } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -18,23 +22,77 @@ const ForgotPassword = () => {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm();
+
+  const password = watch('password');
 
   const onSubmit = async (data) => {
     setIsLoading(true);
     setError('');
 
-    const result = await forgotPassword(data.email);
+    const result = await resetPassword(token, data.password);
 
     if (result.success) {
       setSuccess(true);
     } else {
-      setError(result.message);
+      setError(result.message || 'Failed to reset password. Please try again.');
     }
 
     setIsLoading(false);
   };
+
+  if (!token) {
+    return (
+      <div className="auth-page">
+        <div className="auth-bg-shapes">
+          <div className="shape shape-1"></div>
+          <div className="shape shape-2"></div>
+          <div className="shape shape-3"></div>
+          <div className="shape shape-4"></div>
+        </div>
+
+        <div className="auth-container">
+          <div className="auth-brand-panel">
+            <div className="brand-content">
+              <div className="brand-icon">
+                <FaGraduationCap />
+              </div>
+              <h1 className="brand-title">{APP_NAME}</h1>
+              <p className="brand-tagline">
+                Empowering Education Through Technology
+              </p>
+            </div>
+          </div>
+
+          <div className="auth-form-panel">
+            <div className="auth-form-wrapper">
+              <div className="mobile-brand">
+                <div className="auth-logo">
+                  <FaGraduationCap />
+                </div>
+                <h2 className="auth-title">{APP_NAME}</h2>
+              </div>
+
+              <div className="error-content">
+                <div className="error-icon-wrapper">
+                  <FaLock />
+                </div>
+                <h3 className="form-title">Invalid Reset Link</h3>
+                <p className="form-subtitle" style={{ marginBottom: '1.5rem' }}>
+                  This password reset link is invalid or has expired. Please request a new one.
+                </p>
+                <Link to="/forgot-password" className="submit-btn btn btn-primary">
+                  Request New Link
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (success) {
     return (
@@ -89,13 +147,12 @@ const ForgotPassword = () => {
                 <div className="success-icon-wrapper">
                   <FaCheckCircle />
                 </div>
-                <h3 className="form-title">Check Your Email</h3>
+                <h3 className="form-title">Password Reset Successfully!</h3>
                 <p className="form-subtitle" style={{ marginBottom: '1.5rem' }}>
-                  We've sent a password reset link to your email address.
-                  Please check your inbox and follow the instructions.
+                  Your password has been updated. You can now sign in with your new password.
                 </p>
                 <Link to="/login" className="submit-btn btn btn-primary">
-                  Back to Login
+                  Sign In
                 </Link>
               </div>
             </div>
@@ -159,9 +216,9 @@ const ForgotPassword = () => {
             </Link>
 
             <div className="form-header">
-              <h3 className="form-title">Forgot Password?</h3>
+              <h3 className="form-title">Reset Password</h3>
               <p className="form-subtitle">
-                Enter your email and we'll send you a reset link
+                Enter your new password below
               </p>
             </div>
 
@@ -173,26 +230,68 @@ const ForgotPassword = () => {
 
             <form onSubmit={handleSubmit(onSubmit)} className="auth-form">
               <div className="form-group">
-                <label className="form-label">Email Address</label>
+                <label className="form-label">New Password</label>
                 <div className="input-wrapper">
                   <span className="input-icon">
-                    <FaEnvelope />
+                    <FaLock />
                   </span>
                   <input
-                    type="email"
-                    placeholder="Enter your email"
-                    className={`form-input ${errors.email ? 'is-invalid' : ''}`}
-                    {...register('email', {
-                      required: 'Email is required',
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter new password"
+                    className={`form-input ${errors.password ? 'is-invalid' : ''}`}
+                    {...register('password', {
+                      required: 'Password is required',
+                      minLength: {
+                        value: 8,
+                        message: 'Password must be at least 8 characters',
+                      },
                       pattern: {
-                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: 'Invalid email address',
+                        value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+                        message: 'Password must contain uppercase, lowercase, and number',
                       },
                     })}
                   />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  </button>
                 </div>
-                {errors.email && (
-                  <span className="error-message">{errors.email.message}</span>
+                {errors.password && (
+                  <span className="error-message">{errors.password.message}</span>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Confirm Password</label>
+                <div className="input-wrapper">
+                  <span className="input-icon">
+                    <FaLock />
+                  </span>
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Confirm new password"
+                    className={`form-input ${errors.confirmPassword ? 'is-invalid' : ''}`}
+                    {...register('confirmPassword', {
+                      required: 'Please confirm your password',
+                      validate: (value) =>
+                        value === password || 'Passwords do not match',
+                    })}
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                  </button>
+                </div>
+                {errors.confirmPassword && (
+                  <span className="error-message">{errors.confirmPassword.message}</span>
                 )}
               </div>
 
@@ -202,7 +301,7 @@ const ForgotPassword = () => {
                 className="submit-btn"
                 isLoading={isLoading}
               >
-                Send Reset Link
+                Reset Password
               </Button>
             </form>
 
@@ -221,4 +320,4 @@ const ForgotPassword = () => {
   );
 };
 
-export default ForgotPassword;
+export default ResetPassword;

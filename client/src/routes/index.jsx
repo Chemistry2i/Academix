@@ -5,7 +5,7 @@ import ProtectedRoute, { PublicRoute } from '../components/auth/ProtectedRoute';
 import { ROLES, MODULES } from '../config/roles';
 
 // Auth Pages
-import { Login, ForgotPassword } from '../pages/auth';
+import { Login, ForgotPassword, ResetPassword, VerifyEmail } from '../pages/auth';
 
 // Dashboard
 import { Dashboard } from '../pages/dashboard';
@@ -66,6 +66,22 @@ const router = createBrowserRouter([
     element: (
       <PublicRoute>
         <ForgotPassword />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: '/reset-password',
+    element: (
+      <PublicRoute>
+        <ResetPassword />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: '/verify-email',
+    element: (
+      <PublicRoute>
+        <VerifyEmail />
       </PublicRoute>
     ),
   },
