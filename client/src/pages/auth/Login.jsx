@@ -1,9 +1,9 @@
 // Academix - Login Page
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Container, Row, Col, Card, Form, Alert } from 'react-bootstrap';
+import { Form, Alert } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGraduationCap } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../../components/common';
 import { APP_NAME } from '../../config/constants';
@@ -39,121 +39,158 @@ const Login = () => {
 
   return (
     <div className="auth-page">
-      <Container>
-        <Row className="justify-content-center align-items-center min-vh-100">
-          <Col xs={12} sm={10} md={8} lg={5} xl={4}>
-            <div className="text-center mb-4">
-              <div className="auth-logo">
-                <span>A</span>
+      {/* Animated Background Elements */}
+      <div className="auth-bg-shapes">
+        <div className="shape shape-1"></div>
+        <div className="shape shape-2"></div>
+        <div className="shape shape-3"></div>
+        <div className="shape shape-4"></div>
+      </div>
+
+      <div className="auth-container">
+        {/* Left Panel - Branding (Hidden on mobile) */}
+        <div className="auth-brand-panel">
+          <div className="brand-content">
+            <div className="brand-icon">
+              <FaGraduationCap />
+            </div>
+            <h1 className="brand-title">{APP_NAME}</h1>
+            <p className="brand-tagline">
+              Empowering Education Through Technology
+            </p>
+            <div className="brand-features">
+              <div className="feature-item">
+                <div className="feature-dot"></div>
+                <span>Streamlined Student Management</span>
               </div>
-              <h1 className="auth-title">{APP_NAME}</h1>
-              <p className="auth-subtitle">
-                School Management System for Ugandan Secondary Schools
-              </p>
+              <div className="feature-item">
+                <div className="feature-dot"></div>
+                <span>Real-time Academic Tracking</span>
+              </div>
+              <div className="feature-item">
+                <div className="feature-dot"></div>
+                <span>Secure & Reliable Platform</span>
+              </div>
+            </div>
+          </div>
+          <div className="brand-footer">
+            <p>Trusted by schools across Uganda</p>
+          </div>
+        </div>
+
+        {/* Right Panel - Login Form */}
+        <div className="auth-form-panel">
+          <div className="auth-form-wrapper">
+            {/* Mobile Logo */}
+            <div className="mobile-brand">
+              <div className="auth-logo">
+                <FaGraduationCap />
+              </div>
+              <h2 className="auth-title">{APP_NAME}</h2>
             </div>
 
-            <Card className="auth-card">
-              <Card.Body className="p-4">
-                <h4 className="text-center mb-4">Welcome Back!</h4>
+            <div className="form-header">
+              <h3 className="form-title">Welcome Back!</h3>
+              <p className="form-subtitle">Sign in to continue to your dashboard</p>
+            </div>
 
-                {error && (
-                  <Alert variant="danger" dismissible onClose={clearError}>
-                    {error}
-                  </Alert>
+            {error && (
+              <Alert variant="danger" dismissible onClose={clearError} className="auth-alert">
+                {error}
+              </Alert>
+            )}
+
+            <Form onSubmit={handleSubmit(onSubmit)} className="auth-form">
+              <div className="form-group">
+                <label className="form-label">Email Address</label>
+                <div className="input-wrapper">
+                  <span className="input-icon">
+                    <FaEnvelope />
+                  </span>
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    className={`form-input ${errors.email ? 'is-invalid' : ''}`}
+                    {...register('email', {
+                      required: 'Email is required',
+                      pattern: {
+                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        message: 'Invalid email address',
+                      },
+                    })}
+                  />
+                </div>
+                {errors.email && (
+                  <span className="error-message">{errors.email.message}</span>
                 )}
+              </div>
 
-                <Form onSubmit={handleSubmit(onSubmit)}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Email Address</Form.Label>
-                    <div className="input-icon-wrapper">
-                      <FaEnvelope className="input-icon" />
-                      <Form.Control
-                        type="email"
-                        placeholder="Enter your email"
-                        className="input-with-icon"
-                        isInvalid={!!errors.email}
-                        {...register('email', {
-                          required: 'Email is required',
-                          pattern: {
-                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                            message: 'Invalid email address',
-                          },
-                        })}
-                      />
-                    </div>
-                    {errors.email && (
-                      <Form.Text className="text-danger">
-                        {errors.email.message}
-                      </Form.Text>
-                    )}
-                  </Form.Group>
-
-                  <Form.Group className="mb-3">
-                    <div className="d-flex justify-content-between">
-                      <Form.Label>Password</Form.Label>
-                      <Link to="/forgot-password" className="small text-primary">
-                        Forgot Password?
-                      </Link>
-                    </div>
-                    <div className="input-icon-wrapper">
-                      <FaLock className="input-icon" />
-                      <Form.Control
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Enter your password"
-                        className="input-with-icon"
-                        isInvalid={!!errors.password}
-                        {...register('password', {
-                          required: 'Password is required',
-                          minLength: {
-                            value: 6,
-                            message: 'Password must be at least 6 characters',
-                          },
-                        })}
-                      />
-                      <button
-                        type="button"
-                        className="password-toggle"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <FaEyeSlash /> : <FaEye />}
-                      </button>
-                    </div>
-                    {errors.password && (
-                      <Form.Text className="text-danger">
-                        {errors.password.message}
-                      </Form.Text>
-                    )}
-                  </Form.Group>
-
-                  <Form.Group className="mb-4">
-                    <Form.Check
-                      type="checkbox"
-                      label="Remember me"
-                      {...register('rememberMe')}
-                    />
-                  </Form.Group>
-
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    className="w-100"
-                    isLoading={isLoading}
+              <div className="form-group">
+                <div className="label-row">
+                  <label className="form-label">Password</label>
+                  <Link to="/forgot-password" className="forgot-link">
+                    Forgot Password?
+                  </Link>
+                </div>
+                <div className="input-wrapper">
+                  <span className="input-icon">
+                    <FaLock />
+                  </span>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter your password"
+                    className={`form-input ${errors.password ? 'is-invalid' : ''}`}
+                    {...register('password', {
+                      required: 'Password is required',
+                      minLength: {
+                        value: 6,
+                        message: 'Password must be at least 6 characters',
+                      },
+                    })}
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
-                    Sign In
-                  </Button>
-                </Form>
-              </Card.Body>
-            </Card>
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <span className="error-message">{errors.password.message}</span>
+                )}
+              </div>
 
-            <p className="text-center mt-4 text-muted">
-              Don't have an account?{' '}
-              <Link to="/contact" className="text-primary">
-                Contact your school admin
-              </Link>
-            </p>
-          </Col>
-        </Row>
-      </Container>
+              <div className="form-group remember-group">
+                <label className="checkbox-wrapper">
+                  <input type="checkbox" {...register('rememberMe')} />
+                  <span className="checkmark"></span>
+                  <span className="checkbox-label">Remember me</span>
+                </label>
+              </div>
+
+              <Button
+                type="submit"
+                variant="primary"
+                className="submit-btn"
+                isLoading={isLoading}
+              >
+                Sign In
+              </Button>
+            </Form>
+
+            <div className="form-footer">
+              <p>
+                Need help accessing your account?{' '}
+                <Link to="/contact" className="contact-link">
+                  Contact your school admin
+                </Link>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
