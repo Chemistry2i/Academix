@@ -14,9 +14,15 @@ import { useAuth } from '../../context/AuthContext';
 import { PageHeader, StatCard } from '../../components/common';
 import CanAccess from '../../components/auth/CanAccess';
 import { MODULES, ROLES, getRoleLabel } from '../../config/roles';
+import StudentDashboard from './StudentDashboard';
 
 const Dashboard = () => {
   const { user } = useAuth();
+
+  // If user is a student, show the student-specific dashboard
+  if (user?.role === ROLES.STUDENT) {
+    return <StudentDashboard />;
+  }
 
   // Dashboard stats - would come from API in real app
   const stats = {

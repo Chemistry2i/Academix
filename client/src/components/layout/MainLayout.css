@@ -3,7 +3,7 @@
 /* App Layout */
 .app-layout {
   min-height: 100vh;
-  background: #f4f6f9;
+  background: #f8f9fb;
 }
 
 /* Main Wrapper */
@@ -22,7 +22,7 @@
 /* Main Content */
 .main-content {
   flex: 1;
-  padding-top: 65px; /* Header height */
+  padding-top: 70px; /* Header height */
 }
 
 .content-wrapper {
@@ -55,6 +55,10 @@
 @media (max-width: 991.98px) {
   .main-wrapper {
     margin-left: 0;
+  }
+
+  .main-content {
+    padding-top: 60px; /* Smaller header on mobile */
   }
 
   .sidebar-collapsed .main-wrapper {

@@ -8,7 +8,7 @@ import { ROLES, MODULES } from '../config/roles';
 import { Login, ForgotPassword, ResetPassword, VerifyEmail } from '../pages/auth';
 
 // Dashboard
-import { Dashboard } from '../pages/dashboard';
+import { Dashboard, StudentDashboard } from '../pages/dashboard';
 
 // Error Pages
 import { NotFound, Unauthorized } from '../pages/errors';
@@ -83,6 +83,16 @@ const router = createBrowserRouter([
       <PublicRoute>
         <VerifyEmail />
       </PublicRoute>
+    ),
+  },
+
+  // Public Student Dashboard Preview (for development/demo)
+  {
+    path: '/demo/student-dashboard',
+    element: (
+      <div style={{ padding: '2rem', background: '#f8f9fa', minHeight: '100vh' }}>
+        <StudentDashboard />
+      </div>
     ),
   },
 

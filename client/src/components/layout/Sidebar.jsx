@@ -1,7 +1,7 @@
 // Academix - Sidebar Component
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Collapse } from 'react-bootstrap';
+import { Collapse, Badge } from 'react-bootstrap';
 import {
   FaChevronDown,
   FaChevronRight,
@@ -10,7 +10,7 @@ import {
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import { getNavigationForRole } from '../../config/navigation';
-import { hasModuleAccess } from '../../config/roles';
+import { hasModuleAccess, getRoleLabel } from '../../config/roles';
 import { APP_NAME } from '../../config/constants';
 import './Sidebar.css';
 
@@ -97,8 +97,15 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       {/* Logo Section */}
       <div className="sidebar-header">
         <div className="logo-container">
-          <div className="logo-icon">A</div>
-          {!isCollapsed && <span className="logo-text">{APP_NAME}</span>}
+          <div className="logo-icon">
+            <img src="/academix-logo.svg" alt="Academix" onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.textContent = 'A'; }} />
+          </div>
+          {!isCollapsed && (
+            <div className="logo-text-container">
+              <span className="logo-text">{APP_NAME}</span>
+              <span className="logo-subtitle">{getRoleLabel(user?.role)} Dashboard</span>
+            </div>
+          )}
         </div>
         <button className="toggle-btn d-lg-none" onClick={toggleSidebar}>
           <FaBars />
@@ -112,18 +119,26 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         </ul>
       </nav>
 
-      {/* User Section */}
+      {/* User Section with Profile */}
       <div className="sidebar-footer">
-        <div className="user-info">
-          <div className="user-avatar">
-            {user?.firstName?.[0] || user?.name?.[0] || 'U'}
+        <div className="user-profile">
+          <div className="profile-avatar">
+            {user?.profileImage ? (
+              <img src={user.profileImage} alt={user?.firstName} className="profile-image" />
+            ) : (
+              <span className="avatar-initial">
+                {user?.firstName?.[0] || user?.name?.[0] || 'U'}
+              </span>
+            )}
           </div>
           {!isCollapsed && (
-            <div className="user-details">
-              <span className="user-name">
+            <div className="profile-info">
+              <span className="profile-name">
                 {user?.firstName} {user?.lastName}
               </span>
-              <span className="user-role">{user?.role?.replace('_', ' ')}</span>
+              <Badge className="role-badge" bg="none">
+                {getRoleLabel(user?.role) || user?.role?.replace('_', ' ')}
+              </Badge>
             </div>
           )}
         </div>

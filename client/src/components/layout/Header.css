@@ -4,11 +4,12 @@
   top: 0;
   left: 260px;
   right: 0;
-  height: 65px;
-  background: #fff;
-  border-bottom: 1px solid #e9ecef;
+  height: 70px;
+  background: linear-gradient(135deg, #4285f4 0%, #1976d2 100%);
+  border-bottom: none;
   z-index: 999;
   transition: left 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-collapsed .app-header {
@@ -16,15 +17,15 @@
 }
 
 .sidebar-toggle {
-  color: #495057;
+  color: #fff;
   padding: 0.5rem;
   border-radius: 6px;
   transition: all 0.2s;
 }
 
 .sidebar-toggle:hover {
-  background: #f8f9fa;
-  color: #212529;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
 }
 
 /* Search */
@@ -41,12 +42,12 @@
 .nav-icon-wrapper {
   position: relative;
   padding: 0.5rem;
-  color: #495057;
+  color: rgba(255, 255, 255, 0.8);
   transition: color 0.2s;
 }
 
 .nav-icon-wrapper:hover {
-  color: #0d6efd;
+  color: #fff;
 }
 
 .notification-badge {
@@ -156,6 +157,13 @@
   font-weight: 600;
   font-size: 0.9rem;
   text-transform: uppercase;
+  overflow: hidden;
+}
+
+.user-avatar-sm .avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .user-info-header {
@@ -167,13 +175,13 @@
 .user-name-header {
   font-weight: 500;
   font-size: 0.9rem;
-  color: #212529;
+  color: #fff;
   line-height: 1.2;
 }
 
 .user-role-header {
   font-size: 0.75rem;
-  color: #6c757d;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .user-dropdown .dropdown-menu {
@@ -187,9 +195,40 @@
   border-radius: 10px 10px 0 0;
 }
 
-/* Responsive */
 @media (max-width: 991.98px) {
   .app-header {
     left: 0;
+    height: 60px;
   }
+  
+  .app-header h5 {
+    font-size: 1.1rem;
+  }
+  
+  .user-info-header {
+    display: none !important;
+  }
+}
+
+/* Header Logout Button */
+.header-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 0.5rem;
+}
+
+.header-logout-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
 }

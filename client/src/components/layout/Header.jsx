@@ -18,6 +18,7 @@ import {
   FaUser,
   FaSignOutAlt,
   FaQuestionCircle,
+  FaGraduationCap,
 } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import { getRoleLabel } from '../../config/roles';
@@ -38,23 +39,14 @@ const Header = ({ toggleSidebar }) => {
       <Navbar expand="lg" className="h-100 px-3 px-lg-4">
         {/* Left Section */}
         <div className="d-flex align-items-center">
-          <button className="btn btn-link sidebar-toggle me-3" onClick={toggleSidebar}>
+          <button className="btn btn-link sidebar-toggle me-3 d-lg-none" onClick={toggleSidebar}>
             <FaBars size={18} />
           </button>
 
-          {/* Search */}
-          <div className="header-search d-none d-md-block">
-            <InputGroup>
-              <InputGroup.Text className="bg-light border-0">
-                <FaSearch className="text-muted" size={14} />
-              </InputGroup.Text>
-              <Form.Control
-                type="text"
-                placeholder="Search students, staff, classes..."
-                className="border-0 bg-light"
-                style={{ width: '280px' }}
-              />
-            </InputGroup>
+          {/* Portal Title */}
+          <div className="d-flex align-items-center">
+            <FaGraduationCap className="text-white me-2" size={24} />
+            <h5 className="mb-0 text-white fw-bold">Student Portal</h5>
           </div>
         </div>
 
@@ -136,11 +128,15 @@ const Header = ({ toggleSidebar }) => {
             title={
               <div className="user-dropdown-toggle d-flex align-items-center">
                 <div className="user-avatar-sm">
-                  {user?.firstName?.[0] || user?.name?.[0] || 'U'}
+                  {user?.profileImage ? (
+                    <img src={user.profileImage} alt={user?.firstName} className="avatar-img" />
+                  ) : (
+                    user?.firstName?.[0] || user?.name?.[0] || 'U'
+                  )}
                 </div>
                 <div className="user-info-header d-none d-lg-block">
                   <span className="user-name-header">
-                    {user?.firstName || user?.name}
+                    {user?.firstName} {user?.lastName || ''}
                   </span>
                   <span className="user-role-header">
                     {getRoleLabel(user?.role)}
@@ -170,6 +166,16 @@ const Header = ({ toggleSidebar }) => {
               <FaSignOutAlt className="me-2" /> Logout
             </NavDropdown.Item>
           </NavDropdown>
+
+          {/* Quick Logout Button */}
+          <button
+            onClick={logout}
+            className="header-logout-btn d-none d-lg-flex"
+            title="Logout"
+          >
+            <FaSignOutAlt className="me-2" />
+            <span>Logout</span>
+          </button>
         </Nav>
       </Navbar>
     </header>

@@ -159,8 +159,26 @@ export const navigationConfig = [
   },
 ];
 
+// Student-specific navigation (simpler, flat structure)
+const studentNavigation = [
+  createNavItem('Dashboard', '/dashboard', <FaHome />, MODULES.DASHBOARD),
+  createNavItem('Exams & Results', '/results', <FaChartBar />, MODULES.RESULTS),
+  createNavItem('Assignments', '/assignments', <FaBook />, MODULES.ASSIGNMENTS),
+  createNavItem('Timetable', '/academics/timetable', <FaCalendarAlt />, MODULES.TIMETABLE),
+  createNavItem('Library', '/library', <FaBookOpen />, MODULES.LIBRARY),
+  createNavItem('Notices', '/notices', <FaBullhorn />, MODULES.NOTICES),
+];
+
 // Get navigation items based on user role
 export const getNavigationForRole = (role, checkModuleAccess) => {
+  // Students get a simplified flat navigation
+  if (role === ROLES.STUDENT) {
+    return studentNavigation.filter((item) => {
+      if (!item.module) return true;
+      return checkModuleAccess(item.module);
+    });
+  }
+
   const filterItems = (items) => {
     return items
       .map((item) => {
