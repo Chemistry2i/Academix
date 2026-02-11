@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academix API Testing</title>
+</head>
+<body>
+    <h1>🎓 Academix API Testing Suite</h1>
+    
+    <h2>Available Test Pages:</h2>
+    
+    <div>
+        <h3>🔐 User Authentication Testing</h3>
+        <p>Test user registration, login, and password management endpoints.</p>
+        <a href="test-user-endpoints.html">📝 Test User Endpoints</a>
+    </div>
+    
+    <div>
+        <h3>🎓 Student Registration</h3>
+        <p>Register new students with academic information and validation.</p>
+        <a href="student-registration.html">📚 Student Registration Form</a>
+    </div>
+    
+    <hr>
+    
+    <h2>📋 Testing Instructions:</h2>
+    
+    <ol>
+        <li><strong>Start your Spring Boot server</strong> - Make sure it's running on <code>http://localhost:8080</code></li>
+        <li><strong>Click on test page above</strong> to access the testing forms</li>
+        <li><strong>Test Registration:</strong> Fill out the registration form and submit</li>
+        <li><strong>Test Login:</strong> Use the same email/password you registered with</li>
+        <li><strong>Test Password Change:</strong> Use the user ID returned from registration</li>
+    </ol>
+    
+    <h2>🔧 API Endpoints Available:</h2>
+    
+    <h3>👤 User Authentication:</h3>
+    <ul>
+        <li><code>POST /api/auth/register</code> - User registration with password hashing</li>
+        <li><code>POST /api/auth/login</code> - User login with password verification</li>
+        <li><code>PUT /api/auth/change-password/{userId}</code> - Change user password</li>
+        <li><code>GET /api/auth/users</code> - Get all users (testing only)</li>
+    </ul>
+    
+    <h3>🎓 Student Management:</h3>  
+    <ul>
+        <li><code>POST /api/students/register</code> - Student registration with academic info</li>
+        <li><code>GET /api/students/all</code> - Get all students (testing only)</li>
+        <li><code>GET /api/students/{id}</code> - Get student by ID</li>
+        <li><code>GET /api/students/class/{className}</code> - Get students by class</li>
+        <li><code>PUT /api/students/{id}/academic</code> - Update student academic information</li>
+    </ul>
+    
+    <h2>✅ What's Being Tested:</h2>
+    
+    <h3>🔐 Security & Authentication:</h3>
+    <ul>
+        <li>✅ Password automatic hashing (BCrypt)</li>
+        <li>✅ Input validation (required fields, email format, etc.)</li>
+        <li>✅ User data persistence (in-memory for testing)</li>
+        <li>✅ Password verification for login</li>
+        <li>✅ Secure password change process</li>
+        <li>✅ JSON serialization with password exclusion</li>
+    </ul>
+    
+    <h3>🎓 Student Management:</h3>
+    <ul>
+        <li>✅ Student-specific field validation</li>
+        <li>✅ Academic information handling (class, stream, subjects)</li>
+        <li>✅ Residence status management (Day/Boarding)</li>
+        <li>✅ Unique identifier validation (Student ID, LINN)</li>
+        <li>✅ Class-based subject combination logic</li>
+        <li>✅ Auto-generation of student IDs</li>
+        <li>✅ Student search and filtering</li>
+    </ul>
+    
+    <h2>🚀 Quick Start:</h2>
+    
+    <p>1. <a href="test-user-endpoints.html">Test General User Functions</a> - Registration, login, password changes</p>
+    <p>2. <a href="student-registration.html">Register Students</a> - Full student registration with academic info</p>
+    <p>3. Register a new user/student with sample data</p>
+    <p>4. Try logging in with the same credentials</p>
+    <p>5. Test changing passwords and academic information updates</p>
+    
+    <hr>
+    
+    <p><em>Note: This is a development testing interface. All data is stored in memory and will be lost when the server restarts.</em></p>
+    
+</body>
+</html>

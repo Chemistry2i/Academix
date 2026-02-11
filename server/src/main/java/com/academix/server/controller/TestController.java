@@ -8,6 +8,6 @@ public class TestController {
     // simple test endpoint to verify that the server is running
     @GetMapping("/test")
     public String test() {
-        return "Server is running";
+        return "Welcome to Academix School Management System!";
     }
 }

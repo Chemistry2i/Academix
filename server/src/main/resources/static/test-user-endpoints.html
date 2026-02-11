@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academix User Testing</title>
+</head>
+<body>
+    <h1>Academix User Registration & Authentication Testing</h1>
+    
+    <!-- User Registration Form -->
+    <div>
+        <h2>User Registration</h2>
+        <form id="registrationForm">
+            <fieldset>
+                <legend>Personal Information</legend>
+                
+                <label for="firstName">First Name*:</label><br>
+                <input type="text" id="firstName" name="firstName" required><br><br>
+                
+                <label for="lastName">Last Name*:</label><br>
+                <input type="text" id="lastName" name="lastName" required><br><br>
+                
+                <label for="otherNames">Other Names:</label><br>
+                <input type="text" id="otherNames" name="otherNames"><br><br>
+                
+                <label for="email">Email*:</label><br>
+                <input type="email" id="email" name="email" required><br><br>
+                
+                <label for="password">Password*:</label><br>
+                <input type="password" id="password" name="password" required><br><br>
+                
+                <label for="nin">NIN (14 characters):</label><br>
+                <input type="text" id="nin" name="nin" maxlength="14" pattern="[A-Z0-9]{14}"><br><br>
+                
+                <label for="phoneNumber">Phone Number:</label><br>
+                <input type="tel" id="phoneNumber" name="phoneNumber"><br><br>
+                
+                <label for="gender">Gender*:</label><br>
+                <select id="gender" name="gender" required>
+                    <option value="">Select Gender</option>
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="OTHER">Other</option>
+                </select><br><br>
+                
+                <label for="dateOfBirth">Date of Birth*:</label><br>
+                <input type="date" id="dateOfBirth" name="dateOfBirth" required><br><br>
+                
+                <label for="nationality">Nationality*:</label><br>
+                <input type="text" id="nationality" name="nationality" required><br><br>
+                
+                <label for="disabilityStatus">Disability Status:</label><br>
+                <input type="text" id="disabilityStatus" name="disabilityStatus"><br><br>
+            </fieldset>
+            
+            <fieldset>
+                <legend>Address Information</legend>
+                
+                <label for="district">District*:</label><br>
+                <input type="text" id="district" name="district" required><br><br>
+                
+                <label for="county">County*:</label><br>
+                <input type="text" id="county" name="county" required><br><br>
+                
+                <label for="subCounty">Sub-County*:</label><br>
+                <input type="text" id="subCounty" name="subCounty" required><br><br>
+                
+                <label for="parish">Parish*:</label><br>
+                <input type="text" id="parish" name="parish" required><br><br>
+                
+                <label for="village">Village*:</label><br>
+                <input type="text" id="village" name="village" required><br><br>
+            </fieldset>
+            
+            <fieldset>
+                <legend>Optional Documents</legend>
+                
+                <label for="profilePictureUrl">Profile Picture URL:</label><br>
+                <input type="url" id="profilePictureUrl" name="profilePictureUrl"><br><br>
+                
+                <label for="birthCertificateUrl">Birth Certificate URL:</label><br>
+                <input type="url" id="birthCertificateUrl" name="birthCertificateUrl"><br><br>
+            </fieldset>
+            
+            <button type="submit">Register User</button>
+        </form>
+        
+        <div id="registrationResult"></div>
+    </div>
+    
+    <hr>
+    
+    <!-- User Login Form -->
+    <div>
+        <h2>User Login</h2>
+        <form id="loginForm">
+            <label for="loginEmail">Email:</label><br>
+            <input type="email" id="loginEmail" name="email" required><br><br>
+            
+            <label for="loginPassword">Password:</label><br>
+            <input type="password" id="loginPassword" name="password" required><br><br>
+            
+            <button type="submit">Login</button>
+        </form>
+        
+        <div id="loginResult"></div>
+    </div>
+    
+    <hr>
+    
+    <!-- Change Password Form -->
+    <div>
+        <h2>Change Password</h2>
+        <form id="changePasswordForm">
+            <label for="userId">User ID:</label><br>
+            <input type="number" id="userId" name="userId" required><br><br>
+            
+            <label for="oldPassword">Old Password:</label><br>
+            <input type="password" id="oldPassword" name="oldPassword" required><br><br>
+            
+            <label for="newPassword">New Password:</label><br>
+            <input type="password" id="newPassword" name="newPassword" required><br><br>
+            
+            <button type="submit">Change Password</button>
+        </form>
+        
+        <div id="changePasswordResult"></div>
+    </div>
+
+    <script>
+        // Base API URL - adjust if your server runs on different port
+        const API_BASE = 'http://localhost:8080/api/auth';
+
+        // Registration Form Handler
+        document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const userData = Object.fromEntries(formData.entries());
+            
+            // Remove empty fields
+            Object.keys(userData).forEach(key => {
+                if (userData[key] === '') {
+                    delete userData[key];
+                }
+            });
+            
+            try {
+                const response = await fetch(`${API_BASE}/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
+                });
+                
+                const result = await response.text();
+                document.getElementById('registrationResult').innerHTML = 
+                    `<h3>Registration Result:</h3><pre>${result}</pre>`;
+                    
+                if (response.ok) {
+                    document.getElementById('registrationForm').reset();
+                }
+            } catch (error) {
+                document.getElementById('registrationResult').innerHTML = 
+                    `<h3>Error:</h3><pre>${error.message}</pre>`;
+            }
+        });
+
+        // Login Form Handler
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const loginData = Object.fromEntries(formData.entries());
+            
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(loginData)
+                });
+                
+                const result = await response.text();
+                document.getElementById('loginResult').innerHTML = 
+                    `<h3>Login Result:</h3><pre>${result}</pre>`;
+                    
+            } catch (error) {
+                document.getElementById('loginResult').innerHTML = 
+                    `<h3>Error:</h3><pre>${error.message}</pre>`;
+            }
+        });
+
+        // Change Password Form Handler
+        document.getElementById('changePasswordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const passwordData = {
+                oldPassword: formData.get('oldPassword'),
+                newPassword: formData.get('newPassword')
+            };
+            const userId = formData.get('userId');
+            
+            try {
+                const response = await fetch(`${API_BASE}/change-password/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(passwordData)
+                });
+                
+                const result = await response.text();
+                document.getElementById('changePasswordResult').innerHTML = 
+                    `<h3>Change Password Result:</h3><pre>${result}</pre>`;
+                    
+                if (response.ok) {
+                    document.getElementById('changePasswordForm').reset();
+                }
+            } catch (error) {
+                document.getElementById('changePasswordResult').innerHTML = 
+                    `<h3>Error:</h3><pre>${error.message}</pre>`;
+            }
+        });
+
+        // Helper function to pretty print JSON
+        function formatJSON(obj) {
+            return JSON.stringify(obj, null, 2);
+        }
+    </script>
+</body>
+</html>

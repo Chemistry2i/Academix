@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Registration - Academix</title>
+</head>
+<body>
+    <h1>🎓 Student Registration - Academix</h1>
+    
+    <div>
+        <form id="studentRegistrationForm">
+            <fieldset>
+                <legend>👤 Personal Information</legend>
+                
+                <label for="firstName">First Name *:</label><br>
+                <input type="text" id="firstName" name="firstName" required maxlength="50"><br><br>
+                
+                <label for="lastName">Last Name *:</label><br>
+                <input type="text" id="lastName" name="lastName" required maxlength="50"><br><br>
+                
+                <label for="otherNames">Other Names:</label><br>
+                <input type="text" id="otherNames" name="otherNames" maxlength="100"><br><br>
+                
+                <label for="email">Email Address *:</label><br>
+                <input type="email" id="email" name="email" required maxlength="100"><br><br>
+                
+                <label for="password">Password *:</label><br>
+                <input type="password" id="password" name="password" required minlength="6"><br><br>
+                
+                <label for="phoneNumber">Phone Number:</label><br>
+                <input type="tel" id="phoneNumber" name="phoneNumber" placeholder="+256701234567"><br><br>
+                
+                <label for="gender">Gender *:</label><br>
+                <select id="gender" name="gender" required>
+                    <option value="">Select Gender</option>
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="OTHER">Other</option>
+                </select><br><br>
+                
+                <label for="dateOfBirth">Date of Birth *:</label><br>
+                <input type="date" id="dateOfBirth" name="dateOfBirth" required><br><br>
+                
+                <label for="nationality">Nationality *:</label><br>
+                <input type="text" id="nationality" name="nationality" required maxlength="50" value="Ugandan"><br><br>
+                
+                <label for="nin">National ID Number (NIN):</label><br>
+                <input type="text" id="nin" name="nin" maxlength="14" pattern="[A-Z0-9]{14}" placeholder="CF123456789ABC"><br><br>
+                
+                <label for="disabilityStatus">Disability Status (if any):</label><br>
+                <input type="text" id="disabilityStatus" name="disabilityStatus" maxlength="100"><br><br>
+            </fieldset>
+            
+            <fieldset>
+                <legend>🎓 Academic Information</legend>
+                
+                <div style="background-color: #f0f8ff; padding: 10px; border: 1px solid #ccc; margin-bottom: 15px;">
+                    <p><strong>📝 Note:</strong> Student ID will be automatically generated after registration</p>
+                </div>
+                
+                <label for="linn">LINN (Learner Identification Number):</label><br>
+                <input type="text" id="linn" name="linn" maxlength="20" placeholder="L123456789"><br><br>
+                
+                <label for="currentClass">Current Class/Grade *:</label><br>
+                <select id="currentClass" name="currentClass" required>
+                    <option value="">Select Class</option>
+                    <option value="Senior 1">Senior 1 (S1)</option>
+                    <option value="Senior 2">Senior 2 (S2)</option>
+                    <option value="Senior 3">Senior 3 (S3)</option>
+                    <option value="Senior 4">Senior 4 (S4)</option>
+                    <option value="Senior 5">Senior 5 (S5)</option>
+                    <option value="Senior 6">Senior 6 (S6)</option>
+                </select><br><br>
+                
+                <label for="stream">Stream/Section:</label><br>
+                <select id="stream" name="stream">
+                    <option value="">Select Stream</option>
+                    <option value="Blue">Blue</option>
+                    <option value="Red">Red</option>
+                    <option value="Green">Green</option>
+                    <option value="Yellow">Yellow</option>
+                    <option value="Science">Science</option>
+                    <option value="Arts">Arts</option>
+                    <option value="Commerce">Commerce</option>
+                    <option value="Technical">Technical</option>
+                </select><br><br>
+                
+                <label for="combination">Subject Combination (for S5/S6):</label><br>
+                <input type="text" id="combination" name="combination" maxlength="200" placeholder="e.g., Math, Physics, Chemistry, Biology"><br><br>
+                
+                <label for="residenceStatus">Residence Status:</label><br>
+                <select id="residenceStatus" name="residenceStatus">
+                    <option value="">Select Status</option>
+                    <option value="DAY">Day Scholar</option>
+                    <option value="BOARDING">Boarding</option>
+                </select><br><br>
+                
+                <label for="house">House (for boarding students):</label><br>
+                <input type="text" id="house" name="house" maxlength="50" placeholder="e.g., Red House, Blue House"><br><br>
+            </fieldset>
+            
+            <fieldset>
+                <legend>🏠 Address Information</legend>
+                
+                <label for="district">District *:</label><br>
+                <input type="text" id="district" name="district" required maxlength="50"><br><br>
+                
+                <label for="county">County *:</label><br>
+                <input type="text" id="county" name="county" required maxlength="50"><br><br>
+                
+                <label for="subCounty">Sub-County *:</label><br>
+                <input type="text" id="subCounty" name="subCounty" required maxlength="50"><br><br>
+                
+                <label for="parish">Parish *:</label><br>
+                <input type="text" id="parish" name="parish" required maxlength="50"><br><br>
+                
+                <label for="village">Village *:</label><br>
+                <input type="text" id="village" name="village" required maxlength="50"><br><br>
+            </fieldset>
+            
+            <fieldset>
+                <legend>📎 Documents (Optional)</legend>
+                
+                <label for="profilePictureUrl">Profile Picture URL:</label><br>
+                <input type="url" id="profilePictureUrl" name="profilePictureUrl" maxlength="500"><br><br>
+                
+                <label for="birthCertificateUrl">Birth Certificate URL:</label><br>
+                <input type="url" id="birthCertificateUrl" name="birthCertificateUrl" maxlength="500"><br><br>
+            </fieldset>
+            
+            <button type="submit">📝 Register Student</button>
+            <button type="reset">🔄 Reset Form</button>
+        </form>
+        
+        <div id="registrationResult"></div>
+    </div>
+    
+    <hr>
+    
+    <div>
+        <h2>📋 Registration Instructions:</h2>
+        <ul>
+            <li>✅ All fields marked with (*) are required</li>
+            <li>🆔 <strong>Student ID will be automatically generated</strong> - no need to provide one</li>
+            <li>📧 Use a valid email address for account verification</li>
+            <li>🔐 Choose a strong password (minimum 6 characters)</li>
+            <li>🎓 Select the appropriate class and stream</li>
+            <li>🏠 Provide complete address information</li>
+            <li>📱 Phone numbers should include country code (e.g., +256)</li>
+            <li>🔢 LINN is optional but recommended for official records</li>
+        </ul>
+    </div>
+
+    <div>
+        <p><a href="index.html">← Back to Main Testing Page</a></p>
+    </div>
+
+    <script>
+        // Base API URL - adjust if your server runs on different port
+        const API_BASE = 'https://organic-winner-pqprvg9gx94f69j7-8080.app.github.dev/api/students';
+
+        // Student Registration Form Handler
+        document.getElementById('studentRegistrationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const studentData = Object.fromEntries(formData.entries());
+            
+            // Remove empty fields to prevent validation errors
+            Object.keys(studentData).forEach(key => {
+                if (studentData[key] === '') {
+                    delete studentData[key];
+                }
+            });
+            
+            // Show loading state
+            const resultDiv = document.getElementById('registrationResult');
+            resultDiv.innerHTML = '<p>⏳ Registering student, please wait...</p>';
+            
+            try {
+                console.log('Sending student data:', studentData);
+                
+                const response = await fetch(`${API_BASE}/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(studentData)
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server error:', errorText);
+                    throw new Error(`Server error (${response.status}): ${errorText}`);
+                }
+                
+                const result = await response.json();
+                console.log('Success result:', result);
+                
+                // Display result
+                if (result.message && result.message.includes('success')) {
+                    resultDiv.innerHTML = `
+                        <h3 style="color: green;">✅ Student Registration Successful!</h3>
+                        <div style="background-color: #f0f8ff; padding: 15px; border: 1px solid #ccc;">
+                            <p><strong>🆔 Generated Student ID:</strong> <span style="font-size: 18px; color: blue; font-weight: bold;">${result.studentId || 'N/A'}</span></p>
+                            <p><strong>👤 Student Name:</strong> ${result.fullName || 'N/A'}</p>
+                            <p><strong>📧 Email:</strong> ${result.email || 'N/A'}</p>
+                            <p><strong>🆔 System User ID:</strong> ${result.userId || 'N/A'}</p>
+                            <p><strong>🎓 Current Class:</strong> ${result.currentClass || 'Not specified'}</p>
+                            <p><strong>🏠 Residence:</strong> ${result.residenceStatus || 'Not specified'}</p>
+                            <p><strong>🔐 Password Hashed:</strong> ${result.passwordHashed ? 'Yes ✅' : 'No ❌'}</p>
+                        </div>
+                        <div style="background-color: #e8f5e8; padding: 10px; margin-top: 10px; border: 1px solid #4CAF50;">
+                            <p><strong>📋 Important:</strong> Please save your <strong>Student ID: ${result.studentId || 'N/A'}</strong></p>
+                            <p><em>You can now use your email and password to login!</em></p>
+                        </div>
+                    `;
+                    
+                    // Reset form on success
+                    document.getElementById('studentRegistrationForm').reset();
+                } else {
+                    resultDiv.innerHTML = `
+                        <h3 style="color: orange;">⚠️ Unexpected Response</h3>
+                        <div style="background-color: #fff8e1; padding: 15px; border: 1px solid #ccc;">
+                            <p><strong>Response:</strong> ${JSON.stringify(result)}</p>
+                        </div>
+                    `;
+                }
+                
+                // Scroll to result
+                resultDiv.scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                console.error('Registration error:', error);
+                resultDiv.innerHTML = `
+                    <h3 style="color: red;">❌ Registration Failed</h3>
+                    <div style="background-color: #fff0f0; padding: 15px; border: 1px solid #ccc;">
+                        <p><strong>Error Details:</strong> ${error.message}</p>
+                        <p><strong>Debugging Info:</strong></p>
+                        <ul>
+                            <li>Server URL: ${API_BASE}/register</li>
+                            <li>Form Data: ${JSON.stringify(studentData, null, 2)}</li>
+                            <li>Error Type: ${error.name}</li>
+                        </ul>
+                        <p><em>📝 Check browser console for more details</em></p>
+                        <p><em>🔧 Make sure your Spring Boot server is running on http://localhost:8080</em></p>
+                    </div>
+                `;
+            }
+        });
+
+        // Auto-generate student ID is now handled server-side
+        // No client-side ID generation needed
+
+        // Show/hide house field based on residence status
+        document.getElementById('residenceStatus').addEventListener('change', function() {
+            const houseField = document.getElementById('house');
+            if (this.value === 'BOARDING') {
+                houseField.style.backgroundColor = '#e8f4fd';
+                houseField.placeholder = 'Required for boarding students';
+            } else {
+                houseField.style.backgroundColor = '';
+                houseField.placeholder = 'e.g., Red House, Blue House';
+            }
+        });
+        
+        // Show/hide combination field based on class
+        document.getElementById('currentClass').addEventListener('change', function() {
+            const combinationField = document.getElementById('combination');
+            if (this.value.includes('Senior 5') || this.value.includes('Senior 6')) {
+                combinationField.style.backgroundColor = '#e8f4fd';
+                combinationField.placeholder = 'Required for S5/S6 - e.g., Math, Physics, Chemistry';
+            } else {
+                combinationField.style.backgroundColor = '';
+                combinationField.placeholder = 'e.g., Math, Physics, Chemistry, Biology';
+            }
+        });
+    </script>
+</body>
+</html>
