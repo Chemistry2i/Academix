@@ -160,6 +160,45 @@
 			<version>0.11.5</version>
 			<scope>runtime</scope>
 		</dependency>
+		
+		<!-- MFA Dependencies -->
+		<!-- Google Authenticator for TOTP -->
+		<dependency>
+			<groupId>com.warrenstrange</groupId>
+			<artifactId>googleauth</artifactId>
+			<version>1.5.0</version>
+		</dependency>
+		
+		<!-- QR Code generation for TOTP setup -->
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>core</artifactId>
+			<version>3.5.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>javase</artifactId>
+			<version>3.5.2</version>
+		</dependency>
+		
+		<!-- SMS Provider Dependencies (Optional - choose one) -->
+		<!-- Twilio SMS -->
+		<!--
+		<dependency>
+			<groupId>com.twilio.sdk</groupId>
+			<artifactId>twilio</artifactId>
+			<version>9.14.1</version>
+		</dependency>
+		-->
+		
+		<!-- AWS SNS for SMS (Alternative) -->
+		<!--
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-sns</artifactId>
+			<version>1.12.565</version>
+		</dependency>
+		-->
 	</dependencies>
 
 	<build>

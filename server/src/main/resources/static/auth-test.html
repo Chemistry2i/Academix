@@ -111,21 +111,34 @@
         </div>
         <button onclick="verifyEmail()">Verify Email</button>
         <button onclick="autoFillVerificationToken()" style="background-color: #17a2b8;">Auto-Fill Token</button>
+        <button onclick="debugEmailTokens()" style="background-color: #6f42c1; color: white;">🔍 Debug User Tokens</button>
         <div id="verifyResponse" class="response" style="display:none;"></div>
     </div>
 
     <!-- Login -->
     <div class="container">
         <h2>3. User Login</h2>
+        <div style="background-color: #e8f5e8; padding: 15px; border: 2px solid #4CAF50; margin-bottom: 15px;">
+            <h3 style="color: #2e7d32; margin-top: 0;">✅ Universal Login System</h3>
+            <p><strong>🎓 Students:</strong> Use your registered email and password</p>
+            <p><strong>👨‍🏫 Teachers/Staff:</strong> Use your account credentials</p>
+            <p><strong>👤 Admins:</strong> Use your admin credentials</p>
+            <p><em>📂 System automatically detects your user type and redirects to appropriate dashboard!</em></p>
+        </div>
+        <div style="background-color: #fff3cd; padding: 12px; border: 2px solid #ffc107; margin-bottom: 15px;">
+            <h4 style="color: #856404; margin-top: 0;">🔐 Email Verification Required!</h4>
+            <p><strong>⚠️ Important:</strong> You must verify your email before you can login, even if you have the correct password.</p>
+            <p><strong>📧 Steps:</strong> 1) Register → 2) Check your email → 3) Click verification link → 4) Then login</p>
+        </div>
         <div class="form-group">
             <label for="loginEmail">Email:</label>
-            <input type="email" id="loginEmail" value="john.doe@example.com">
+            <input type="email" id="loginEmail" placeholder="Enter your email">
         </div>
         <div class="form-group">
             <label for="loginPassword">Password:</label>
-            <input type="password" id="loginPassword" value="SecurePass123">
+            <input type="password" id="loginPassword" placeholder="Enter your password">
         </div>
-        <button onclick="login()">Login</button>
+        <button onclick="login()" style="background-color: #007bff; font-size: 16px; padding: 12px 24px;">🚀 Login</button>
         <div id="loginResponse" class="response" style="display:none;"></div>
     </div>
 
@@ -248,13 +261,92 @@
                 password: document.getElementById('loginPassword').value
             };
             
+            // Use standard login endpoint (now supports all user types)
             const result = await makeRequest(`${API_BASE}/login`, 'POST', body);
-            showResponse('loginResponse', result);
             
-            // Store tokens if login successful
-            if (result.success && result.data.accessToken) {
-                localStorage.setItem('accessToken', result.data.accessToken);
-                localStorage.setItem('refreshToken', result.data.refreshToken);
+            // Enhanced response display with better error handling
+            if (result.success && result.data.user) {
+                const user = result.data.user;
+                const userType = user.role || 'USER';
+                const dashboardUrl = getDashboardUrl(userType);
+                
+                // Create enhanced success message
+                const successMessage = {
+                    ...result,
+                    dashboardRedirect: dashboardUrl,
+                    userInfo: {
+                        name: user.fullName,
+                        email: user.email,
+                        role: userType,
+                        studentId: user.studentId || null,
+                        currentClass: user.currentClass || null,
+                        emailVerified: user.emailVerified
+                    }
+                };
+                showResponse('loginResponse', successMessage);
+                
+                // Store tokens
+                if (result.data.accessToken) {
+                    localStorage.setItem('accessToken', result.data.accessToken);
+                    localStorage.setItem('refreshToken', result.data.refreshToken);
+                    localStorage.setItem('userRole', userType);
+                    localStorage.setItem('userInfo', JSON.stringify(user));
+                }
+                
+                // Simulate dashboard redirect (in real app, this would redirect)
+                setTimeout(() => {
+                    if (confirm(`Login successful! Would you like to simulate redirect to ${dashboardUrl}?`)) {
+                        alert(`🎉 Redirecting to ${userType} Dashboard: ${dashboardUrl}`);
+                    }
+                }, 1000);
+                
+            } else {
+                // Handle specific error messages
+                const errorMessage = result.data?.message || 'Login failed';
+                
+                if (errorMessage.includes('verify your email')) {
+                    // Email verification error - provide helpful instructions
+                    const enhancedError = {
+                        ...result,
+                        errorType: 'EMAIL_VERIFICATION_REQUIRED',
+                        data: {
+                            ...result.data,
+                            message: errorMessage,
+                            instructions: [
+                                '1. Check your email inbox for the verification link',
+                                '2. Click the link to verify your email address',
+                                '3. Return here and try logging in again',
+                                '4. If you cannot find the email, use "Resend Token" section below'
+                            ],
+                            resendInstructions: 'Use section 6 below to resend verification email if needed'
+                        }
+                    };
+                    showResponse('loginResponse', enhancedError);
+                    
+                    // Auto-fill resend email field
+                    try {
+                        document.getElementById('resendEmail').value = body.email;
+                        document.getElementById('tokenType').value = 'verification';
+                    } catch(e) { /* Ignore if elements don't exist */ }
+                    
+                } else {
+                    showResponse('loginResponse', result);
+                }
+            }
+        }
+
+        // Helper function to determine dashboard URL based on user role
+        function getDashboardUrl(userType) {
+            switch(userType.toUpperCase()) {
+                case 'STUDENT':
+                    return '/student/dashboard';
+                case 'TEACHER': 
+                case 'STAFF':
+                    return '/staff/dashboard';
+                case 'ADMIN':
+                    return '/admin/dashboard';
+                default:
+                    return '/dashboard';
             }
         }
 
@@ -292,35 +384,101 @@
             showResponse('usersResponse', result);
         }
 
-        // Helper function to extract verification token from debug endpoint
-        async function getVerificationToken(email) {
-            try {
-                const result = await makeRequest(`${API_BASE}/debug/user/${email}`, 'GET');
-                if (result.success && result.data.emailVerificationToken) {
-                    document.getElementById('verifyToken').value = result.data.emailVerificationToken;
-                    alert(`Found verification token for ${email}! Token has been filled in the verification field.`);
-                    return result.data.emailVerificationToken;
-                }
-            } catch (error) {
-                // Fallback to users list method
-                const result = await makeRequest(`${API_BASE}/users`, 'GET');
-                if (result.success && result.data.users) {
-                    const user = result.data.users.find(u => u.email === email);
-                    if (user && user.emailVerificationToken) {
-                        document.getElementById('verifyToken').value = user.emailVerificationToken;
-                        alert(`Found verification token for ${email}! Token has been filled in.`);
-                        return user.emailVerificationToken;
-                    }
-                }
-            }
-            alert(`No verification token found for ${email}. Make sure you've registered first.`);
-            return null;
-        }
-
         // Auto-fill verification token for current registration email
         function autoFillVerificationToken() {
             const email = document.getElementById('regEmail').value;
+            if (!email) {
+                alert('Please enter an email address first.');
+                return;
+            }
             getVerificationToken(email);
+        }
+
+        // Debug function for the button
+        async function debugEmailTokens() {
+            const email = document.getElementById('verifyToken').value ? 
+                document.getElementById('regEmail').value : 
+                prompt('Enter email address to debug:');
+                
+            if (!email) {
+                alert('Please enter an email address.');
+                return;
+            }
+            
+            const result = await debugUserTokens(email);
+            if (result) {
+                const info = `
+🔍 Debug Info for: ${email}
+📧 Email Verified: ${result.emailVerified ? 'Yes ✅' : 'No ❌'}
+👤 User Type: ${result.userType || 'USER'}
+🆔 Role: ${result.role || 'Unknown'}
+🔑 Has Token: ${result.emailVerificationToken ? 'Yes ✅' : 'No ❌'}
+⏰ Token Expires: ${result.emailVerificationExpiry ? new Date(result.emailVerificationExpiry).toLocaleString() : 'Not set'}
+📅 Created: ${result.createdAt ? new Date(result.createdAt).toLocaleString() : 'Unknown'}
+                `.trim();
+                
+                alert(info);
+            }
+        }
+
+        // Enhanced debug function to check both user types
+        async function debugUserTokens(email) {
+            try {
+                // Try debug endpoint first
+                const debugResult = await makeRequest(`${API_BASE}/debug/user/${email}`, 'GET');
+                if (debugResult.success) {
+                    console.log('Debug info for', email, ':', debugResult.data);
+                    return debugResult.data;
+                }
+            } catch (error) {
+                console.log('Debug endpoint failed, trying getAllUsers...');
+            }
+
+            // Fallback to getAllUsers
+            try {
+                const result = await makeRequest(`${API_BASE}/users`, 'GET');
+                if (result.success) {
+                    // Check in general users
+                    let user = result.data.users?.find(u => u.email === email);
+                    if (!user) {
+                        // Check in students
+                        user = result.data.students?.find(s => s.email === email);
+                    }
+                    
+                    if (user) {
+                        console.log('User found:', user);
+                        return user;
+                    } else {
+                        console.log('User not found in either storage');
+                        alert('User not found. Please register first.');
+                        return null;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to get debug info:', error);
+                alert('Failed to get user debug info: ' + error.message);
+                return null;
+            }
+        }
+
+        // Modified getVerificationToken to use enhanced debug
+        async function getVerificationToken(email) {
+            const userInfo = await debugUserTokens(email);
+            
+            if (userInfo && userInfo.emailVerificationToken) {
+                document.getElementById('verifyToken').value = userInfo.emailVerificationToken;
+                
+                // Show token info
+                const expiryInfo = userInfo.emailVerificationExpiry ? 
+                    ` (Expires: ${new Date(userInfo.emailVerificationExpiry).toLocaleString()})` : '';
+                    
+                alert(`✅ Found verification token for ${email}!${expiryInfo}\nToken has been filled in the verification field.\n\nUser Type: ${userInfo.userType || 'USER'}\nEmail Verified: ${userInfo.emailVerified ? 'Yes' : 'No'}`);
+                
+                return userInfo.emailVerificationToken;
+            } else {
+                alert(`❌ No verification token found for ${email}. \n\nPossible reasons:\n1. User not registered\n2. Email already verified\n3. Token expired\n\nPlease register first or use "Resend Token" if registered.`);
+                return null;
+            }
         }
     </script>
 </body>

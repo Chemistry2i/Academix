@@ -40,9 +40,20 @@ public class AuthService {
     @Autowired
     private SecurityEnhancementService securityService; // Add security service
 
+    @Autowired
+    private MFAService mfaService; // Add MFA service
+
     // In-memory storage for testing (replace with repository in production)
     private final Map<String, User> userStorage = new HashMap<>();
     private Long userIdCounter = 1L;
+    
+    // Reference to student storage for unified login (temporary solution until unified database)
+    private static Map<String, Student> studentStorage = new HashMap<>();
+    
+    // Method to set student storage reference (called from StudentController)
+    public static void setStudentStorage(Map<String, Student> storage) {
+        studentStorage = storage;
+    }
 
     /**
      * Register a new user with enhanced security checks
@@ -152,7 +163,33 @@ public class AuthService {
             // Record successful login
             securityService.recordSuccessfulLogin(request.getEmail());
 
-            // Generate tokens with shorter access token expiry for security
+            // Check if MFA is enabled for the user
+            if (mfaService.isMFAEnabled(user.getEmail())) {
+                // Generate temporary token for MFA flow
+                String tempToken = jwtService.generateTempToken(user.getEmail(), 10); // 10 minute expiry
+                
+                // Send MFA challenge
+                boolean challengeSent = mfaService.sendMFAChallenge(user.getEmail());
+                
+                if (challengeSent) {
+                    securityService.recordSecurityEvent(user.getEmail(), "MFA_CHALLENGE_SENT", null);
+                    logger.info("MFA challenge sent for user: {}", user.getEmail());
+                    
+                    return new AuthResponse(
+                        "MFA verification required",
+                        null, // No access token yet
+                        null, // No refresh token yet  
+                        0L,   // No expiration yet
+                        null, // No user info yet
+                        true, // requiresMFA flag
+                        tempToken // Temporary token for MFA verification
+                    );
+                } else {
+                    throw new RuntimeException("Failed to send MFA challenge. Please try again.");
+                }
+            }
+
+            // No MFA required - proceed with normal login
             String accessToken = jwtService.generateToken(user.getEmail(), getUserRole(user), user.getId());
             String refreshToken = jwtService.generateRefreshToken(user.getEmail());
 
@@ -180,6 +217,114 @@ public class AuthService {
         } catch (Exception e) {
             securityService.recordSecurityEvent(request.getEmail(), "LOGIN_FAILED", e.getMessage());
             logger.error("Login failed for email: {}", request.getEmail(), e);
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    /**
+     * Unified login that checks both user storage and student storage
+     * This allows all user types (students, staff, admin) to login through one endpoint
+     */
+    public AuthResponse unifiedLogin(LoginRequest request) {
+        try {
+            // Rate limiting check
+            if (securityService.isRateLimited(request.getEmail(), "LOGIN")) {
+                throw new RuntimeException("Too many login attempts. Please try again later.");
+            }
+
+            // Account lockout check 
+            if (securityService.isAccountLocked(request.getEmail())) {
+                throw new RuntimeException("Account is temporarily locked due to multiple failed login attempts. Please try again later.");
+            }
+
+            User foundUser = null;
+            String userType = "UNKNOWN";
+
+            // First, check regular user storage (AuthService)
+            foundUser = userStorage.get(request.getEmail());
+            if (foundUser != null) {
+                userType = "USER";
+            } else {
+                // If not found in user storage, check student storage
+                Student student = studentStorage.get(request.getEmail());
+                if (student != null) {
+                    foundUser = student; // Student extends User
+                    userType = "STUDENT";
+                }
+            }
+
+            // If user not found in either storage
+            if (foundUser == null) {
+                securityService.recordFailedLoginAttempt(request.getEmail());
+                throw new RuntimeException("Invalid email or password");
+            }
+
+            // Verify password
+            if (!userService.verifyPassword(request.getPassword(), foundUser.getPassword())) {
+                securityService.recordFailedLoginAttempt(request.getEmail());
+                throw new RuntimeException("Invalid email or password");
+            }
+
+            // Check if email is verified BEFORE allowing login
+            if (!foundUser.getEmailVerified()) {
+                securityService.recordSecurityEvent(request.getEmail(), "LOGIN_BLOCKED_UNVERIFIED_EMAIL", "UserType: " + userType);
+                throw new RuntimeException("Please verify your email before logging in. Check your email inbox for the verification link.");
+            }
+
+            // Check if account is active
+            if (!foundUser.getIsActive()) {
+                throw new RuntimeException("Account is disabled. Please contact support");
+            }
+
+            // Record successful login
+            securityService.recordSuccessfulLogin(request.getEmail());
+
+            // Generate JWT tokens
+            String accessToken = jwtService.generateToken(foundUser.getEmail(), getUserRole(foundUser), foundUser.getId());
+            String refreshToken = jwtService.generateRefreshToken(foundUser.getEmail());
+
+            // Create user info with role-specific details
+            UserInfo userInfo;
+            if ("STUDENT".equals(userType)) {
+                Student student = (Student) foundUser;
+                userInfo = new UserInfo(
+                    student.getId(),
+                    student.getEmail(),
+                    student.getFullName(),
+                    "STUDENT",
+                    foundUser.getEmailVerified() != null ? foundUser.getEmailVerified() : true,
+                    foundUser.getIsActive()
+                );
+                // Add student-specific info
+                userInfo.setStudentId(student.getStudentId());
+                userInfo.setCurrentClass(student.getCurrentClass());
+                userInfo.setStream(student.getStream());
+            } else {
+                userInfo = new UserInfo(
+                    foundUser.getId(),
+                    foundUser.getEmail(),
+                    foundUser.getFullName(),
+                    getUserRole(foundUser),
+                    foundUser.getEmailVerified() != null ? foundUser.getEmailVerified() : true,
+                    foundUser.getIsActive()
+                );
+            }
+
+            securityService.recordSecurityEvent(foundUser.getEmail(), "UNIFIED_LOGIN_SUCCESS", 
+                "UserType: " + userType + ", Role: " + getUserRole(foundUser));
+            logger.info("Unified login successful for {}: {} ({})", userType, foundUser.getEmail(), getUserRole(foundUser));
+
+            return new AuthResponse(
+                "Login successful - " + userType,
+                accessToken,
+                refreshToken,
+                jwtService.getJwtExpiration(),
+                userInfo
+            );
+
+        } catch (Exception e) {
+            securityService.recordSecurityEvent(request.getEmail(), "UNIFIED_LOGIN_FAILED", e.getMessage());
+            logger.error("Unified login failed for email: {}", request.getEmail(), e);
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -328,26 +473,49 @@ public class AuthService {
     }
 
     /**
-     * Verify email address
+     * Verify email address - Works for all user types (students and general users)
      */
     public AuthResponse verifyEmail(VerifyEmailRequest request) {
         try {
-            // Find user by verification token
-            User user = userStorage.values().stream()
+            User foundUser = null;
+            String userType = "UNKNOWN";
+
+            // First, search in regular user storage (AuthService)
+            foundUser = userStorage.values().stream()
                 .filter(u -> userService.isEmailVerificationTokenValid(u, request.getToken()))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Invalid or expired verification token"));
+                .orElse(null);
+                
+            if (foundUser != null) {
+                userType = "USER";
+            } else {
+                // If not found in user storage, search in student storage
+                foundUser = studentStorage.values().stream()
+                    .filter(s -> userService.isEmailVerificationTokenValid(s, request.getToken()))
+                    .findFirst()
+                    .orElse(null);
+                    
+                if (foundUser != null) {
+                    userType = "STUDENT";
+                }
+            }
+            
+            // If user not found in either storage
+            if (foundUser == null) {
+                securityService.recordSecurityEvent("UNKNOWN", "EMAIL_VERIFICATION_FAILED", "Invalid token: " + request.getToken());
+                throw new RuntimeException("Invalid or expired verification token");
+            }
 
             // Verify email
-            userService.verifyEmail(user);
+            userService.verifyEmail(foundUser);
 
             // Send welcome email
-            emailService.sendWelcomeEmail(user.getEmail(), user.getFullName());
+            emailService.sendWelcomeEmail(foundUser.getEmail(), foundUser.getFullName());
 
-            securityService.recordSecurityEvent(user.getEmail(), "EMAIL_VERIFIED", null);
-            logger.info("Email verified successfully for user: {}", user.getEmail());
+            securityService.recordSecurityEvent(foundUser.getEmail(), "EMAIL_VERIFIED", "UserType: " + userType);
+            logger.info("Email verified successfully for {} user: {}", userType, foundUser.getEmail());
 
-            return new AuthResponse("Email verified successfully! Welcome to Academix.");
+            return new AuthResponse("Email verified successfully! Welcome to Academix. You can now login with your credentials.");
 
         } catch (Exception e) {
             securityService.recordSecurityEvent("UNKNOWN", "EMAIL_VERIFICATION_FAILED", e.getMessage());
@@ -357,7 +525,7 @@ public class AuthService {
     }
 
     /**
-     * Resend verification or reset token with rate limiting
+     * Resend verification or reset token with rate limiting - Works for all user types
      */
     public AuthResponse resendToken(ResendTokenRequest request) {
         try {
@@ -366,30 +534,43 @@ public class AuthService {
                 throw new RuntimeException("Too many token resend attempts. Please try again later.");
             }
 
-            // Find user by email
-            User user = userStorage.get(request.getEmail());
-            if (user == null) {
+            User foundUser = null;
+            String userType = "UNKNOWN";
+
+            // First, check regular user storage (AuthService)
+            foundUser = userStorage.get(request.getEmail());
+            if (foundUser != null) {
+                userType = "USER";
+            } else {
+                // If not found in user storage, check student storage
+                foundUser = studentStorage.get(request.getEmail());
+                if (foundUser != null) {
+                    userType = "STUDENT";
+                }
+            }
+
+            if (foundUser == null) {
                 securityService.recordSecurityEvent(request.getEmail(), "RESEND_TOKEN_UNKNOWN_EMAIL", request.getTokenType());
                 return new AuthResponse("If the email exists in our system, the token will be resent.");
             }
 
             if ("verification".equals(request.getTokenType())) {
-                if (user.getEmailVerified()) {
+                if (foundUser.getEmailVerified()) {
                     throw new RuntimeException("Email is already verified");
                 }
 
-                String verificationToken = userService.generateEmailVerificationToken(user);
-                emailService.sendEmailVerificationEmail(user.getEmail(), verificationToken, user.getFullName());
-                securityService.recordSecurityEvent(user.getEmail(), "VERIFICATION_TOKEN_RESENT", null);
+                String verificationToken = userService.generateEmailVerificationToken(foundUser);
+                emailService.sendEmailVerificationEmail(foundUser.getEmail(), verificationToken, foundUser.getFullName());
+                securityService.recordSecurityEvent(foundUser.getEmail(), "VERIFICATION_TOKEN_RESENT", "UserType: " + userType);
                 
-                return new AuthResponse("Verification email has been resent.");
+                return new AuthResponse("Verification email has been resent to " + foundUser.getEmail() + ". Please check your inbox and click the verification link.");
 
             } else if ("reset".equals(request.getTokenType())) {
-                String resetToken = userService.generatePasswordResetToken(user);
-                emailService.sendPasswordResetEmail(user.getEmail(), resetToken, user.getFullName());
-                securityService.recordSecurityEvent(user.getEmail(), "RESET_TOKEN_RESENT", null);
+                String resetToken = userService.generatePasswordResetToken(foundUser);
+                emailService.sendPasswordResetEmail(foundUser.getEmail(), resetToken, foundUser.getFullName());
+                securityService.recordSecurityEvent(foundUser.getEmail(), "RESET_TOKEN_RESENT", "UserType: " + userType);
                 
-                return new AuthResponse("Password reset link has been resent.");
+                return new AuthResponse("Password reset link has been resent to " + foundUser.getEmail() + ". Please check your inbox.");
 
             } else {
                 throw new RuntimeException("Invalid token type");
@@ -472,12 +653,13 @@ public class AuthService {
     }
 
     /**
-     * Get all users (for testing only)
+     * Get all users including students (for testing only)
      */
     public Map<String, Object> getAllUsers() {
         Map<String, Object> response = new HashMap<>();
-        response.put("totalUsers", userStorage.size());
-        response.put("users", userStorage.values().stream()
+        
+        // Get general users
+        var generalUsers = userStorage.values().stream()
             .map(user -> {
                 Map<String, Object> userData = new HashMap<>();
                 userData.put("id", user.getId());
@@ -486,33 +668,154 @@ public class AuthService {
                 userData.put("emailVerified", user.getEmailVerified());
                 userData.put("isActive", user.getIsActive());
                 userData.put("role", getUserRole(user));
+                userData.put("userType", "USER");
+                userData.put("emailVerificationToken", user.getEmailVerificationToken());
+                userData.put("emailVerificationExpiry", user.getEmailVerificationExpiry());
                 return userData;
-            }).toList());
+            }).toList();
+            
+        // Get students
+        var students = studentStorage.values().stream()
+            .map(student -> {
+                Map<String, Object> userData = new HashMap<>();
+                userData.put("id", student.getId());
+                userData.put("email", student.getEmail());
+                userData.put("fullName", student.getFullName());
+                userData.put("emailVerified", student.getEmailVerified());
+                userData.put("isActive", student.getIsActive());
+                userData.put("role", "STUDENT");
+                userData.put("userType", "STUDENT");
+                userData.put("studentId", student.getStudentId());
+                userData.put("currentClass", student.getCurrentClass());
+                userData.put("emailVerificationToken", student.getEmailVerificationToken());
+                userData.put("emailVerificationExpiry", student.getEmailVerificationExpiry());
+                return userData;
+            }).toList();
+            
+        response.put("totalGeneralUsers", userStorage.size());
+        response.put("totalStudents", studentStorage.size());
+        response.put("totalUsers", userStorage.size() + studentStorage.size());
+        response.put("users", generalUsers);
+        response.put("students", students);
+        
         return response;
     }
 
     /**
      * Debug method to get user details including tokens - FOR TESTING ONLY
+     * Searches both user and student storages
      */
     public Map<String, Object> getDebugUserInfo(String email) {
-        User user = userStorage.get(email);
-        if (user == null) {
-            throw new RuntimeException("User not found");
+        User foundUser = null;
+        String userType = "UNKNOWN";
+
+        // First, check regular user storage
+        foundUser = userStorage.get(email);
+        if (foundUser != null) {
+            userType = "USER";
+        } else {
+            // If not found in user storage, check student storage
+            foundUser = studentStorage.get(email);
+            if (foundUser != null) {
+                userType = "STUDENT";
+            }
+        }
+
+        if (foundUser == null) {
+            throw new RuntimeException("User not found in either user or student storage");
         }
 
         Map<String, Object> debugInfo = new HashMap<>();
-        debugInfo.put("id", user.getId());
-        debugInfo.put("email", user.getEmail());
-        debugInfo.put("fullName", user.getFullName());
-        debugInfo.put("emailVerified", user.getEmailVerified());
-        debugInfo.put("isActive", user.getIsActive());
-        debugInfo.put("role", getUserRole(user));
-        debugInfo.put("emailVerificationToken", user.getEmailVerificationToken());
-        debugInfo.put("emailVerificationExpiry", user.getEmailVerificationExpiry());
-        debugInfo.put("resetPasswordToken", user.getResetPasswordToken());
-        debugInfo.put("resetPasswordExpiry", user.getResetPasswordExpiry());
-        debugInfo.put("createdAt", user.getCreatedAt());
+        debugInfo.put("id", foundUser.getId());
+        debugInfo.put("email", foundUser.getEmail());
+        debugInfo.put("fullName", foundUser.getFullName());
+        debugInfo.put("emailVerified", foundUser.getEmailVerified());
+        debugInfo.put("isActive", foundUser.getIsActive());
+        debugInfo.put("role", getUserRole(foundUser));
+        debugInfo.put("userType", userType);
+        debugInfo.put("emailVerificationToken", foundUser.getEmailVerificationToken());
+        debugInfo.put("emailVerificationExpiry", foundUser.getEmailVerificationExpiry());
+        debugInfo.put("resetPasswordToken", foundUser.getResetPasswordToken());
+        debugInfo.put("resetPasswordExpiry", foundUser.getResetPasswordExpiry());
+        debugInfo.put("createdAt", foundUser.getCreatedAt());
+
+        // Add student-specific info if it's a student
+        if ("STUDENT".equals(userType)) {
+            Student student = (Student) foundUser;
+            debugInfo.put("studentId", student.getStudentId());
+            debugInfo.put("currentClass", student.getCurrentClass());
+            debugInfo.put("stream", student.getStream());
+        }
 
         return debugInfo;
+    }
+
+    /**
+     * Complete MFA login with verification code
+     */
+    public AuthResponse completeMFALogin(String tempToken, String mfaCode, String method) {
+        try {
+            // Validate the temporary token
+            String email = jwtService.extractUsername(tempToken);
+            
+            if (!jwtService.isValidTempToken(tempToken, email)) {
+                throw new RuntimeException("Invalid or expired temporary token. Please login again.");
+            }
+
+            // Find user
+            User user = userStorage.get(email);
+            if (user == null) {
+                throw new RuntimeException("User not found");
+            }
+
+            // Verify MFA code
+            MFAService.MFAMethod mfaMethod = null;
+            if (method != null) {
+                try {
+                    mfaMethod = MFAService.MFAMethod.valueOf(method.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    throw new RuntimeException("Invalid MFA method specified");
+                }
+            }
+
+            boolean mfaValid = mfaService.verifyMFACode(email, mfaCode, mfaMethod);
+            
+            if (!mfaValid) {
+                securityService.recordSecurityEvent(email, "MFA_VERIFICATION_FAILED", "Method: " + method);
+                throw new RuntimeException("Invalid MFA verification code");
+            }
+
+            // MFA verification successful - blacklist the temp token
+            jwtService.blacklistToken(tempToken);
+
+            // Generate actual access and refresh tokens
+            String accessToken = jwtService.generateToken(user.getEmail(), getUserRole(user), user.getId());
+            String refreshToken = jwtService.generateRefreshToken(user.getEmail());
+
+            // Create user info
+            UserInfo userInfo = new UserInfo(
+                user.getId(),
+                user.getEmail(),
+                user.getFullName(),
+                getUserRole(user),
+                user.getEmailVerified(),
+                user.getIsActive()
+            );
+
+            securityService.recordSecurityEvent(email, "MFA_LOGIN_SUCCESS", "Method: " + method + ", Role: " + getUserRole(user));
+            logger.info("MFA login completed successfully for user: {}", email);
+
+            return new AuthResponse(
+                "MFA verification successful. Login completed.",
+                accessToken,
+                refreshToken,
+                jwtService.getJwtExpiration(),
+                userInfo
+            );
+
+        } catch (Exception e) {
+            logger.error("MFA login completion failed", e);
+            throw new RuntimeException(e.getMessage());
+        }
     }
 }

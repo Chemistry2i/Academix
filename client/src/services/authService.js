@@ -4,11 +4,55 @@ import { AUTH_ENDPOINTS } from '../config/apiEndpoints';
 
 export const authService = {
   /**
-   * Login user
+   * Universal login for all user types (students, staff, admin)
+   * @param {Object} credentials - { email, password }
+   * @returns {Promise} - { success, data: { user, token, dashboardUrl } }
+   */
+  login: async (credentials) => {
+    try {
+      // Use standard login endpoint (now supports all user types)
+      const response = await api.post(AUTH_ENDPOINTS.LOGIN, credentials);
+      
+      // Add dashboard URL based on user role
+      const userData = response.data;
+      if (userData.user) {
+        userData.dashboardUrl = authService.getDashboardUrl(userData.user.role);
+      }
+      
+      return { success: true, data: userData };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Login failed',
+      };
+    }
+  },
+
+  /**
+   * Get dashboard URL based on user role/type
+   * @param {string} userRole - User role (STUDENT, TEACHER, STAFF, ADMIN)
+   * @returns {string} - Dashboard URL path
+   */
+  getDashboardUrl: (userRole) => {
+    switch(userRole?.toUpperCase()) {
+      case 'STUDENT':
+        return '/student/dashboard';
+      case 'TEACHER':
+      case 'STAFF':
+        return '/staff/dashboard';
+      case 'ADMIN':
+        return '/admin/dashboard';
+      default:
+        return '/dashboard';
+    }
+  },
+
+  /**
+   * Legacy login (general auth users only)
    * @param {Object} credentials - { email, password }
    * @returns {Promise} - { success, data: { user, token } }
    */
-  login: async (credentials) => {
+  legacyLogin: async (credentials) => {
     try {
       const response = await api.post(AUTH_ENDPOINTS.LOGIN, credentials);
       return { success: true, data: response.data };

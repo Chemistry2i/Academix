@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.academix.server.dto.AuthDto.*;
 import com.academix.server.dto.AuthDto.ApiResponse;
 import com.academix.server.dto.AuthDto.AuthResponse;
 import com.academix.server.dto.AuthDto.ChangePasswordRequest;
@@ -25,7 +24,9 @@ import com.academix.server.dto.AuthDto.RegisterRequest;
 import com.academix.server.dto.AuthDto.ResendTokenRequest;
 import com.academix.server.dto.AuthDto.ResetPasswordRequest;
 import com.academix.server.dto.AuthDto.VerifyEmailRequest;
+import com.academix.server.dto.MFARequestDTOs.MFAChallengeRequest;
 import com.academix.server.service.AuthService;
+import com.academix.server.service.UserService;
 
 import jakarta.validation.Valid;
 
@@ -38,6 +39,9 @@ public class AuthController {
     
     @Autowired
     private AuthService authService;
+    
+    @Autowired 
+    private UserService userService;
     
     /**
      * User Registration
@@ -56,17 +60,33 @@ public class AuthController {
     }
     
     /**
-     * User Login
-     * Authenticates user and returns JWT tokens
+     * User Login - Universal login for all user types (students, staff, admin)
+     * Automatically detects user type and provides appropriate response
      */
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> loginUser(@Valid @RequestBody LoginRequest request) {
         try {
-            AuthResponse response = authService.loginUser(request);
-            logger.info("Login successful for email: {}", request.getEmail());
+            AuthResponse response = authService.unifiedLogin(request);
+            logger.info("Universal login successful for email: {}", request.getEmail());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            logger.error("Login failed for email: {}", request.getEmail(), e);
+            logger.error("Universal login failed for email: {}", request.getEmail(), e);
+            return ResponseEntity.badRequest().body(new AuthResponse(e.getMessage()));
+        }
+    }
+
+    /**
+     * Unified Login - Works for all user types (students, staff, admin)
+     * Use this endpoint for all login attempts instead of separate endpoints
+     */
+    @PostMapping("/unified-login")
+    public ResponseEntity<AuthResponse> unifiedLogin(@Valid @RequestBody LoginRequest request) {
+        try {
+            AuthResponse response = authService.unifiedLogin(request);
+            logger.info("Unified login successful for email: {}", request.getEmail());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Unified login failed for email: {}", request.getEmail(), e);
             return ResponseEntity.badRequest().body(new AuthResponse(e.getMessage()));
         }
     }
@@ -213,6 +233,26 @@ public class AuthController {
         } catch (Exception e) {
             logger.error("Debug user info failed", e);
             return ResponseEntity.badRequest().body(new ApiResponse("User not found", false));
+        }
+    }
+
+    /**
+     * Complete MFA Login
+     * Verifies MFA code and completes authentication
+     */
+    @PostMapping("/mfa/verify")
+    public ResponseEntity<AuthResponse> completeMFALogin(@Valid @RequestBody MFAChallengeRequest request) {
+        try {
+            AuthResponse response = authService.completeMFALogin(
+                request.getTempToken(), 
+                request.getCode(),
+                request.getMethod()
+            );
+            logger.info("MFA login completed successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("MFA login completion failed", e);
+            return ResponseEntity.badRequest().body(new AuthResponse(e.getMessage()));
         }
     }
 

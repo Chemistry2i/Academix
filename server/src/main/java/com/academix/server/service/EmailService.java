@@ -284,9 +284,29 @@ public class EmailService {
             }
             
         } catch (Exception e) {
-            // Log error but don't throw - allow registration to continue
-            logger.error("User credentials email service error for {}, but registration will continue: {}", toEmail, e.getMessage());
-            logger.warn("User login details for manual communication - Email: {}, Password: {}", toEmail, generatedPassword);
+            logger.error("Failed to send user credentials email to: {}", toEmail, e);
+            logger.warn("User credentials for manual communication - Email: {}, Password: {}", toEmail, generatedPassword);
+        }
+    }
+    
+    /**
+     * Generic method to send simple email - for MFA and other purposes
+     */
+    public void sendEmail(String toEmail, String subject, String body) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject(subject);
+            message.setText(body);
+            
+            mailSender.send(message);
+            logger.info("Email sent successfully to: {}", toEmail);
+            
+        } catch (Exception e) {
+            logger.error("Failed to send email to: {}", toEmail, e);
+            // Log the email content for debugging in development
+            logger.warn("Email content that failed to send - Subject: {}, Body: {}", subject, body);
         }
     }
 }

@@ -111,10 +111,40 @@ const router = createBrowserRouter([
         element: <Navigate to="/dashboard" replace />,
       },
 
-      // Dashboard
+      // General Dashboard (Admin/Default)
       {
         path: 'dashboard',
         element: <Dashboard />,
+      },
+
+      // Admin Dashboard (Explicit route)
+      {
+        path: 'admin/dashboard',
+        element: (
+          <ProtectedRoute requiredRoles={[ROLES.ADMIN]}>
+            <Dashboard />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Staff Dashboard 
+      {
+        path: 'staff/dashboard',
+        element: (
+          <ProtectedRoute requiredRoles={[ROLES.TEACHER, ROLES.ADMIN]}>
+            <Dashboard />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Student Dashboard
+      {
+        path: 'student/dashboard',
+        element: (
+          <ProtectedRoute requiredRoles={[ROLES.STUDENT]}>
+            <StudentDashboard />
+          </ProtectedRoute>
+        ),
       },
 
       // Student Management

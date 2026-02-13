@@ -58,6 +58,58 @@ public class EnhancedJwtService {
         return generateToken(username, null, null, refreshExpiration);
     }
 
+    /**
+     * Generate temporary token for MFA flow
+     */
+    public String generateTempToken(String username, int expirationMinutes) {
+        long tempExpiration = expirationMinutes * 60 * 1000L; // Convert minutes to milliseconds
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("tokenType", "temp_mfa");
+        extraClaims.put("iat", System.currentTimeMillis());
+        extraClaims.put("jti", java.util.UUID.randomUUID().toString());
+        
+        String token = Jwts.builder()
+                .setClaims(extraClaims)
+                .setSubject(username)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + tempExpiration))
+                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .compact();
+
+        // Track token creation
+        trackTokenUsage(token, "TEMP_TOKEN_CREATED");
+        logger.info("Temporary MFA token generated for user: {}", username);
+        
+        return token;
+    }
+
+    /**
+     * Validate temporary token for MFA flow
+     */
+    public boolean isValidTempToken(String token, String username) {
+        try {
+            if (isTokenBlacklisted(token)) {
+                logger.warn("Attempt to use blacklisted temp token for user: {}", username);
+                return false;
+            }
+
+            if (!isValidTokenType(token, "temp_mfa")) {
+                logger.warn("Invalid token type for MFA verification: {}", username);
+                return false;
+            }
+
+            final String tokenUsername = extractUsername(token);
+            boolean isValid = (tokenUsername.equals(username)) && !isTokenExpired(token);
+            
+            trackTokenUsage(token, isValid ? "TEMP_TOKEN_VALIDATED" : "TEMP_TOKEN_VALIDATION_FAILED");
+            
+            return isValid;
+        } catch (Exception e) {
+            logger.error("Temp token validation failed for user: {}", username, e);
+            return false;
+        }
+    }
+
     private String generateToken(String username, String role, Long userId, long expiration) {
         Map<String, Object> extraClaims = new HashMap<>();
         if (role != null) extraClaims.put("role", role);

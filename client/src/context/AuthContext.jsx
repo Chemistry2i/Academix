@@ -141,19 +141,28 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.login(credentials);
 
       if (response.success) {
-        const { user, token } = response.data;
+        const { user, token, dashboardUrl } = response.data;
 
         // Store in localStorage
         localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
         localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
         localStorage.setItem(STORAGE_KEYS.SCHOOL_ID, user.schoolId || '');
+        
+        // Store user role for routing
+        localStorage.setItem('userRole', user.role || 'USER');
 
         dispatch({
           type: AUTH_ACTIONS.LOGIN_SUCCESS,
           payload: { user, token },
         });
 
-        return { success: true, user };
+        // Return success with user data and dashboard URL for routing
+        return { 
+          success: true, 
+          user, 
+          dashboardUrl: dashboardUrl || authService.getDashboardUrl(user.role),
+          userType: user.role 
+        };
       } else {
         dispatch({
           type: AUTH_ACTIONS.LOGIN_FAILURE,

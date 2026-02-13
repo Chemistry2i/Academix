@@ -25,8 +25,10 @@
                 <label for="email">Email Address *:</label><br>
                 <input type="email" id="email" name="email" required maxlength="100"><br><br>
                 
-                <div style="background-color: #e8f4fd; padding: 10px; border: 1px solid #4CAF50; margin-bottom: 15px;">
+                <div style="background-color: #e8f4fd; padding: 15px; border: 1px solid #4CAF50; margin-bottom: 15px;">
                     <p><strong>🔐 Password:</strong> A secure password will be generated automatically and sent to your email address during registration.</p>
+                    <p><strong>📧 Email Verification:</strong> You MUST verify your email before you can login. Check your inbox after registration!</p>
+                    <p><strong>🚨 Important:</strong> Login will be blocked until email verification is complete, even with correct password.</p>
                 </div>
                 
                 <label for="phoneNumber">Phone Number:</label><br>
@@ -144,13 +146,15 @@
         <ul>
             <li>✅ All fields marked with (*) are required</li>
             <li>🆔 <strong>Student ID will be automatically generated</strong> - no need to provide one</li>
-            <li>� <strong>Password will be automatically generated</strong> and sent to your email</li>
-            <li>📧 Use a valid email address - you'll receive your login credentials there</li>
+            <li>🔐 <strong>Password will be automatically generated</strong> and sent to your email</li>
+            <li>📧 <strong>Use a valid email address</strong> - you'll receive your login credentials there</li>
+            <li>🔒 <strong>IMPORTANT: Verify your email before logging in!</strong> Check your inbox for verification link</li>
+            <li>🚨 <strong>Login will be blocked until email is verified</strong>, even with correct password</li>
             <li>🎓 Select the appropriate class and stream</li>
             <li>🏠 Provide complete address information</li>
             <li>📱 Phone numbers should include country code (e.g., +256)</li>
             <li>🔢 LINN is optional but recommended for official records</li>
-            <li>🔄 You can change your password after first login</li>
+            <li>🔄 You can change your password after first login and email verification</li>
         </ul>
     </div>
 
@@ -216,10 +220,16 @@
                             <p><strong>🏠 Residence:</strong> ${result.residenceStatus || 'Not specified'}</p>
                             <p><strong>🔐 Password Hashed:</strong> ${result.passwordHashed ? 'Yes ✅' : 'No ❌'}</p>
                         </div>
-                        <div style="background-color: #e8f5e8; padding: 10px; margin-top: 10px; border: 1px solid #4CAF50;">
+                        <div style="background-color: #e8f5e8; padding: 15px; margin-top: 10px; border: 1px solid #4CAF50;">
                             <p><strong>📋 Important:</strong> Please save your <strong>Student ID: ${result.studentId || 'N/A'}</strong></p>
                             <p><strong>🔐 Login Credentials:</strong> Your email and generated password have been sent to <strong>${result.email}</strong></p>
-                            <p><em>📧 Check your email for login instructions and remember to change your password after first login!</em></p>
+                        </div>
+                        <div style="background-color: #fff3cd; padding: 15px; margin-top: 10px; border: 2px solid #ffc107;">
+                            <h4 style="color: #856404; margin-top: 0;">🚨 BEFORE YOU CAN LOGIN:</h4>
+                            <p><strong>1. CHECK YOUR EMAIL INBOX</strong> for the verification link</p>
+                            <p><strong>2. CLICK THE VERIFICATION LINK</strong> to activate your account</p>
+                            <p><strong>3. ONLY THEN</strong> you can login with your credentials</p>
+                            <p><em>⚠️ Login will be blocked until email verification is complete!</em></p>
                         </div>
                     `;
                     

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.academix.server.model.Student;
+import com.academix.server.service.AuthService;
 import com.academix.server.service.EmailService;
 import com.academix.server.service.UserService;
 
@@ -81,11 +82,17 @@ public class StudentController {
                 student.setIsDeleted(false);
             }
             
+            // Important: Set email as NOT verified by default
+            student.setEmailVerified(false);
+            
             // Generate email verification token
             String verificationToken = userService.generateEmailVerificationToken(student);
             
             // Store in memory for testing
             studentStorage.put(student.getEmail(), student);
+            
+            // Share student storage with AuthService for unified login
+            AuthService.setStudentStorage(studentStorage);
             
             // Log credentials and verification token for development
             System.out.println("\n=== STUDENT REGISTRATION SUCCESS ===");
@@ -223,6 +230,63 @@ public class StudentController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(
                 createErrorResponse("Update failed: " + e.getMessage())
+            );
+        }
+    }
+    
+    /**
+     * Student Login - Authenticate using student credentials
+     */
+    @PostMapping("/login")
+    public ResponseEntity<?> loginStudent(@RequestBody Map<String, String> loginRequest) {
+        try {
+            String email = loginRequest.get("email");
+            String password = loginRequest.get("password");
+            
+            if (email == null || password == null || email.trim().isEmpty() || password.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(createErrorResponse("Email and password are required"));
+            }
+            
+            // Find student by email
+            Student student = studentStorage.get(email);
+            if (student == null) {
+                return ResponseEntity.badRequest().body(createErrorResponse("Invalid email or password"));
+            }
+            
+            // Verify password
+            if (!userService.verifyPassword(password, student.getPassword())) {
+                return ResponseEntity.badRequest().body(createErrorResponse("Invalid email or password"));
+            }
+            
+            // Check if student account is active
+            if (!student.getIsActive()) {
+                return ResponseEntity.badRequest().body(createErrorResponse("Student account is not active"));
+            }
+            
+            // Create success response with student information
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Login successful!");
+            response.put("success", true);
+            response.put("student", createStudentSummary(student));
+            response.put("studentId", student.getStudentId());
+            response.put("fullName", student.getFullName());
+            response.put("currentClass", student.getCurrentClass());
+            response.put("stream", student.getStream());
+            response.put("residenceStatus", student.getResidenceStatus());
+            response.put("loginTime", LocalDateTime.now());
+            
+            System.out.println("\n=== STUDENT LOGIN SUCCESS ===");
+            System.out.println("Email: " + student.getEmail());
+            System.out.println("Student ID: " + student.getStudentId());
+            System.out.println("Name: " + student.getFullName());
+            System.out.println("Class: " + student.getCurrentClass());
+            System.out.println("============================\n");
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                createErrorResponse("Login failed: " + e.getMessage())
             );
         }
     }

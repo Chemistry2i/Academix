@@ -22,7 +22,7 @@ const Login = () => {
     formState: { errors },
   } = useForm();
 
-  const from = location.state?.from?.pathname || '/dashboard';
+  const from = location.state?.from?.pathname;
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -31,7 +31,20 @@ const Login = () => {
     const result = await login(data);
 
     if (result.success) {
-      navigate(from, { replace: true });
+      // Use dashboard URL based on user type, or fallback to 'from' location
+      const redirectPath = result.dashboardUrl || from || '/dashboard';
+      
+      // Log successful login with user type for debugging
+      console.log(`Login successful: ${result.userType} user redirecting to ${redirectPath}`);
+      
+      navigate(redirectPath, { replace: true });
+    } else {
+      // Handle specific error types
+      if (result.message?.includes('verify your email')) {
+        // Email verification required - provide helpful message
+        console.warn('Login blocked: Email verification required');
+        // The error message will be displayed by the auth context
+      }
     }
 
     setIsLoading(false);

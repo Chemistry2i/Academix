@@ -103,6 +103,8 @@ public class AuthDto {
         private String refreshToken;
         private Long expiresIn;
         private UserInfo user;
+        private Boolean requiresMFA;
+        private String tempToken;
 
         public AuthResponse(String message) {
             this.message = message;
@@ -114,7 +116,41 @@ public class AuthDto {
             this.refreshToken = refreshToken;
             this.expiresIn = expiresIn;
             this.user = user;
+            this.requiresMFA = false;
         }
+
+        // MFA constructor
+        public AuthResponse(String message, String accessToken, String refreshToken, Long expiresIn, UserInfo user, Boolean requiresMFA, String tempToken) {
+            this.message = message;
+            this.accessToken = accessToken;
+            this.refreshToken = refreshToken;
+            this.expiresIn = expiresIn;
+            this.user = user;
+            this.requiresMFA = requiresMFA;
+            this.tempToken = tempToken;
+        }
+
+        // Getters and setters
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
+
+        public String getAccessToken() { return accessToken; }
+        public void setAccessToken(String accessToken) { this.accessToken = accessToken; }
+
+        public String getRefreshToken() { return refreshToken; }
+        public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
+
+        public Long getExpiresIn() { return expiresIn; }
+        public void setExpiresIn(Long expiresIn) { this.expiresIn = expiresIn; }
+
+        public UserInfo getUser() { return user; }
+        public void setUser(UserInfo user) { this.user = user; }
+
+        public Boolean getRequiresMFA() { return requiresMFA; }
+        public void setRequiresMFA(Boolean requiresMFA) { this.requiresMFA = requiresMFA; }
+
+        public String getTempToken() { return tempToken; }
+        public void setTempToken(String tempToken) { this.tempToken = tempToken; }
     }
 
     @Data
@@ -125,6 +161,11 @@ public class AuthDto {
         private String role;
         private Boolean emailVerified;
         private Boolean isActive;
+        
+        // Student-specific fields (null for non-student users)
+        private String studentId;
+        private String currentClass;
+        private String stream;
 
         public UserInfo(Long id, String email, String fullName, String role, Boolean emailVerified, Boolean isActive) {
             this.id = id;

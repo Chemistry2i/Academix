@@ -3,15 +3,15 @@
 const API_VERSION = '/v1';
 
 export const AUTH_ENDPOINTS = {
-  LOGIN: `${API_VERSION}/auth/login`,
-  REGISTER: `${API_VERSION}/auth/register`,
-  LOGOUT: `${API_VERSION}/auth/logout`,
-  REFRESH_TOKEN: `${API_VERSION}/auth/refresh`,
-  FORGOT_PASSWORD: `${API_VERSION}/auth/forgot-password`,
-  RESET_PASSWORD: `${API_VERSION}/auth/reset-password`,
-  VERIFY_EMAIL: `${API_VERSION}/auth/verify-email`,
-  CHANGE_PASSWORD: `${API_VERSION}/auth/change-password`,
-  ME: `${API_VERSION}/auth/me`,
+  LOGIN: `/api/auth/login`, // Universal login for all user types
+  REGISTER: `/api/auth/register`,
+  LOGOUT: `/api/auth/logout`,
+  REFRESH_TOKEN: `/api/auth/refresh`,
+  FORGOT_PASSWORD: `/api/auth/forgot-password`,
+  RESET_PASSWORD: `/api/auth/reset-password`,
+  VERIFY_EMAIL: `/api/auth/verify-email`,
+  CHANGE_PASSWORD: `/api/auth/change-password`,
+  ME: `/api/auth/me`,
 };
 
 export const USER_ENDPOINTS = {
