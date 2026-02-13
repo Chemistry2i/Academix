@@ -87,9 +87,8 @@
             <label for="regEmail">Email:</label>
             <input type="email" id="regEmail" value="john.doe@example.com">
         </div>
-        <div class="form-group">
-            <label for="regPassword">Password:</label>
-            <input type="password" id="regPassword" value="SecurePass123">
+        <div style="background-color: #e8f4fd; padding: 10px; border: 1px solid #17a2b8; margin-bottom: 15px;">
+            <p><strong>🔐 Password:</strong> Will be auto-generated and sent via email</p>
         </div>
         <div class="form-group">
             <label for="regRole">Role:</label>
@@ -226,7 +225,6 @@
                 firstName: document.getElementById('regFirstName').value,
                 lastName: document.getElementById('regLastName').value,
                 email: document.getElementById('regEmail').value,
-                password: document.getElementById('regPassword').value,
                 role: document.getElementById('regRole').value,
                 gender: document.getElementById('regGender').value
             };

@@ -54,18 +54,14 @@ public class AuthService {
                 throw new RuntimeException("Too many registration attempts. Please try again later.");
             }
 
-            // Enhanced password validation
-            PasswordValidationResult passwordValidation = securityService.validatePasswordStrength(request.getPassword());
-            if (!passwordValidation.isValid()) {
-                throw new RuntimeException("Password does not meet security requirements: " + 
-                    String.join(", ", passwordValidation.getErrors()));
-            }
-
             // Check if email already exists
             if (userStorage.values().stream().anyMatch(u -> u.getEmail().equals(request.getEmail()))) {
                 securityService.recordSecurityEvent(request.getEmail(), "DUPLICATE_REGISTRATION", null);
                 throw new RuntimeException("Email already exists");
             }
+
+            // Generate secure password for the user
+            String generatedPassword = emailService.generateSecurePassword(10);
 
             // Create new student (or appropriate user type)
             Student student = new Student();
@@ -74,7 +70,7 @@ public class AuthService {
             student.setOtherNames(request.getOtherNames());
             student.setLastName(request.getLastName());
             student.setEmail(request.getEmail());
-            student.setPassword(request.getPassword());
+            student.setPassword(generatedPassword);
             student.setPhoneNumber(request.getPhoneNumber());
             student.setDistrict(request.getDistrict());
             student.setGender(request.getGender());
@@ -95,11 +91,18 @@ public class AuthService {
 
             // Send verification email
             emailService.sendEmailVerificationEmail(student.getEmail(), verificationToken, student.getFullName());
+            
+            // Also send credentials email for immediate login capability
+            try {
+                emailService.sendUserCredentialsEmail(student.getEmail(), student.getFullName(), generatedPassword);
+            } catch (Exception credentialsError) {
+                logger.warn("Credentials email failed but registration continues: {}", credentialsError.getMessage());
+            }
 
             securityService.recordSecurityEvent(student.getEmail(), "USER_REGISTERED", "Role: " + getUserRole(student));
             logger.info("User registered successfully: {}", student.getEmail());
 
-            return new AuthResponse("Registration successful! Please check your email to verify your account.");
+            return new AuthResponse("Registration successful! Your login credentials have been sent to your email. Please also verify your email for full account activation.");
 
         } catch (Exception e) {
             securityService.recordSecurityEvent(request.getEmail(), "REGISTRATION_FAILED", e.getMessage());

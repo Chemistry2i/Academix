@@ -1,14 +1,25 @@
 package com.academix.server.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import com.academix.server.service.UserService;
-import com.academix.server.model.Student;
-import jakarta.validation.Valid;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import java.time.LocalDateTime;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.academix.server.model.Student;
+import com.academix.server.service.EmailService;
+import com.academix.server.service.UserService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/students")
@@ -17,6 +28,9 @@ public class StudentController {
     
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private EmailService emailService;
     
     // In-memory storage for testing (replace with database in production)
     private Map<String, Student> studentStorage = new HashMap<>();
@@ -52,6 +66,10 @@ public class StudentController {
                 attempts++;
             }
             
+            // Generate secure password for the student
+            String generatedPassword = emailService.generateSecurePassword(10);
+            student.setPassword(generatedPassword);
+            
             // Hash the password before saving
             userService.prepareUserForSaving(student);
             
@@ -63,12 +81,39 @@ public class StudentController {
                 student.setIsDeleted(false);
             }
             
+            // Generate email verification token
+            String verificationToken = userService.generateEmailVerificationToken(student);
+            
             // Store in memory for testing
             studentStorage.put(student.getEmail(), student);
             
+            // Log credentials and verification token for development
+            System.out.println("\n=== STUDENT REGISTRATION SUCCESS ===");
+            System.out.println("Email: " + student.getEmail());
+            System.out.println("Student ID: " + student.getStudentId());
+            System.out.println("Generated Password: " + generatedPassword);
+            System.out.println("Email Verification Token: " + verificationToken);
+            System.out.println("Class: " + student.getCurrentClass());
+            System.out.println("============================\n");
+            
+            // Send student registration email with credentials
+            try {
+                emailService.sendStudentRegistrationEmail(
+                    student.getEmail(), 
+                    student.getFullName(), 
+                    student.getStudentId(),
+                    student.getCurrentClass(),
+                    student.getStream(),
+                    generatedPassword
+                );
+            } catch (Exception emailError) {
+                // Log email failure but don't break registration
+                System.out.println("Email sending failed but registration successful: " + emailError.getMessage());
+            }
+            
             // Return success response with student info
             Map<String, Object> response = createSuccessResponse(
-                "Student registered successfully!",
+                "Student registered successfully! Login credentials have been sent to your email.",
                 student
             );
             

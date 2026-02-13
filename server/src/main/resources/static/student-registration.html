@@ -25,8 +25,9 @@
                 <label for="email">Email Address *:</label><br>
                 <input type="email" id="email" name="email" required maxlength="100"><br><br>
                 
-                <label for="password">Password *:</label><br>
-                <input type="password" id="password" name="password" required minlength="6"><br><br>
+                <div style="background-color: #e8f4fd; padding: 10px; border: 1px solid #4CAF50; margin-bottom: 15px;">
+                    <p><strong>🔐 Password:</strong> A secure password will be generated automatically and sent to your email address during registration.</p>
+                </div>
                 
                 <label for="phoneNumber">Phone Number:</label><br>
                 <input type="tel" id="phoneNumber" name="phoneNumber" placeholder="+256701234567"><br><br>
@@ -143,12 +144,13 @@
         <ul>
             <li>✅ All fields marked with (*) are required</li>
             <li>🆔 <strong>Student ID will be automatically generated</strong> - no need to provide one</li>
-            <li>📧 Use a valid email address for account verification</li>
-            <li>🔐 Choose a strong password (minimum 6 characters)</li>
+            <li>� <strong>Password will be automatically generated</strong> and sent to your email</li>
+            <li>📧 Use a valid email address - you'll receive your login credentials there</li>
             <li>🎓 Select the appropriate class and stream</li>
             <li>🏠 Provide complete address information</li>
             <li>📱 Phone numbers should include country code (e.g., +256)</li>
             <li>🔢 LINN is optional but recommended for official records</li>
+            <li>🔄 You can change your password after first login</li>
         </ul>
     </div>
 
@@ -216,7 +218,8 @@
                         </div>
                         <div style="background-color: #e8f5e8; padding: 10px; margin-top: 10px; border: 1px solid #4CAF50;">
                             <p><strong>📋 Important:</strong> Please save your <strong>Student ID: ${result.studentId || 'N/A'}</strong></p>
-                            <p><em>You can now use your email and password to login!</em></p>
+                            <p><strong>🔐 Login Credentials:</strong> Your email and generated password have been sent to <strong>${result.email}</strong></p>
+                            <p><em>📧 Check your email for login instructions and remember to change your password after first login!</em></p>
                         </div>
                     `;
                     
