@@ -1,167 +1,242 @@
 package com.academix.server.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import com.academix.server.service.UserService;
-import com.academix.server.model.Student; 
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.academix.server.dto.AuthDto.*;
+import com.academix.server.dto.AuthDto.ApiResponse;
+import com.academix.server.dto.AuthDto.AuthResponse;
+import com.academix.server.dto.AuthDto.ChangePasswordRequest;
+import com.academix.server.dto.AuthDto.ForgotPasswordRequest;
+import com.academix.server.dto.AuthDto.LoginRequest;
+import com.academix.server.dto.AuthDto.RefreshTokenRequest;
+import com.academix.server.dto.AuthDto.RegisterRequest;
+import com.academix.server.dto.AuthDto.ResendTokenRequest;
+import com.academix.server.dto.AuthDto.ResetPasswordRequest;
+import com.academix.server.dto.AuthDto.VerifyEmailRequest;
+import com.academix.server.service.AuthService;
+
 import jakarta.validation.Valid;
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "*")
 public class AuthController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
     
     @Autowired
-    private UserService userService;
-    
-    // In-memory storage for testing (replace with database in production)
-    private Map<String, Student> userStorage = new HashMap<>();
-    private Long userIdCounter = 1L;
+    private AuthService authService;
     
     /**
-     * User Registration with Password Hashing - FOR TESTING
+     * User Registration
+     * Creates a new user account and sends email verification
      */
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody Student student) {
+    public ResponseEntity<AuthResponse> registerUser(@Valid @RequestBody RegisterRequest request) {
         try {
-            // Check if email already exists
-            if (userStorage.values().stream().anyMatch(u -> u.getEmail().equals(student.getEmail()))) {
-                return ResponseEntity.badRequest().body("Email already exists!");
-            }
-            
-            // Set ID for testing
-            student.setId(userIdCounter++);
-            
-            // Hash the password before saving
-            userService.prepareUserForSaving(student);
-            
-            // Store in memory for testing
-            userStorage.put(student.getEmail(), student);
-            
-            // Return success with user info (password excluded by @JsonIgnore)
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "User registered successfully!");
-            response.put("userId", student.getId());
-            response.put("email", student.getEmail());
-            response.put("fullName", student.getFullName());
-            response.put("passwordHashed", student.getPassword() != null && student.getPassword().startsWith("$2"));
-            
+            AuthResponse response = authService.registerUser(request);
+            logger.info("Registration successful for email: {}", request.getEmail());
             return ResponseEntity.ok(response);
-            
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Registration failed: " + e.getMessage());
+            logger.error("Registration failed for email: {}", request.getEmail(), e);
+            return ResponseEntity.badRequest().body(new AuthResponse(e.getMessage()));
         }
     }
     
     /**
-     * User Login with Password Verification - FOR TESTING
+     * User Login
+     * Authenticates user and returns JWT tokens
      */
     @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<AuthResponse> loginUser(@Valid @RequestBody LoginRequest request) {
         try {
-            // Find user by email
-            Student user = userStorage.get(loginRequest.getEmail());
-            
-            if (user == null) {
-                return ResponseEntity.badRequest().body("User not found!");
-            }
-            
-            // Verify password
-            if (userService.verifyPassword(loginRequest.getPassword(), user.getPassword())) {
-                Map<String, Object> response = new HashMap<>();
-                response.put("message", "Login successful!");
-                response.put("userId", user.getId());
-                response.put("email", user.getEmail());
-                response.put("fullName", user.getFullName());
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body("Invalid password!");
-            }
-            
+            AuthResponse response = authService.loginUser(request);
+            logger.info("Login successful for email: {}", request.getEmail());
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Login failed: " + e.getMessage());
+            logger.error("Login failed for email: {}", request.getEmail(), e);
+            return ResponseEntity.badRequest().body(new AuthResponse(e.getMessage()));
         }
     }
-    
+
     /**
-     * Change Password - FOR TESTING
+     * Forgot Password
+     * Sends password reset email to user
      */
-    @PutMapping("/change-password/{userId}")
-    public ResponseEntity<?> changePassword(@PathVariable Long userId, 
-                                          @RequestBody ChangePasswordRequest request) {
+    @PostMapping("/forgot-password")
+    public ResponseEntity<AuthResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         try {
-            // Find user by ID
-            Student user = userStorage.values().stream()
-                .filter(u -> u.getId().equals(userId))
-                .findFirst()
-                .orElse(null);
-                
-            if (user == null) {
-                return ResponseEntity.badRequest().body("User not found!");
-            }
-            
-            // Verify old password first
-            if (userService.verifyPassword(request.getOldPassword(), user.getPassword())) {
-                userService.updatePassword(user, request.getNewPassword());
-                
-                Map<String, Object> response = new HashMap<>();
-                response.put("message", "Password changed successfully!");
-                response.put("userId", user.getId());
-                response.put("passwordHashed", user.getPassword().startsWith("$2"));
-                
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.badRequest().body("Old password is incorrect!");
-            }
-            
+            AuthResponse response = authService.forgotPassword(request);
+            logger.info("Forgot password request processed for email: {}", request.getEmail());
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Password change failed: " + e.getMessage());
+            logger.error("Forgot password failed for email: {}", request.getEmail(), e);
+            return ResponseEntity.badRequest().body(new AuthResponse(e.getMessage()));
+        }
+    }
+
+    /**
+     * Reset Password
+     * Resets user password using reset token
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<AuthResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        try {
+            AuthResponse response = authService.resetPassword(request);
+            logger.info("Password reset successful");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Password reset failed", e);
+            return ResponseEntity.badRequest().body(new AuthResponse(e.getMessage()));
+        }
+    }
+
+    /**
+     * Verify Email
+     * Verifies user email using verification token
+     */
+    @PostMapping("/verify-email")
+    public ResponseEntity<AuthResponse> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        try {
+            AuthResponse response = authService.verifyEmail(request);
+            logger.info("Email verification successful");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Email verification failed", e);
+            return ResponseEntity.badRequest().body(new AuthResponse(e.getMessage()));
+        }
+    }
+
+    /**
+     * Resend Token
+     * Resends verification or reset token
+     */
+    @PostMapping("/resend-token")
+    public ResponseEntity<AuthResponse> resendToken(@Valid @RequestBody ResendTokenRequest request) {
+        try {
+            AuthResponse response = authService.resendToken(request);
+            logger.info("Token resend processed for email: {} and type: {}", request.getEmail(), request.getTokenType());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Token resend failed for email: {}", request.getEmail(), e);
+            return ResponseEntity.badRequest().body(new AuthResponse(e.getMessage()));
+        }
+    }
+
+    /**
+     * Change Password
+     * Changes password for authenticated user
+     * TODO: Add JWT authentication requirement
+     */
+    @PutMapping("/change-password")
+    public ResponseEntity<AuthResponse> changePassword(
+            @RequestParam String userEmail, 
+            @Valid @RequestBody ChangePasswordRequest request) {
+        try {
+            AuthResponse response = authService.changePassword(userEmail, request);
+            logger.info("Password change successful for user: {}", userEmail);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Password change failed for user: {}", userEmail, e);
+            return ResponseEntity.badRequest().body(new AuthResponse(e.getMessage()));
+        }
+    }
+
+    /**
+     * Refresh Token
+     * Refreshes access token using refresh token
+     */
+    @PostMapping("/refresh-token")
+    public ResponseEntity<AuthResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        try {
+            AuthResponse response = authService.refreshToken(request);
+            logger.info("Token refresh successful");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Token refresh failed", e);
+            return ResponseEntity.badRequest().body(new AuthResponse(e.getMessage()));
+        }
+    }
+
+    /**
+     * Get Current User Info
+     * Returns current user information
+     * TODO: Implement with JWT authentication
+     */
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse> getCurrentUser(@RequestParam String userEmail) {
+        try {
+            // This is a placeholder - implement with JWT token extraction
+            ApiResponse response = new ApiResponse("Feature not implemented yet", false);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Get current user failed", e);
+            return ResponseEntity.badRequest().body(new ApiResponse(e.getMessage(), false));
         }
     }
     
     /**
      * Get all registered users - FOR TESTING ONLY
+     * Remove this endpoint in production
      */
     @GetMapping("/users")
-    public ResponseEntity<?> getAllUsers() {
-        Map<String, Object> response = new HashMap<>();
-        response.put("totalUsers", userStorage.size());
-        response.put("users", userStorage.values().stream()
-            .map(user -> {
-                Map<String, Object> userData = new HashMap<>();
-                userData.put("id", user.getId());
-                userData.put("email", user.getEmail());
-                userData.put("fullName", user.getFullName());
-                userData.put("district", user.getDistrict());
-                userData.put("isActive", user.getIsActive());
-                return userData;
-            }).toList());
-        return ResponseEntity.ok(response);
+    public ResponseEntity<ApiResponse> getAllUsers() {
+        try {
+            var users = authService.getAllUsers();
+            return ResponseEntity.ok(new ApiResponse("Users retrieved successfully", true, users));
+        } catch (Exception e) {
+            logger.error("Get all users failed", e);
+            return ResponseEntity.badRequest().body(new ApiResponse(e.getMessage(), false));
+        }
     }
-    
-    // DTOs for request bodies
-    public static class LoginRequest {
-        private String email;
-        private String password;
-        
-        // Getters and setters
-        public String getEmail() { return email; }
-        public void setEmail(String email) { this.email = email; }
-        public String getPassword() { return password; }
-        public void setPassword(String password) { this.password = password; }
+
+    /**
+     * Debug endpoint to get user details including verification tokens - FOR TESTING ONLY
+     */
+    @GetMapping("/debug/user/{email}")
+    public ResponseEntity<ApiResponse> getDebugUserInfo(@PathVariable String email) {
+        try {
+            var userDetails = authService.getDebugUserInfo(email);
+            return ResponseEntity.ok(new ApiResponse("User debug info retrieved", true, userDetails));
+        } catch (Exception e) {
+            logger.error("Debug user info failed", e);
+            return ResponseEntity.badRequest().body(new ApiResponse("User not found", false));
+        }
     }
-    
-    public static class ChangePasswordRequest {
-        private String oldPassword;
-        private String newPassword;
-        
-        // Getters and setters
-        public String getOldPassword() { return oldPassword; }
-        public void setOldPassword(String oldPassword) { this.oldPassword = oldPassword; }
-        public String getNewPassword() { return newPassword; }
-        public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
+
+    /**
+     * Logout
+     * TODO: Implement token blacklisting for true logout
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<AuthResponse> logout() {
+        try {
+            // For now, just return success - implement token blacklisting in production
+            logger.info("User logout processed");
+            return ResponseEntity.ok(new AuthResponse("Logout successful"));
+        } catch (Exception e) {
+            logger.error("Logout failed", e);
+            return ResponseEntity.badRequest().body(new AuthResponse("Logout failed"));
+        }
+    }
+
+    /**
+     * Health Check Endpoint
+     */
+    @GetMapping("/health")
+    public ResponseEntity<ApiResponse> healthCheck() {
+        return ResponseEntity.ok(new ApiResponse("Auth service is running", true));
     }
 }

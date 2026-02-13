@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academix Authentication Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .response {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-left: 4px solid #007bff;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .success {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        h2 {
+            color: #343a40;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Academix Authentication System Test</h1>
+
+    <!-- Registration -->
+    <div class="container">
+        <h2>1. User Registration</h2>
+        <div class="form-group">
+            <label for="regFirstName">First Name:</label>
+            <input type="text" id="regFirstName" value="John">
+        </div>
+        <div class="form-group">
+            <label for="regLastName">Last Name:</label>
+            <input type="text" id="regLastName" value="Doe">
+        </div>
+        <div class="form-group">
+            <label for="regEmail">Email:</label>
+            <input type="email" id="regEmail" value="john.doe@example.com">
+        </div>
+        <div class="form-group">
+            <label for="regPassword">Password:</label>
+            <input type="password" id="regPassword" value="SecurePass123">
+        </div>
+        <div class="form-group">
+            <label for="regRole">Role:</label>
+            <input type="text" id="regRole" value="STUDENT">
+        </div>
+        <div class="form-group">
+            <label for="regGender">Gender:</label>
+            <input type="text" id="regGender" value="MALE">
+        </div>
+        <button onclick="register()">Register</button>
+        <div id="regResponse" class="response" style="display:none;"></div>
+    </div>
+
+    <!-- Email Verification -->
+    <div class="container">
+        <h2>2. Email Verification</h2>
+        <div class="form-group">
+            <label for="verifyToken">Verification Token:</label>
+            <input type="text" id="verifyToken" placeholder="Enter verification token from email">
+        </div>
+        <button onclick="verifyEmail()">Verify Email</button>
+        <button onclick="autoFillVerificationToken()" style="background-color: #17a2b8;">Auto-Fill Token</button>
+        <div id="verifyResponse" class="response" style="display:none;"></div>
+    </div>
+
+    <!-- Login -->
+    <div class="container">
+        <h2>3. User Login</h2>
+        <div class="form-group">
+            <label for="loginEmail">Email:</label>
+            <input type="email" id="loginEmail" value="john.doe@example.com">
+        </div>
+        <div class="form-group">
+            <label for="loginPassword">Password:</label>
+            <input type="password" id="loginPassword" value="SecurePass123">
+        </div>
+        <button onclick="login()">Login</button>
+        <div id="loginResponse" class="response" style="display:none;"></div>
+    </div>
+
+    <!-- Forgot Password -->
+    <div class="container">
+        <h2>4. Forgot Password</h2>
+        <div class="form-group">
+            <label for="forgotEmail">Email:</label>
+            <input type="email" id="forgotEmail" value="john.doe@example.com">
+        </div>
+        <button onclick="forgotPassword()">Send Reset Link</button>
+        <div id="forgotResponse" class="response" style="display:none;"></div>
+    </div>
+
+    <!-- Reset Password -->
+    <div class="container">
+        <h2>5. Reset Password</h2>
+        <div class="form-group">
+            <label for="resetToken">Reset Token:</label>
+            <input type="text" id="resetToken" placeholder="Enter reset token from email">
+        </div>
+        <div class="form-group">
+            <label for="newPassword">New Password:</label>
+            <input type="password" id="newPassword" value="NewSecurePass123">
+        </div>
+        <button onclick="resetPassword()">Reset Password</button>
+        <div id="resetResponse" class="response" style="display:none;"></div>
+    </div>
+
+    <!-- Resend Token -->
+    <div class="container">
+        <h2>6. Resend Token</h2>
+        <div class="form-group">
+            <label for="resendEmail">Email:</label>
+            <input type="email" id="resendEmail" value="john.doe@example.com">
+        </div>
+        <div class="form-group">
+            <label for="tokenType">Token Type:</label>
+            <select id="tokenType">
+                <option value="verification">Email Verification</option>
+                <option value="reset">Password Reset</option>
+            </select>
+        </div>
+        <button onclick="resendToken()">Resend Token</button>
+        <div id="resendResponse" class="response" style="display:none;"></div>
+    </div>
+
+    <!-- Get All Users -->
+    <div class="container">
+        <h2>7. Get All Users (Testing Only)</h2>
+        <button onclick="getAllUsers()">Get All Users</button>
+        <div id="usersResponse" class="response" style="display:none;"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://organic-winner-pqprvg9gx94f69j7-8080.app.github.dev/api/auth';
+
+        async function makeRequest(url, method = 'GET', body = null) {
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                };
+                
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+
+                const response = await fetch(url, options);
+                const data = await response.json();
+                
+                return {
+                    success: response.ok,
+                    data: data,
+                    status: response.status
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    data: { message: error.message },
+                    status: 0
+                };
+            }
+        }
+
+        function showResponse(elementId, result) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = 'response ' + (result.success ? 'success' : 'error');
+            element.textContent = JSON.stringify(result, null, 2);
+        }
+
+        async function register() {
+            const body = {
+                firstName: document.getElementById('regFirstName').value,
+                lastName: document.getElementById('regLastName').value,
+                email: document.getElementById('regEmail').value,
+                password: document.getElementById('regPassword').value,
+                role: document.getElementById('regRole').value,
+                gender: document.getElementById('regGender').value
+            };
+            
+            const result = await makeRequest(`${API_BASE}/register`, 'POST', body);
+            showResponse('regResponse', result);
+        }
+
+        async function verifyEmail() {
+            const body = {
+                token: document.getElementById('verifyToken').value
+            };
+            
+            const result = await makeRequest(`${API_BASE}/verify-email`, 'POST', body);
+            showResponse('verifyResponse', result);
+        }
+
+        async function login() {
+            const body = {
+                email: document.getElementById('loginEmail').value,
+                password: document.getElementById('loginPassword').value
+            };
+            
+            const result = await makeRequest(`${API_BASE}/login`, 'POST', body);
+            showResponse('loginResponse', result);
+            
+            // Store tokens if login successful
+            if (result.success && result.data.accessToken) {
+                localStorage.setItem('accessToken', result.data.accessToken);
+                localStorage.setItem('refreshToken', result.data.refreshToken);
+            }
+        }
+
+        async function forgotPassword() {
+            const body = {
+                email: document.getElementById('forgotEmail').value
+            };
+            
+            const result = await makeRequest(`${API_BASE}/forgot-password`, 'POST', body);
+            showResponse('forgotResponse', result);
+        }
+
+        async function resetPassword() {
+            const body = {
+                token: document.getElementById('resetToken').value,
+                newPassword: document.getElementById('newPassword').value
+            };
+            
+            const result = await makeRequest(`${API_BASE}/reset-password`, 'POST', body);
+            showResponse('resetResponse', result);
+        }
+
+        async function resendToken() {
+            const body = {
+                email: document.getElementById('resendEmail').value,
+                tokenType: document.getElementById('tokenType').value
+            };
+            
+            const result = await makeRequest(`${API_BASE}/resend-token`, 'POST', body);
+            showResponse('resendResponse', result);
+        }
+
+        async function getAllUsers() {
+            const result = await makeRequest(`${API_BASE}/users`, 'GET');
+            showResponse('usersResponse', result);
+        }
+
+        // Helper function to extract verification token from debug endpoint
+        async function getVerificationToken(email) {
+            try {
+                const result = await makeRequest(`${API_BASE}/debug/user/${email}`, 'GET');
+                if (result.success && result.data.emailVerificationToken) {
+                    document.getElementById('verifyToken').value = result.data.emailVerificationToken;
+                    alert(`Found verification token for ${email}! Token has been filled in the verification field.`);
+                    return result.data.emailVerificationToken;
+                }
+            } catch (error) {
+                // Fallback to users list method
+                const result = await makeRequest(`${API_BASE}/users`, 'GET');
+                if (result.success && result.data.users) {
+                    const user = result.data.users.find(u => u.email === email);
+                    if (user && user.emailVerificationToken) {
+                        document.getElementById('verifyToken').value = user.emailVerificationToken;
+                        alert(`Found verification token for ${email}! Token has been filled in.`);
+                        return user.emailVerificationToken;
+                    }
+                }
+            }
+            alert(`No verification token found for ${email}. Make sure you've registered first.`);
+            return null;
+        }
+
+        // Auto-fill verification token for current registration email
+        function autoFillVerificationToken() {
+            const email = document.getElementById('regEmail').value;
+            getVerificationToken(email);
+        }
+    </script>
+</body>
+</html>

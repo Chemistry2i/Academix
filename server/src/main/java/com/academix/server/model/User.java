@@ -128,6 +128,22 @@ public abstract class User {
     @Column(nullable = true, length = 50)
     private String village;
 
+    // Password reset fields
+    @Column(nullable = true, length = 255)
+    private String resetPasswordToken;
+    
+    @Column(nullable = true)
+    private LocalDateTime resetPasswordExpiry;
+    
+    @Column(nullable = true, length = 255)
+    private String emailVerificationToken;
+    
+    @Column(nullable = true)
+    private LocalDateTime emailVerificationExpiry;
+    
+    @Column(nullable = false)
+    private Boolean emailVerified = false;
+
     // Audit fields
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
