@@ -37,6 +37,16 @@ public class Student extends User {
     @Column(nullable = true, length = 200)
     private String combination; // Subject combination for students in higher classes (e.g., Math, Physics, Chemistry)
 
+    // Document URLs specific to students
+    @Column(nullable = true, length = 500)
+    private String academicTranscriptUrl;
+    
+    @Column(nullable = true, length = 500)
+    private String medicalCertificateUrl;
+    
+    @Column(nullable = true, length = 1000)
+    private String otherDocumentUrls; // JSON array for additional student documents
+
     // Enum for residence status
     public enum ResidenceStatus {
         DAY, BOARDING

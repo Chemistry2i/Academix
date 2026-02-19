@@ -106,6 +106,18 @@ public abstract class User {
     @Size(max = 500, message = "Birth certificate URL must not exceed 500 characters")
     @Column(nullable = true, length = 500)
     private String birthCertificateUrl;
+    
+    @Size(max = 500, message = "ID document URL must not exceed 500 characters")
+    @Column(nullable = true, length = 500)
+    private String idDocumentUrl;
+    
+    @Size(max = 500, message = "CV/Resume URL must not exceed 500 characters")
+    @Column(nullable = true, length = 500)
+    private String cvResumeUrl;
+    
+    @Size(max = 1000, message = "Certificate URLs must not exceed 1000 characters")
+    @Column(nullable = true, length = 1000)
+    private String certificateUrls; // JSON array of certificate URLs for multiple certificates
 
     @Size(min = 1, max = 50, message = "District must be between 1 and 50 characters")
     @Column(nullable = true, length = 50)

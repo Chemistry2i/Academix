@@ -51,6 +51,28 @@ public class UserService {
     }
     
     /**
+     * Find a user by email (placeholder - will be implemented with repository layer)
+     * @param email The user's email
+     * @return User if found, null otherwise
+     */
+    public User findByEmail(String email) {
+        // This is a placeholder method. In production, this would use a repository
+        // For now, return null to comply with interface
+        return null;
+    }
+    
+    /**
+     * Save a user (placeholder - will be implemented with repository layer)
+     * @param user The user to save
+     * @return The saved user
+     */
+    public User save(User user) {
+        // This is a placeholder method. In production, this would use a repository
+        // For now, return the user as-is to comply with interface
+        return user;
+    }
+    
+    /**
      * Check if a password is already hashed (starts with $2a$, $2b$, or $2y$ for BCrypt)
      * @param password The password to check
      * @return true if already hashed, false otherwise

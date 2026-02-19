@@ -818,4 +818,20 @@ public class AuthService {
             throw new RuntimeException(e.getMessage());
         }
     }
+
+    /**
+     * Find user by email across all storage systems
+     * @param email The email to search for
+     * @return User if found, null otherwise
+     */
+    public User findUserByEmail(String email) {
+        // Check in regular user storage
+        User user = userStorage.get(email);
+        if (user != null) {
+            return user;
+        }
+        
+        // Check in student storage
+        return studentStorage.get(email);
+    }
 }

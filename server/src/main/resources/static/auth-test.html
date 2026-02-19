@@ -193,8 +193,111 @@
         <div id="usersResponse" class="response" style="display:none;"></div>
     </div>
 
+    <!-- File Upload Testing -->
+    <div class="container">
+        <h2>8. File Upload Testing</h2>
+        <div style="background-color: #fff3cd; padding: 12px; border: 2px solid #ffc107; margin-bottom: 15px;">
+            <h4 style="color: #856404; margin-top: 0;">🔐 Authentication Required!</h4>
+            <p><strong>⚠️ Important:</strong> You must login first to test file uploads. Get your access token from the login response above.</p>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <!-- Upload Section -->
+            <div>
+                <h3>📁 Upload File</h3>
+                <div class="form-group">
+                    <label for="uploadFile">Select File:</label>
+                    <input type="file" id="uploadFile" accept="*/*">
+                </div>
+                <div class="form-group">
+                    <label for="fileType">File Type:</label>
+                    <select id="fileType">
+                        <option value="profile_picture">Profile Picture</option>
+                        <option value="birth_certificate">Birth Certificate</option>
+                        <option value="academic_transcript">Academic Transcript</option>
+                        <option value="medical_certificate">Medical Certificate</option>
+                        <option value="id_document">ID Document</option>
+                        <option value="cv_resume">CV/Resume</option>
+                        <option value="certificate">Certificate/Qualification</option>
+                        <option value="other_document">Other Document</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="fileDescription">Description (optional):</label>
+                    <input type="text" id="fileDescription" placeholder="Brief description of the file">
+                </div>
+                <div class="form-group">
+                    <label for="accessToken">Access Token:</label>
+                    <input type="text" id="accessToken" placeholder="Paste access token from login response">
+                    <button onclick="autoFillToken()" style="background-color: #17a2b8; margin-top: 5px; padding: 5px 10px; font-size: 12px;">Auto-Fill from Login</button>
+                </div>
+                <button onclick="uploadFile()">📤 Upload File</button>
+                <div id="uploadResponse" class="response" style="display:none;"></div>
+                
+                <!-- Upload Progress -->
+                <div id="uploadProgress" style="display:none; margin-top: 15px;">
+                    <div style="background: #f0f0f0; border-radius: 10px; padding: 3px;">
+                        <div id="progressBar" style="background: #007bff; height: 20px; border-radius: 8px; width: 0%; transition: width 0.3s ease;"></div>
+                    </div>
+                    <div id="progressText" style="text-align: center; margin-top: 5px;">0%</div>
+                </div>
+            </div>
+            
+            <!-- File Management Section -->
+            <div>
+                <h3>📂 My Files</h3>
+                <button onclick="getMyFiles()" style="background-color: #28a745;">🔍 View My Files</button>
+                <button onclick="clearFileList()" style="background-color: #6c757d;">🗑️ Clear List</button>
+                <div id="fileListResponse" class="response" style="display:none;"></div>
+                
+                <!-- File Actions -->
+                <div style="margin-top: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    <h4>🗂️ File Actions</h4>
+                    <div class="form-group">
+                        <label for="deleteFileType">File Type to Delete:</label>
+                        <select id="deleteFileType">
+                            <option value="profile_picture">Profile Picture</option>
+                            <option value="birth_certificate">Birth Certificate</option>
+                            <option value="academic_transcript">Academic Transcript</option>
+                            <option value="medical_certificate">Medical Certificate</option>
+                            <option value="id_document">ID Document</option>
+                            <option value="cv_resume">CV/Resume</option>
+                            <option value="certificate">Certificate/Qualification</option>
+                            <option value="other_document">Other Document</option>
+                        </select>
+                    </div>
+                    <button onclick="deleteFile()" style="background-color: #dc3545;">🗑️ Delete File</button>
+                    <div id="deleteResponse" class="response" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- File Upload Results Grid -->
+        <div id="uploadResultsGrid" style="display:none; margin-top: 20px;">
+            <h3>📋 Upload Results</h3>
+            <div id="resultsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Cloudinary Testing -->
+    <div class="container">
+        <h2>9. Cloudinary URL Testing</h2>
+        <div class="form-group">
+            <label for="publicId">Public ID:</label>
+            <input type="text" id="publicId" placeholder="Enter Cloudinary public ID">
+        </div>
+        <div class="form-group">
+            <label for="transformation">Transformation:</label>
+            <input type="text" id="transformation" value="w_300,h_300,c_fill,f_auto,q_auto" placeholder="Enter transformation string">
+        </div>
+        <button onclick="getOptimizedUrl()">🔗 Get Optimized URL</button>
+        <div id="urlResponse" class="response" style="display:none;"></div>
+    </div>
+
     <script>
-        const API_BASE = 'https://organic-winner-pqprvg9gx94f69j7-8080.app.github.dev/api/auth';
+        const API_BASE = 'http://localhost:8080/api/auth';
+        const FILES_API = 'http://localhost:8080/api/files';
 
         async function makeRequest(url, method = 'GET', body = null) {
             try {
