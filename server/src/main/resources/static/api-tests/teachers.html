@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teachers API Test - Academix</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 30px;
+        }
+        header h1 { font-size: 1.8rem; }
+        header a {
+            color: #00d4ff;
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 1px solid #00d4ff;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        header a:hover { background: #00d4ff; color: #1a1a2e; }
+        .endpoint-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 20px; }
+        .endpoint-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .endpoint-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .method { padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+        .method.get { background: #22c55e; color: #000; }
+        .method.post { background: #3b82f6; color: #fff; }
+        .method.put { background: #f59e0b; color: #000; }
+        .method.delete { background: #ef4444; color: #fff; }
+        .endpoint-path { font-family: monospace; color: #94a3b8; font-size: 14px; }
+        .endpoint-desc { color: #94a3b8; font-size: 13px; margin-bottom: 15px; }
+        .input-group { margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 13px;
+        }
+        .input-group textarea { min-height: 100px; font-family: monospace; }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: transform 0.2s;
+        }
+        .btn:hover { transform: scale(1.02); }
+        .btn-primary { background: linear-gradient(90deg, #00d4ff, #7c3aed); color: #fff; }
+        .response-area {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .response-area.success { border-left: 3px solid #22c55e; }
+        .response-area.error { border-left: 3px solid #ef4444; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 10px; }
+        .status-badge.s2xx { background: #22c55e; color: #000; }
+        .status-badge.s4xx { background: #f59e0b; color: #000; }
+        .status-badge.s5xx { background: #ef4444; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>👨‍🏫 Teachers API</h1>
+            <a href="index.html">← Back to Home</a>
+        </header>
+
+        <div class="endpoint-grid">
+            <!-- CREATE TEACHER -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/teachers</span>
+                </div>
+                <p class="endpoint-desc">Create a new teacher</p>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="createTeacherBody">{
+  "email": "teacher@academix.com",
+  "password": "password123",
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "dateOfBirth": "1985-03-20",
+  "gender": "FEMALE",
+  "nationality": "Ugandan",
+  "qualification": "Masters in Education",
+  "specialization": "Physics",
+  "department": "Sciences",
+  "hireDate": "2020-01-15"
+}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="createTeacher()">Send Request</button>
+                <div class="response-area" id="createTeacherResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET ALL TEACHERS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/teachers</span>
+                </div>
+                <p class="endpoint-desc">Get all teachers</p>
+                <button class="btn btn-primary" onclick="getAllTeachers()">Send Request</button>
+                <div class="response-area" id="getAllTeachersResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET TEACHER BY ID -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/teachers/{id}</span>
+                </div>
+                <p class="endpoint-desc">Get teacher by database ID</p>
+                <div class="input-group">
+                    <label>Teacher ID (Database)</label>
+                    <input type="number" id="getTeacherId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="getTeacherById()">Send Request</button>
+                <div class="response-area" id="getTeacherByIdResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET BY TEACHER ID -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/teachers/teacher-id/{teacherId}</span>
+                </div>
+                <p class="endpoint-desc">Get teacher by teacher ID (e.g., TCH2024001)</p>
+                <div class="input-group">
+                    <label>Teacher ID</label>
+                    <input type="text" id="getByTeacherId" value="TCH2024001">
+                </div>
+                <button class="btn btn-primary" onclick="getByTeacherId()">Send Request</button>
+                <div class="response-area" id="getByTeacherIdResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET BY DEPARTMENT -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/teachers/department/{department}</span>
+                </div>
+                <p class="endpoint-desc">Get teachers by department</p>
+                <div class="input-group">
+                    <label>Department</label>
+                    <select id="getByDepartment">
+                        <option value="Sciences">Sciences</option>
+                        <option value="Arts">Arts</option>
+                        <option value="Languages">Languages</option>
+                        <option value="Mathematics">Mathematics</option>
+                        <option value="Technical">Technical</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="getByDepartment()">Send Request</button>
+                <div class="response-area" id="getByDepartmentResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET BY SUBJECT -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/teachers/subject/{subjectId}</span>
+                </div>
+                <p class="endpoint-desc">Get teachers teaching a subject</p>
+                <div class="input-group">
+                    <label>Subject ID</label>
+                    <input type="number" id="getBySubjectId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="getBySubject()">Send Request</button>
+                <div class="response-area" id="getBySubjectResponse">Response will appear here...</div>
+            </div>
+
+            <!-- UPDATE TEACHER -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method put">PUT</span>
+                    <span class="endpoint-path">/api/teachers/{id}</span>
+                </div>
+                <p class="endpoint-desc">Update teacher details</p>
+                <div class="input-group">
+                    <label>Teacher ID (Database)</label>
+                    <input type="number" id="updateTeacherId" value="1">
+                </div>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="updateTeacherBody">{
+  "qualification": "PhD in Physics",
+  "isClassTeacher": true,
+  "classResponsibility": "S3A"
+}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="updateTeacher()">Send Request</button>
+                <div class="response-area" id="updateTeacherResponse">Response will appear here...</div>
+            </div>
+
+            <!-- SEARCH TEACHERS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/teachers/search?q={searchTerm}</span>
+                </div>
+                <p class="endpoint-desc">Search teachers by name</p>
+                <div class="input-group">
+                    <label>Search Term</label>
+                    <input type="text" id="searchTeacherTerm" value="Jane">
+                </div>
+                <button class="btn btn-primary" onclick="searchTeachers()">Send Request</button>
+                <div class="response-area" id="searchTeachersResponse">Response will appear here...</div>
+            </div>
+
+            <!-- DELETE TEACHER -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="endpoint-path">/api/teachers/{id}</span>
+                </div>
+                <p class="endpoint-desc">Delete a teacher</p>
+                <div class="input-group">
+                    <label>Teacher ID (Database)</label>
+                    <input type="number" id="deleteTeacherId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="deleteTeacher()" style="background: #ef4444;">Send Request</button>
+                <div class="response-area" id="deleteTeacherResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET STATISTICS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/teachers/statistics</span>
+                </div>
+                <p class="endpoint-desc">Get teacher statistics</p>
+                <button class="btn btn-primary" onclick="getTeacherStatistics()">Send Request</button>
+                <div class="response-area" id="statisticsResponse">Response will appear here...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        
+        function getHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const token = localStorage.getItem('academix_token');
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            return headers;
+        }
+
+        function displayResponse(elementId, response, data) {
+            const el = document.getElementById(elementId);
+            const statusClass = response.status >= 500 ? 's5xx' : (response.status >= 400 ? 's4xx' : 's2xx');
+            el.className = `response-area ${response.ok ? 'success' : 'error'}`;
+            el.innerHTML = `<span class="status-badge ${statusClass}">${response.status}</span>\n${JSON.stringify(data, null, 2)}`;
+        }
+
+        async function createTeacher() {
+            try {
+                const body = JSON.parse(document.getElementById('createTeacherBody').value);
+                const response = await fetch(`${API_BASE}/api/teachers`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify(body)
+                });
+                const data = await response.json();
+                displayResponse('createTeacherResponse', response, data);
+            } catch (e) {
+                document.getElementById('createTeacherResponse').textContent = `Error: ${e.message}`;
+            }
+        }
+
+        async function getAllTeachers() {
+            try {
+                const response = await fetch(`${API_BASE}/api/teachers`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getAllTeachersResponse', response, data);
+            } catch (e) {
+                document.getElementById('getAllTeachersResponse').textContent = `Error: ${e.message}`;
+            }
+        }
+
+        async function getTeacherById() {
+            try {
+                const id = document.getElementById('getTeacherId').value;
+                const response = await fetch(`${API_BASE}/api/teachers/${id}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getTeacherByIdResponse', response, data);
+            } catch (e) {
+                document.getElementById('getTeacherByIdResponse').textContent = `Error: ${e.message}`;
+            }
+        }
+
+        async function getByTeacherId() {
+            try {
+                const teacherId = document.getElementById('getByTeacherId').value;
+                const response = await fetch(`${API_BASE}/api/teachers/teacher-id/${teacherId}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getByTeacherIdResponse', response, data);
+            } catch (e) {
+                document.getElementById('getByTeacherIdResponse').textContent = `Error: ${e.message}`;
+            }
+        }
+
+        async function getByDepartment() {
+            try {
+                const dept = document.getElementById('getByDepartment').value;
+                const response = await fetch(`${API_BASE}/api/teachers/department/${dept}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getByDepartmentResponse', response, data);
+            } catch (e) {
+                document.getElementById('getByDepartmentResponse').textContent = `Error: ${e.message}`;
+            }
+        }
+
+        async function getBySubject() {
+            try {
+                const subjectId = document.getElementById('getBySubjectId').value;
+                const response = await fetch(`${API_BASE}/api/teachers/subject/${subjectId}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getBySubjectResponse', response, data);
+            } catch (e) {
+                document.getElementById('getBySubjectResponse').textContent = `Error: ${e.message}`;
+            }
+        }
+
+        async function updateTeacher() {
+            try {
+                const id = document.getElementById('updateTeacherId').value;
+                const body = JSON.parse(document.getElementById('updateTeacherBody').value);
+                const response = await fetch(`${API_BASE}/api/teachers/${id}`, {
+                    method: 'PUT',
+                    headers: getHeaders(),
+                    body: JSON.stringify(body)
+                });
+                const data = await response.json();
+                displayResponse('updateTeacherResponse', response, data);
+            } catch (e) {
+                document.getElementById('updateTeacherResponse').textContent = `Error: ${e.message}`;
+            }
+        }
+
+        async function searchTeachers() {
+            try {
+                const term = document.getElementById('searchTeacherTerm').value;
+                const response = await fetch(`${API_BASE}/api/teachers/search?q=${encodeURIComponent(term)}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('searchTeachersResponse', response, data);
+            } catch (e) {
+                document.getElementById('searchTeachersResponse').textContent = `Error: ${e.message}`;
+            }
+        }
+
+        async function deleteTeacher() {
+            if (!confirm('Are you sure you want to delete this teacher?')) return;
+            try {
+                const id = document.getElementById('deleteTeacherId').value;
+                const response = await fetch(`${API_BASE}/api/teachers/${id}`, {
+                    method: 'DELETE',
+                    headers: getHeaders()
+                });
+                const data = await response.json();
+                displayResponse('deleteTeacherResponse', response, data);
+            } catch (e) {
+                document.getElementById('deleteTeacherResponse').textContent = `Error: ${e.message}`;
+            }
+        }
+
+        async function getTeacherStatistics() {
+            try {
+                const response = await fetch(`${API_BASE}/api/teachers/statistics`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('statisticsResponse', response, data);
+            } catch (e) {
+                document.getElementById('statisticsResponse').textContent = `Error: ${e.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
