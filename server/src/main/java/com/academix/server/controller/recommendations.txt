@@ -1,0 +1,8 @@
+1. Encaspulation
+2. polymorphism
+
+
+3. Adding student
+updaing styudent
+disabling student
+Adding subject
