@@ -160,6 +160,14 @@ public class SubjectService {
     }
 
     /**
+     * Get subjects by level
+     */
+    @Transactional(readOnly = true)
+    public List<Subject> getSubjectsByLevel(Subject.SubjectLevel level) {
+        return subjectRepository.findByLevel(level);
+    }
+
+    /**
      * Get subjects by category
      */
     @Transactional(readOnly = true)

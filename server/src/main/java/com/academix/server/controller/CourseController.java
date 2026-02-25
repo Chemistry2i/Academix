@@ -127,7 +127,7 @@ public class CourseController {
      */
     @GetMapping("/science")
     public ResponseEntity<List<Course>> getScienceCourses() {
-        return ResponseEntity.ok(courseService.getCoursesByType(Course.CourseType.SCIENCE));
+        return ResponseEntity.ok(courseService.getCoursesByType(Course.CourseType.SCIENCES));
     }
 
     /**
@@ -149,44 +149,30 @@ public class CourseController {
     }
 
     /**
-     * Enroll student in a course
-     * POST /api/courses/{id}/enroll/{studentId}
+     * Enroll student in a course (increment enrollment count)
+     * POST /api/courses/{id}/enroll
      */
-    @PostMapping("/{id}/enroll/{studentId}")
+    @PostMapping("/{id}/enroll")
     @PreAuthorize("hasRole('ADMIN') or hasRole('HEAD_TEACHER') or hasRole('REGISTRAR')")
-    public ResponseEntity<?> enrollStudent(@PathVariable Long id, @PathVariable Long studentId) {
+    public ResponseEntity<?> enrollStudent(@PathVariable Long id) {
         try {
-            courseService.enrollStudent(id, studentId);
-            return ResponseEntity.ok(Map.of("message", "Student enrolled successfully"));
+            Course course = courseService.enrollStudent(id);
+            return ResponseEntity.ok(Map.of("message", "Enrollment incremented successfully", "currentEnrollment", course.getCurrentEnrollment()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
     /**
-     * Remove student from a course
-     * DELETE /api/courses/{id}/enroll/{studentId}
+     * Withdraw student from a course (decrement enrollment count)
+     * DELETE /api/courses/{id}/withdraw
      */
-    @DeleteMapping("/{id}/enroll/{studentId}")
+    @DeleteMapping("/{id}/withdraw")
     @PreAuthorize("hasRole('ADMIN') or hasRole('HEAD_TEACHER') or hasRole('REGISTRAR')")
-    public ResponseEntity<?> removeStudent(@PathVariable Long id, @PathVariable Long studentId) {
+    public ResponseEntity<?> withdrawStudent(@PathVariable Long id) {
         try {
-            courseService.removeStudent(id, studentId);
-            return ResponseEntity.ok(Map.of("message", "Student removed from course successfully"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    /**
-     * Get students enrolled in a course
-     * GET /api/courses/{id}/students
-     */
-    @GetMapping("/{id}/students")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('HEAD_TEACHER') or hasRole('TEACHER')")
-    public ResponseEntity<?> getEnrolledStudents(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(courseService.getEnrolledStudents(id));
+            Course course = courseService.withdrawStudent(id);
+            return ResponseEntity.ok(Map.of("message", "Withdrawal successful", "currentEnrollment", course.getCurrentEnrollment()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

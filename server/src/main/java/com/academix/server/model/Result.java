@@ -24,10 +24,10 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "results", indexes = {
-    @Index(name = "idx_result_student", columnList = "studentId"),
-    @Index(name = "idx_result_exam", columnList = "examId"),
-    @Index(name = "idx_result_class", columnList = "className"),
-    @Index(name = "idx_result_subject", columnList = "subjectCode")
+    @Index(name = "idx_result_student", columnList = "student_id"),
+    @Index(name = "idx_result_exam", columnList = "exam_id"),
+    @Index(name = "idx_result_class", columnList = "class_name"),
+    @Index(name = "idx_result_subject", columnList = "subject_code")
 })
 public class Result {
 
@@ -37,32 +37,32 @@ public class Result {
 
     // Student ID (reference to Student entity)
     @NotNull(message = "Student ID is required")
-    @Column(nullable = false)
+    @Column(name = "student_id", nullable = false)
     private Long studentId;
 
     // Student's registration number (for easy reference)
-    @Column(nullable = true, length = 20)
+    @Column(name = "student_number", nullable = true, length = 20)
     private String studentNumber;
 
     // Exam ID (reference to Exam entity)
     @NotNull(message = "Exam ID is required")
-    @Column(nullable = false)
+    @Column(name = "exam_id", nullable = false)
     private Long examId;
 
     // Exam code (for easy reference)
-    @Column(nullable = true, length = 50)
+    @Column(name = "exam_code", nullable = true, length = 50)
     private String examCode;
 
     // Subject code
-    @Column(nullable = false, length = 10)
+    @Column(name = "subject_code", nullable = false, length = 10)
     private String subjectCode;
 
     // Subject name (for easy reference)
-    @Column(nullable = true, length = 100)
+    @Column(name = "subject_name", nullable = true, length = 100)
     private String subjectName;
 
     // Class/Form (e.g., "S1", "S4", "S6")
-    @Column(nullable = false, length = 20)
+    @Column(name = "class_name", nullable = false, length = 20)
     private String className;
 
     // Stream (if applicable)
