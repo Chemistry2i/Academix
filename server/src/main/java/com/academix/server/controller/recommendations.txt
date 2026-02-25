@@ -1,8 +1,11 @@
 1. Encaspulation
 2. polymorphism
 
+bascially OOP principles 
+Enforcing MVC
+
 
 3. Adding student
-updaing styudent
-disabling student
-Adding subject
+4.updatng student
+5.disabling student
+6.Adding subject
