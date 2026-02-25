@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results API Test - Academix</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; color: #fff; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 30px; }
+        header h1 { font-size: 1.8rem; }
+        header a { color: #00d4ff; text-decoration: none; padding: 8px 16px; border: 1px solid #00d4ff; border-radius: 8px; }
+        .endpoint-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 20px; }
+        .endpoint-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .endpoint-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .method { padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+        .method.get { background: #22c55e; color: #000; }
+        .method.post { background: #3b82f6; color: #fff; }
+        .method.put { background: #f59e0b; color: #000; }
+        .method.delete { background: #ef4444; color: #fff; }
+        .endpoint-path { font-family: monospace; color: #94a3b8; font-size: 14px; }
+        .endpoint-desc { color: #94a3b8; font-size: 13px; margin-bottom: 15px; }
+        .input-group { margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+        .input-group input, .input-group select, .input-group textarea { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 13px; }
+        .input-group textarea { min-height: 120px; font-family: monospace; }
+        .inline-inputs { display: flex; gap: 10px; }
+        .inline-inputs .input-group { flex: 1; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; }
+        .btn-primary { background: linear-gradient(90deg, #00d4ff, #7c3aed); color: #fff; }
+        .response-area { margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 200px; overflow: auto; white-space: pre-wrap; }
+        .response-area.success { border-left: 3px solid #22c55e; }
+        .response-area.error { border-left: 3px solid #ef4444; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 10px; }
+        .status-badge.s2xx { background: #22c55e; color: #000; }
+        .status-badge.s4xx { background: #f59e0b; color: #000; }
+        .status-badge.s5xx { background: #ef4444; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Results API</h1>
+            <a href="index.html">← Back to Home</a>
+        </header>
+
+        <div class="endpoint-grid">
+            <!-- RECORD RESULT -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/results</span>
+                </div>
+                <p class="endpoint-desc">Record a student result (auto-calculates grade)</p>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="createResultBody">{
+  "studentId": 1,
+  "examId": 1,
+  "subjectId": 1,
+  "marksObtained": 75,
+  "term": "Term 1",
+  "academicYear": "2024",
+  "formLevel": 3,
+  "levelType": "O_LEVEL",
+  "remarks": "Good performance"
+}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="createResult()">Send Request</button>
+                <div class="response-area" id="createResultResponse">Response will appear here...</div>
+            </div>
+
+            <!-- BULK RECORD RESULTS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/results/bulk</span>
+                </div>
+                <p class="endpoint-desc">Record multiple results at once</p>
+                <div class="input-group">
+                    <label>Request Body (JSON Array)</label>
+                    <textarea id="bulkResultsBody">[
+  {"studentId": 1, "examId": 1, "subjectId": 1, "marksObtained": 85, "term": "Term 1", "academicYear": "2024", "formLevel": 3, "levelType": "O_LEVEL"},
+  {"studentId": 2, "examId": 1, "subjectId": 1, "marksObtained": 72, "term": "Term 1", "academicYear": "2024", "formLevel": 3, "levelType": "O_LEVEL"}
+]</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="bulkRecordResults()">Send Request</button>
+                <div class="response-area" id="bulkResultsResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET ALL RESULTS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/results</span>
+                </div>
+                <p class="endpoint-desc">Get all results</p>
+                <button class="btn btn-primary" onclick="getAllResults()">Send Request</button>
+                <div class="response-area" id="getAllResultsResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET RESULT BY ID -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/results/{id}</span>
+                </div>
+                <p class="endpoint-desc">Get result by ID</p>
+                <div class="input-group">
+                    <label>Result ID</label>
+                    <input type="number" id="getResultId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="getResultById()">Send Request</button>
+                <div class="response-area" id="getResultByIdResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET STUDENT RESULTS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/results/student/{studentId}</span>
+                </div>
+                <p class="endpoint-desc">Get all results for a student</p>
+                <div class="input-group">
+                    <label>Student ID</label>
+                    <input type="number" id="getStudentResultsId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="getStudentResults()">Send Request</button>
+                <div class="response-area" id="getStudentResultsResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET EXAM RESULTS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/results/exam/{examId}</span>
+                </div>
+                <p class="endpoint-desc">Get all results for an exam</p>
+                <div class="input-group">
+                    <label>Exam ID</label>
+                    <input type="number" id="getExamResultsId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="getExamResults()">Send Request</button>
+                <div class="response-area" id="getExamResultsResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET TERM RESULTS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/results/student/{id}/term/{term}/year/{year}</span>
+                </div>
+                <p class="endpoint-desc">Get student results for a specific term</p>
+                <div class="inline-inputs">
+                    <div class="input-group">
+                        <label>Student ID</label>
+                        <input type="number" id="termStudentId" value="1">
+                    </div>
+                    <div class="input-group">
+                        <label>Term</label>
+                        <select id="termSelect">
+                            <option value="Term 1">Term 1</option>
+                            <option value="Term 2">Term 2</option>
+                            <option value="Term 3">Term 3</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Year</label>
+                        <input type="text" id="termYear" value="2024">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="getTermResults()">Send Request</button>
+                <div class="response-area" id="termResultsResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET REPORT CARD -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/results/student/{id}/report-card</span>
+                </div>
+                <p class="endpoint-desc">Generate student report card</p>
+                <div class="inline-inputs">
+                    <div class="input-group">
+                        <label>Student ID</label>
+                        <input type="number" id="reportCardStudentId" value="1">
+                    </div>
+                    <div class="input-group">
+                        <label>Term</label>
+                        <select id="reportCardTerm">
+                            <option value="Term 1">Term 1</option>
+                            <option value="Term 2">Term 2</option>
+                            <option value="Term 3">Term 3</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Year</label>
+                        <input type="text" id="reportCardYear" value="2024">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="getReportCard()">Send Request</button>
+                <div class="response-area" id="reportCardResponse">Response will appear here...</div>
+            </div>
+
+            <!-- CLASS RANKINGS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/results/class/{className}/rankings</span>
+                </div>
+                <p class="endpoint-desc">Get class rankings</p>
+                <div class="inline-inputs">
+                    <div class="input-group">
+                        <label>Class Name</label>
+                        <input type="text" id="rankingsClass" value="S3A">
+                    </div>
+                    <div class="input-group">
+                        <label>Term</label>
+                        <select id="rankingsTerm">
+                            <option value="Term 1">Term 1</option>
+                            <option value="Term 2">Term 2</option>
+                            <option value="Term 3">Term 3</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Year</label>
+                        <input type="text" id="rankingsYear" value="2024">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="getClassRankings()">Send Request</button>
+                <div class="response-area" id="rankingsResponse">Response will appear here...</div>
+            </div>
+
+            <!-- UPDATE RESULT -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method put">PUT</span>
+                    <span class="endpoint-path">/api/results/{id}</span>
+                </div>
+                <p class="endpoint-desc">Update a result</p>
+                <div class="input-group">
+                    <label>Result ID</label>
+                    <input type="number" id="updateResultId" value="1">
+                </div>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="updateResultBody">{
+  "marksObtained": 80,
+  "remarks": "Updated marks"
+}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="updateResult()">Send Request</button>
+                <div class="response-area" id="updateResultResponse">Response will appear here...</div>
+            </div>
+
+            <!-- DELETE RESULT -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="endpoint-path">/api/results/{id}</span>
+                </div>
+                <p class="endpoint-desc">Delete a result</p>
+                <div class="input-group">
+                    <label>Result ID</label>
+                    <input type="number" id="deleteResultId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="deleteResult()" style="background: #ef4444;">Send Request</button>
+                <div class="response-area" id="deleteResultResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET STATISTICS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/results/statistics</span>
+                </div>
+                <p class="endpoint-desc">Get result statistics</p>
+                <button class="btn btn-primary" onclick="getResultStatistics()">Send Request</button>
+                <div class="response-area" id="statisticsResponse">Response will appear here...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        function getHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const token = localStorage.getItem('academix_token');
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            return headers;
+        }
+        function displayResponse(elementId, response, data) {
+            const el = document.getElementById(elementId);
+            const statusClass = response.status >= 500 ? 's5xx' : (response.status >= 400 ? 's4xx' : 's2xx');
+            el.className = `response-area ${response.ok ? 'success' : 'error'}`;
+            el.innerHTML = `<span class="status-badge ${statusClass}">${response.status}</span>\n${JSON.stringify(data, null, 2)}`;
+        }
+
+        async function createResult() {
+            try {
+                const body = JSON.parse(document.getElementById('createResultBody').value);
+                const response = await fetch(`${API_BASE}/api/results`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('createResultResponse', response, data);
+            } catch (e) { document.getElementById('createResultResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function bulkRecordResults() {
+            try {
+                const body = JSON.parse(document.getElementById('bulkResultsBody').value);
+                const response = await fetch(`${API_BASE}/api/results/bulk`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('bulkResultsResponse', response, data);
+            } catch (e) { document.getElementById('bulkResultsResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getAllResults() {
+            try {
+                const response = await fetch(`${API_BASE}/api/results`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getAllResultsResponse', response, data);
+            } catch (e) { document.getElementById('getAllResultsResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getResultById() {
+            try {
+                const id = document.getElementById('getResultId').value;
+                const response = await fetch(`${API_BASE}/api/results/${id}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getResultByIdResponse', response, data);
+            } catch (e) { document.getElementById('getResultByIdResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getStudentResults() {
+            try {
+                const id = document.getElementById('getStudentResultsId').value;
+                const response = await fetch(`${API_BASE}/api/results/student/${id}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getStudentResultsResponse', response, data);
+            } catch (e) { document.getElementById('getStudentResultsResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getExamResults() {
+            try {
+                const id = document.getElementById('getExamResultsId').value;
+                const response = await fetch(`${API_BASE}/api/results/exam/${id}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getExamResultsResponse', response, data);
+            } catch (e) { document.getElementById('getExamResultsResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getTermResults() {
+            try {
+                const id = document.getElementById('termStudentId').value;
+                const term = document.getElementById('termSelect').value;
+                const year = document.getElementById('termYear').value;
+                const response = await fetch(`${API_BASE}/api/results/student/${id}/term/${encodeURIComponent(term)}/year/${year}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('termResultsResponse', response, data);
+            } catch (e) { document.getElementById('termResultsResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getReportCard() {
+            try {
+                const id = document.getElementById('reportCardStudentId').value;
+                const term = document.getElementById('reportCardTerm').value;
+                const year = document.getElementById('reportCardYear').value;
+                const response = await fetch(`${API_BASE}/api/results/student/${id}/report-card?term=${encodeURIComponent(term)}&academicYear=${year}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('reportCardResponse', response, data);
+            } catch (e) { document.getElementById('reportCardResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getClassRankings() {
+            try {
+                const className = document.getElementById('rankingsClass').value;
+                const term = document.getElementById('rankingsTerm').value;
+                const year = document.getElementById('rankingsYear').value;
+                const response = await fetch(`${API_BASE}/api/results/class/${className}/rankings?term=${encodeURIComponent(term)}&academicYear=${year}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('rankingsResponse', response, data);
+            } catch (e) { document.getElementById('rankingsResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function updateResult() {
+            try {
+                const id = document.getElementById('updateResultId').value;
+                const body = JSON.parse(document.getElementById('updateResultBody').value);
+                const response = await fetch(`${API_BASE}/api/results/${id}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('updateResultResponse', response, data);
+            } catch (e) { document.getElementById('updateResultResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function deleteResult() {
+            if (!confirm('Delete this result?')) return;
+            try {
+                const id = document.getElementById('deleteResultId').value;
+                const response = await fetch(`${API_BASE}/api/results/${id}`, { method: 'DELETE', headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('deleteResultResponse', response, data);
+            } catch (e) { document.getElementById('deleteResultResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getResultStatistics() {
+            try {
+                const response = await fetch(`${API_BASE}/api/results/statistics`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('statisticsResponse', response, data);
+            } catch (e) { document.getElementById('statisticsResponse').textContent = `Error: ${e.message}`; }
+        }
+    </script>
+</body>
+</html>

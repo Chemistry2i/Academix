@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance API Test - Academix</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; color: #fff; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 30px; }
+        header h1 { font-size: 1.8rem; }
+        header a { color: #00d4ff; text-decoration: none; padding: 8px 16px; border: 1px solid #00d4ff; border-radius: 8px; }
+        .endpoint-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 20px; }
+        .endpoint-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .endpoint-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .method { padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+        .method.get { background: #22c55e; color: #000; }
+        .method.post { background: #3b82f6; color: #fff; }
+        .method.put { background: #f59e0b; color: #000; }
+        .method.delete { background: #ef4444; color: #fff; }
+        .endpoint-path { font-family: monospace; color: #94a3b8; font-size: 14px; }
+        .endpoint-desc { color: #94a3b8; font-size: 13px; margin-bottom: 15px; }
+        .input-group { margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+        .input-group input, .input-group select, .input-group textarea { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 13px; }
+        .input-group textarea { min-height: 120px; font-family: monospace; }
+        .inline-inputs { display: flex; gap: 10px; }
+        .inline-inputs .input-group { flex: 1; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; }
+        .btn-primary { background: linear-gradient(90deg, #00d4ff, #7c3aed); color: #fff; }
+        .response-area { margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 200px; overflow: auto; white-space: pre-wrap; }
+        .response-area.success { border-left: 3px solid #22c55e; }
+        .response-area.error { border-left: 3px solid #ef4444; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 10px; }
+        .status-badge.s2xx { background: #22c55e; color: #000; }
+        .status-badge.s4xx { background: #f59e0b; color: #000; }
+        .status-badge.s5xx { background: #ef4444; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>✅ Attendance API</h1>
+            <a href="index.html">← Back to Home</a>
+        </header>
+
+        <div class="endpoint-grid">
+            <!-- MARK ATTENDANCE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/attendance/mark</span>
+                </div>
+                <p class="endpoint-desc">Mark attendance for a student</p>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="markAttendanceBody">{
+  "studentId": 1,
+  "subjectId": 1,
+  "classId": 1,
+  "date": "2024-04-15",
+  "status": "PRESENT",
+  "checkInTime": "08:00:00",
+  "remarks": "On time",
+  "markedById": 1
+}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="markAttendance()">Send Request</button>
+                <div class="response-area" id="markAttendanceResponse">Response will appear here...</div>
+            </div>
+
+            <!-- BULK MARK ATTENDANCE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/attendance/bulk</span>
+                </div>
+                <p class="endpoint-desc">Mark attendance for multiple students</p>
+                <div class="input-group">
+                    <label>Request Body (JSON Array)</label>
+                    <textarea id="bulkAttendanceBody">[
+  {"studentId": 1, "subjectId": 1, "classId": 1, "date": "2024-04-15", "status": "PRESENT", "markedById": 1},
+  {"studentId": 2, "subjectId": 1, "classId": 1, "date": "2024-04-15", "status": "PRESENT", "markedById": 1},
+  {"studentId": 3, "subjectId": 1, "classId": 1, "date": "2024-04-15", "status": "ABSENT", "markedById": 1}
+]</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="bulkMarkAttendance()">Send Request</button>
+                <div class="response-area" id="bulkAttendanceResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET ALL ATTENDANCE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/attendance</span>
+                </div>
+                <p class="endpoint-desc">Get all attendance records</p>
+                <button class="btn btn-primary" onclick="getAllAttendance()">Send Request</button>
+                <div class="response-area" id="getAllAttendanceResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET STUDENT ATTENDANCE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/attendance/student/{studentId}</span>
+                </div>
+                <p class="endpoint-desc">Get attendance for a student</p>
+                <div class="input-group">
+                    <label>Student ID</label>
+                    <input type="number" id="getStudentAttendanceId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="getStudentAttendance()">Send Request</button>
+                <div class="response-area" id="getStudentAttendanceResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET CLASS ATTENDANCE BY DATE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/attendance/class/{className}/date/{date}</span>
+                </div>
+                <p class="endpoint-desc">Get class attendance for a specific date</p>
+                <div class="inline-inputs">
+                    <div class="input-group">
+                        <label>Class Name</label>
+                        <input type="text" id="classAttendanceName" value="S3A">
+                    </div>
+                    <div class="input-group">
+                        <label>Date</label>
+                        <input type="date" id="classAttendanceDate" value="2024-04-15">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="getClassAttendance()">Send Request</button>
+                <div class="response-area" id="classAttendanceResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET SUBJECT ATTENDANCE BY DATE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/attendance/subject/{subjectId}/date/{date}</span>
+                </div>
+                <p class="endpoint-desc">Get subject attendance for a specific date</p>
+                <div class="inline-inputs">
+                    <div class="input-group">
+                        <label>Subject ID</label>
+                        <input type="number" id="subjectAttendanceId" value="1">
+                    </div>
+                    <div class="input-group">
+                        <label>Date</label>
+                        <input type="date" id="subjectAttendanceDate" value="2024-04-15">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="getSubjectAttendance()">Send Request</button>
+                <div class="response-area" id="subjectAttendanceResponse">Response will appear here...</div>
+            </div>
+
+            <!-- UPDATE ATTENDANCE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method put">PUT</span>
+                    <span class="endpoint-path">/api/attendance/{id}</span>
+                </div>
+                <p class="endpoint-desc">Update attendance record</p>
+                <div class="input-group">
+                    <label>Attendance ID</label>
+                    <input type="number" id="updateAttendanceId" value="1">
+                </div>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="updateAttendanceBody">{
+  "status": "LATE",
+  "checkInTime": "08:30:00",
+  "remarks": "Arrived late"
+}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="updateAttendance()">Send Request</button>
+                <div class="response-area" id="updateAttendanceResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET ATTENDANCE SUMMARY -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/attendance/student/{id}/summary</span>
+                </div>
+                <p class="endpoint-desc">Get student attendance summary</p>
+                <div class="input-group">
+                    <label>Student ID</label>
+                    <input type="number" id="summaryStudentId" value="1">
+                </div>
+                <div class="inline-inputs">
+                    <div class="input-group">
+                        <label>Start Date</label>
+                        <input type="date" id="summaryStartDate" value="2024-01-01">
+                    </div>
+                    <div class="input-group">
+                        <label>End Date</label>
+                        <input type="date" id="summaryEndDate" value="2024-12-31">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="getAttendanceSummary()">Send Request</button>
+                <div class="response-area" id="summaryResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET CLASS REPORT -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/attendance/class/{className}/report</span>
+                </div>
+                <p class="endpoint-desc">Get class attendance report</p>
+                <div class="input-group">
+                    <label>Class Name</label>
+                    <input type="text" id="reportClassName" value="S3A">
+                </div>
+                <div class="inline-inputs">
+                    <div class="input-group">
+                        <label>Start Date</label>
+                        <input type="date" id="reportStartDate" value="2024-01-01">
+                    </div>
+                    <div class="input-group">
+                        <label>End Date</label>
+                        <input type="date" id="reportEndDate" value="2024-12-31">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="getClassReport()">Send Request</button>
+                <div class="response-area" id="classReportResponse">Response will appear here...</div>
+            </div>
+
+            <!-- DELETE ATTENDANCE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="endpoint-path">/api/attendance/{id}</span>
+                </div>
+                <p class="endpoint-desc">Delete attendance record</p>
+                <div class="input-group">
+                    <label>Attendance ID</label>
+                    <input type="number" id="deleteAttendanceId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="deleteAttendance()" style="background: #ef4444;">Send Request</button>
+                <div class="response-area" id="deleteAttendanceResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET STATISTICS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/attendance/statistics</span>
+                </div>
+                <p class="endpoint-desc">Get attendance statistics</p>
+                <button class="btn btn-primary" onclick="getAttendanceStatistics()">Send Request</button>
+                <div class="response-area" id="statisticsResponse">Response will appear here...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        function getHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const token = localStorage.getItem('academix_token');
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            return headers;
+        }
+        function displayResponse(elementId, response, data) {
+            const el = document.getElementById(elementId);
+            const statusClass = response.status >= 500 ? 's5xx' : (response.status >= 400 ? 's4xx' : 's2xx');
+            el.className = `response-area ${response.ok ? 'success' : 'error'}`;
+            el.innerHTML = `<span class="status-badge ${statusClass}">${response.status}</span>\n${JSON.stringify(data, null, 2)}`;
+        }
+
+        async function markAttendance() {
+            try {
+                const body = JSON.parse(document.getElementById('markAttendanceBody').value);
+                const response = await fetch(`${API_BASE}/api/attendance/mark`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('markAttendanceResponse', response, data);
+            } catch (e) { document.getElementById('markAttendanceResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function bulkMarkAttendance() {
+            try {
+                const body = JSON.parse(document.getElementById('bulkAttendanceBody').value);
+                const response = await fetch(`${API_BASE}/api/attendance/bulk`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('bulkAttendanceResponse', response, data);
+            } catch (e) { document.getElementById('bulkAttendanceResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getAllAttendance() {
+            try {
+                const response = await fetch(`${API_BASE}/api/attendance`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getAllAttendanceResponse', response, data);
+            } catch (e) { document.getElementById('getAllAttendanceResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getStudentAttendance() {
+            try {
+                const id = document.getElementById('getStudentAttendanceId').value;
+                const response = await fetch(`${API_BASE}/api/attendance/student/${id}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getStudentAttendanceResponse', response, data);
+            } catch (e) { document.getElementById('getStudentAttendanceResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getClassAttendance() {
+            try {
+                const className = document.getElementById('classAttendanceName').value;
+                const date = document.getElementById('classAttendanceDate').value;
+                const response = await fetch(`${API_BASE}/api/attendance/class/${className}/date/${date}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('classAttendanceResponse', response, data);
+            } catch (e) { document.getElementById('classAttendanceResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getSubjectAttendance() {
+            try {
+                const id = document.getElementById('subjectAttendanceId').value;
+                const date = document.getElementById('subjectAttendanceDate').value;
+                const response = await fetch(`${API_BASE}/api/attendance/subject/${id}/date/${date}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('subjectAttendanceResponse', response, data);
+            } catch (e) { document.getElementById('subjectAttendanceResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function updateAttendance() {
+            try {
+                const id = document.getElementById('updateAttendanceId').value;
+                const body = JSON.parse(document.getElementById('updateAttendanceBody').value);
+                const response = await fetch(`${API_BASE}/api/attendance/${id}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('updateAttendanceResponse', response, data);
+            } catch (e) { document.getElementById('updateAttendanceResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getAttendanceSummary() {
+            try {
+                const id = document.getElementById('summaryStudentId').value;
+                const start = document.getElementById('summaryStartDate').value;
+                const end = document.getElementById('summaryEndDate').value;
+                const response = await fetch(`${API_BASE}/api/attendance/student/${id}/summary?startDate=${start}&endDate=${end}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('summaryResponse', response, data);
+            } catch (e) { document.getElementById('summaryResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getClassReport() {
+            try {
+                const className = document.getElementById('reportClassName').value;
+                const start = document.getElementById('reportStartDate').value;
+                const end = document.getElementById('reportEndDate').value;
+                const response = await fetch(`${API_BASE}/api/attendance/class/${className}/report?startDate=${start}&endDate=${end}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('classReportResponse', response, data);
+            } catch (e) { document.getElementById('classReportResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function deleteAttendance() {
+            if (!confirm('Delete this attendance record?')) return;
+            try {
+                const id = document.getElementById('deleteAttendanceId').value;
+                const response = await fetch(`${API_BASE}/api/attendance/${id}`, { method: 'DELETE', headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('deleteAttendanceResponse', response, data);
+            } catch (e) { document.getElementById('deleteAttendanceResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getAttendanceStatistics() {
+            try {
+                const response = await fetch(`${API_BASE}/api/attendance/statistics`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('statisticsResponse', response, data);
+            } catch (e) { document.getElementById('statisticsResponse').textContent = `Error: ${e.message}`; }
+        }
+    </script>
+</body>
+</html>

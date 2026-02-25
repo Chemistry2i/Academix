@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Courses API Test - Academix</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; color: #fff; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 30px; }
+        header h1 { font-size: 1.8rem; }
+        header a { color: #00d4ff; text-decoration: none; padding: 8px 16px; border: 1px solid #00d4ff; border-radius: 8px; }
+        header a:hover { background: #00d4ff; color: #1a1a2e; }
+        .endpoint-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 20px; }
+        .endpoint-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .endpoint-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .method { padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+        .method.get { background: #22c55e; color: #000; }
+        .method.post { background: #3b82f6; color: #fff; }
+        .method.put { background: #f59e0b; color: #000; }
+        .method.delete { background: #ef4444; color: #fff; }
+        .endpoint-path { font-family: monospace; color: #94a3b8; font-size: 14px; }
+        .endpoint-desc { color: #94a3b8; font-size: 13px; margin-bottom: 15px; }
+        .input-group { margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+        .input-group input, .input-group select, .input-group textarea { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 13px; }
+        .input-group textarea { min-height: 120px; font-family: monospace; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; }
+        .btn-primary { background: linear-gradient(90deg, #00d4ff, #7c3aed); color: #fff; }
+        .response-area { margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 200px; overflow: auto; white-space: pre-wrap; }
+        .response-area.success { border-left: 3px solid #22c55e; }
+        .response-area.error { border-left: 3px solid #ef4444; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 10px; }
+        .status-badge.s2xx { background: #22c55e; color: #000; }
+        .status-badge.s4xx { background: #f59e0b; color: #000; }
+        .status-badge.s5xx { background: #ef4444; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 Courses API (A-Level Combinations)</h1>
+            <a href="index.html">← Back to Home</a>
+        </header>
+
+        <div class="endpoint-grid">
+            <!-- CREATE COURSE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/courses</span>
+                </div>
+                <p class="endpoint-desc">Create a new A-Level course combination</p>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="createCourseBody">{
+  "code": "PCM",
+  "name": "Physics, Chemistry, Mathematics",
+  "description": "Science combination for engineering",
+  "category": "SCIENCES",
+  "principal1Id": 1,
+  "principal2Id": 2,
+  "principal3Id": 3,
+  "subsidiary1Id": 4
+}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="createCourse()">Send Request</button>
+                <div class="response-area" id="createCourseResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET ALL COURSES -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/courses</span>
+                </div>
+                <p class="endpoint-desc">Get all courses</p>
+                <button class="btn btn-primary" onclick="getAllCourses()">Send Request</button>
+                <div class="response-area" id="getAllCoursesResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET COURSE BY ID -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/courses/{id}</span>
+                </div>
+                <p class="endpoint-desc">Get course by ID</p>
+                <div class="input-group">
+                    <label>Course ID</label>
+                    <input type="number" id="getCourseId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="getCourseById()">Send Request</button>
+                <div class="response-area" id="getCourseByIdResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET BY CODE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/courses/code/{code}</span>
+                </div>
+                <p class="endpoint-desc">Get course by code</p>
+                <div class="input-group">
+                    <label>Course Code</label>
+                    <select id="getByCode">
+                        <option value="PCM">PCM</option>
+                        <option value="PCB">PCB</option>
+                        <option value="BCM">BCM</option>
+                        <option value="HEG">HEG</option>
+                        <option value="MEG">MEG</option>
+                        <option value="HED">HED</option>
+                        <option value="LEG">LEG</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="getByCode()">Send Request</button>
+                <div class="response-area" id="getByCodeResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET BY CATEGORY -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/courses/category/{category}</span>
+                </div>
+                <p class="endpoint-desc">Get courses by category</p>
+                <div class="input-group">
+                    <label>Category</label>
+                    <select id="getByCategory">
+                        <option value="SCIENCES">Sciences</option>
+                        <option value="ARTS">Arts</option>
+                        <option value="BUSINESS">Business</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="getByCategory()">Send Request</button>
+                <div class="response-area" id="getByCategoryResponse">Response will appear here...</div>
+            </div>
+
+            <!-- UPDATE COURSE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method put">PUT</span>
+                    <span class="endpoint-path">/api/courses/{id}</span>
+                </div>
+                <p class="endpoint-desc">Update course details</p>
+                <div class="input-group">
+                    <label>Course ID</label>
+                    <input type="number" id="updateCourseId" value="1">
+                </div>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="updateCourseBody">{
+  "description": "Updated description for course"
+}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="updateCourse()">Send Request</button>
+                <div class="response-area" id="updateCourseResponse">Response will appear here...</div>
+            </div>
+
+            <!-- DELETE COURSE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="endpoint-path">/api/courses/{id}</span>
+                </div>
+                <p class="endpoint-desc">Delete a course</p>
+                <div class="input-group">
+                    <label>Course ID</label>
+                    <input type="number" id="deleteCourseId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="deleteCourse()" style="background: #ef4444;">Send Request</button>
+                <div class="response-area" id="deleteCourseResponse">Response will appear here...</div>
+            </div>
+
+            <!-- INITIALIZE COURSES -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/courses/initialize</span>
+                </div>
+                <p class="endpoint-desc">Initialize default A-Level combinations</p>
+                <button class="btn btn-primary" onclick="initializeCourses()">Send Request</button>
+                <div class="response-area" id="initializeResponse">Response will appear here...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        function getHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const token = localStorage.getItem('academix_token');
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            return headers;
+        }
+        function displayResponse(elementId, response, data) {
+            const el = document.getElementById(elementId);
+            const statusClass = response.status >= 500 ? 's5xx' : (response.status >= 400 ? 's4xx' : 's2xx');
+            el.className = `response-area ${response.ok ? 'success' : 'error'}`;
+            el.innerHTML = `<span class="status-badge ${statusClass}">${response.status}</span>\n${JSON.stringify(data, null, 2)}`;
+        }
+
+        async function createCourse() {
+            try {
+                const body = JSON.parse(document.getElementById('createCourseBody').value);
+                const response = await fetch(`${API_BASE}/api/courses`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('createCourseResponse', response, data);
+            } catch (e) { document.getElementById('createCourseResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getAllCourses() {
+            try {
+                const response = await fetch(`${API_BASE}/api/courses`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getAllCoursesResponse', response, data);
+            } catch (e) { document.getElementById('getAllCoursesResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getCourseById() {
+            try {
+                const id = document.getElementById('getCourseId').value;
+                const response = await fetch(`${API_BASE}/api/courses/${id}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getCourseByIdResponse', response, data);
+            } catch (e) { document.getElementById('getCourseByIdResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getByCode() {
+            try {
+                const code = document.getElementById('getByCode').value;
+                const response = await fetch(`${API_BASE}/api/courses/code/${code}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getByCodeResponse', response, data);
+            } catch (e) { document.getElementById('getByCodeResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getByCategory() {
+            try {
+                const cat = document.getElementById('getByCategory').value;
+                const response = await fetch(`${API_BASE}/api/courses/category/${cat}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getByCategoryResponse', response, data);
+            } catch (e) { document.getElementById('getByCategoryResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function updateCourse() {
+            try {
+                const id = document.getElementById('updateCourseId').value;
+                const body = JSON.parse(document.getElementById('updateCourseBody').value);
+                const response = await fetch(`${API_BASE}/api/courses/${id}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('updateCourseResponse', response, data);
+            } catch (e) { document.getElementById('updateCourseResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function deleteCourse() {
+            if (!confirm('Delete this course?')) return;
+            try {
+                const id = document.getElementById('deleteCourseId').value;
+                const response = await fetch(`${API_BASE}/api/courses/${id}`, { method: 'DELETE', headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('deleteCourseResponse', response, data);
+            } catch (e) { document.getElementById('deleteCourseResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function initializeCourses() {
+            try {
+                const response = await fetch(`${API_BASE}/api/courses/initialize`, { method: 'POST', headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('initializeResponse', response, data);
+            } catch (e) { document.getElementById('initializeResponse').textContent = `Error: ${e.message}`; }
+        }
+    </script>
+</body>
+</html>

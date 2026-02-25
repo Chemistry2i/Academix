@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timetable API Test - Academix</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; color: #fff; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 30px; }
+        header h1 { font-size: 1.8rem; }
+        header a { color: #00d4ff; text-decoration: none; padding: 8px 16px; border: 1px solid #00d4ff; border-radius: 8px; }
+        .endpoint-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 20px; }
+        .endpoint-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .endpoint-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .method { padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+        .method.get { background: #22c55e; color: #000; }
+        .method.post { background: #3b82f6; color: #fff; }
+        .method.put { background: #f59e0b; color: #000; }
+        .method.delete { background: #ef4444; color: #fff; }
+        .endpoint-path { font-family: monospace; color: #94a3b8; font-size: 14px; }
+        .endpoint-desc { color: #94a3b8; font-size: 13px; margin-bottom: 15px; }
+        .input-group { margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+        .input-group input, .input-group select, .input-group textarea { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 13px; }
+        .input-group textarea { min-height: 120px; font-family: monospace; }
+        .inline-inputs { display: flex; gap: 10px; }
+        .inline-inputs .input-group { flex: 1; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; }
+        .btn-primary { background: linear-gradient(90deg, #00d4ff, #7c3aed); color: #fff; }
+        .response-area { margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 200px; overflow: auto; white-space: pre-wrap; }
+        .response-area.success { border-left: 3px solid #22c55e; }
+        .response-area.error { border-left: 3px solid #ef4444; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 10px; }
+        .status-badge.s2xx { background: #22c55e; color: #000; }
+        .status-badge.s4xx { background: #f59e0b; color: #000; }
+        .status-badge.s5xx { background: #ef4444; color: #fff; }
+        .info-box { background: rgba(0,212,255,0.1); border: 1px solid #00d4ff; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+        .info-box h3 { color: #00d4ff; margin-bottom: 10px; }
+        .info-box p { color: #94a3b8; font-size: 13px; }
+        .day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 10px; }
+        .day-item { background: rgba(255,255,255,0.1); padding: 8px; text-align: center; border-radius: 4px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📅 Timetable API</h1>
+            <a href="index.html">← Back to Home</a>
+        </header>
+
+        <div class="info-box">
+            <h3>Timetable Structure</h3>
+            <p>Days: MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY</p>
+            <p>Period times: 08:00-08:40, 08:40-09:20, and so on (40-minute periods with breaks)</p>
+            <div class="day-grid">
+                <div class="day-item">MON</div>
+                <div class="day-item">TUE</div>
+                <div class="day-item">WED</div>
+                <div class="day-item">THU</div>
+                <div class="day-item">FRI</div>
+                <div class="day-item">SAT</div>
+                <div class="day-item" style="background: rgba(255,255,255,0.05); color: #666;">SUN</div>
+            </div>
+        </div>
+
+        <div class="endpoint-grid">
+            <!-- CREATE TIMETABLE ENTRY -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/timetables</span>
+                </div>
+                <p class="endpoint-desc">Create a new timetable entry</p>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="createTimetableBody">{
+  "className": "S3A",
+  "subjectId": 1,
+  "teacherId": 1,
+  "dayOfWeek": "MONDAY",
+  "startTime": "08:00:00",
+  "endTime": "08:40:00",
+  "room": "Room 101",
+  "term": 1,
+  "academicYear": "2024"
+}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="createTimetable()">Send Request</button>
+                <div class="response-area" id="createTimetableResponse">Response will appear here...</div>
+            </div>
+
+            <!-- BULK CREATE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/timetables/bulk</span>
+                </div>
+                <p class="endpoint-desc">Create multiple timetable entries</p>
+                <div class="input-group">
+                    <label>Request Body (JSON Array)</label>
+                    <textarea id="bulkTimetableBody">[
+  {"className": "S3A", "subjectId": 1, "teacherId": 1, "dayOfWeek": "MONDAY", "startTime": "08:00:00", "endTime": "08:40:00", "room": "Room 101", "term": 1, "academicYear": "2024"},
+  {"className": "S3A", "subjectId": 2, "teacherId": 2, "dayOfWeek": "MONDAY", "startTime": "08:40:00", "endTime": "09:20:00", "room": "Room 101", "term": 1, "academicYear": "2024"}
+]</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="bulkCreateTimetable()">Send Request</button>
+                <div class="response-area" id="bulkTimetableResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET ALL TIMETABLES -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/timetables</span>
+                </div>
+                <p class="endpoint-desc">Get all timetable entries</p>
+                <button class="btn btn-primary" onclick="getAllTimetables()">Send Request</button>
+                <div class="response-area" id="getAllTimetablesResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET BY ID -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/timetables/{id}</span>
+                </div>
+                <p class="endpoint-desc">Get timetable entry by ID</p>
+                <div class="input-group">
+                    <label>Timetable ID</label>
+                    <input type="number" id="getTimetableId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="getTimetableById()">Send Request</button>
+                <div class="response-area" id="getTimetableByIdResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET CLASS SCHEDULE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/timetables/class/{className}</span>
+                </div>
+                <p class="endpoint-desc">Get full class schedule</p>
+                <div class="input-group">
+                    <label>Class Name</label>
+                    <input type="text" id="classScheduleName" value="S3A">
+                </div>
+                <button class="btn btn-primary" onclick="getClassSchedule()">Send Request</button>
+                <div class="response-area" id="classScheduleResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET CLASS DAY SCHEDULE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/timetables/class/{className}/day/{day}</span>
+                </div>
+                <p class="endpoint-desc">Get class schedule for a specific day</p>
+                <div class="inline-inputs">
+                    <div class="input-group">
+                        <label>Class Name</label>
+                        <input type="text" id="classDayScheduleName" value="S3A">
+                    </div>
+                    <div class="input-group">
+                        <label>Day</label>
+                        <select id="classDayScheduleDay">
+                            <option value="MONDAY">MONDAY</option>
+                            <option value="TUESDAY">TUESDAY</option>
+                            <option value="WEDNESDAY">WEDNESDAY</option>
+                            <option value="THURSDAY">THURSDAY</option>
+                            <option value="FRIDAY">FRIDAY</option>
+                            <option value="SATURDAY">SATURDAY</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="getClassDaySchedule()">Send Request</button>
+                <div class="response-area" id="classDayScheduleResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET TEACHER SCHEDULE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/timetables/teacher/{teacherId}</span>
+                </div>
+                <p class="endpoint-desc">Get teacher's full schedule</p>
+                <div class="input-group">
+                    <label>Teacher ID</label>
+                    <input type="number" id="teacherScheduleId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="getTeacherSchedule()">Send Request</button>
+                <div class="response-area" id="teacherScheduleResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET TEACHER DAY SCHEDULE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/timetables/teacher/{teacherId}/day/{day}</span>
+                </div>
+                <p class="endpoint-desc">Get teacher schedule for a specific day</p>
+                <div class="inline-inputs">
+                    <div class="input-group">
+                        <label>Teacher ID</label>
+                        <input type="number" id="teacherDayScheduleId" value="1">
+                    </div>
+                    <div class="input-group">
+                        <label>Day</label>
+                        <select id="teacherDayScheduleDay">
+                            <option value="MONDAY">MONDAY</option>
+                            <option value="TUESDAY">TUESDAY</option>
+                            <option value="WEDNESDAY">WEDNESDAY</option>
+                            <option value="THURSDAY">THURSDAY</option>
+                            <option value="FRIDAY">FRIDAY</option>
+                            <option value="SATURDAY">SATURDAY</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="getTeacherDaySchedule()">Send Request</button>
+                <div class="response-area" id="teacherDayScheduleResponse">Response will appear here...</div>
+            </div>
+
+            <!-- CHECK CONFLICTS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/timetables/check-conflicts</span>
+                </div>
+                <p class="endpoint-desc">Check for scheduling conflicts</p>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="checkConflictsBody">{
+  "className": "S3A",
+  "teacherId": 1,
+  "dayOfWeek": "MONDAY",
+  "startTime": "08:00:00",
+  "endTime": "08:40:00"
+}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="checkConflicts()">Send Request</button>
+                <div class="response-area" id="checkConflictsResponse">Response will appear here...</div>
+            </div>
+
+            <!-- UPDATE TIMETABLE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method put">PUT</span>
+                    <span class="endpoint-path">/api/timetables/{id}</span>
+                </div>
+                <p class="endpoint-desc">Update timetable entry</p>
+                <div class="input-group">
+                    <label>Timetable ID</label>
+                    <input type="number" id="updateTimetableId" value="1">
+                </div>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="updateTimetableBody">{
+  "room": "Room 201",
+  "startTime": "09:20:00",
+  "endTime": "10:00:00"
+}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="updateTimetable()">Send Request</button>
+                <div class="response-area" id="updateTimetableResponse">Response will appear here...</div>
+            </div>
+
+            <!-- DELETE TIMETABLE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="endpoint-path">/api/timetables/{id}</span>
+                </div>
+                <p class="endpoint-desc">Delete timetable entry</p>
+                <div class="input-group">
+                    <label>Timetable ID</label>
+                    <input type="number" id="deleteTimetableId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="deleteTimetable()" style="background: #ef4444;">Send Request</button>
+                <div class="response-area" id="deleteTimetableResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET ROOM USAGE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/timetables/room/{room}/day/{day}</span>
+                </div>
+                <p class="endpoint-desc">Get room usage for a specific day</p>
+                <div class="inline-inputs">
+                    <div class="input-group">
+                        <label>Room</label>
+                        <input type="text" id="roomUsageRoom" value="Room 101">
+                    </div>
+                    <div class="input-group">
+                        <label>Day</label>
+                        <select id="roomUsageDay">
+                            <option value="MONDAY">MONDAY</option>
+                            <option value="TUESDAY">TUESDAY</option>
+                            <option value="WEDNESDAY">WEDNESDAY</option>
+                            <option value="THURSDAY">THURSDAY</option>
+                            <option value="FRIDAY">FRIDAY</option>
+                            <option value="SATURDAY">SATURDAY</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="getRoomUsage()">Send Request</button>
+                <div class="response-area" id="roomUsageResponse">Response will appear here...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        function getHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const token = localStorage.getItem('academix_token');
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            return headers;
+        }
+        function displayResponse(elementId, response, data) {
+            const el = document.getElementById(elementId);
+            const statusClass = response.status >= 500 ? 's5xx' : (response.status >= 400 ? 's4xx' : 's2xx');
+            el.className = `response-area ${response.ok ? 'success' : 'error'}`;
+            el.innerHTML = `<span class="status-badge ${statusClass}">${response.status}</span>\n${JSON.stringify(data, null, 2)}`;
+        }
+
+        async function createTimetable() {
+            try {
+                const body = JSON.parse(document.getElementById('createTimetableBody').value);
+                const response = await fetch(`${API_BASE}/api/timetables`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('createTimetableResponse', response, data);
+            } catch (e) { document.getElementById('createTimetableResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function bulkCreateTimetable() {
+            try {
+                const body = JSON.parse(document.getElementById('bulkTimetableBody').value);
+                const response = await fetch(`${API_BASE}/api/timetables/bulk`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('bulkTimetableResponse', response, data);
+            } catch (e) { document.getElementById('bulkTimetableResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getAllTimetables() {
+            try {
+                const response = await fetch(`${API_BASE}/api/timetables`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getAllTimetablesResponse', response, data);
+            } catch (e) { document.getElementById('getAllTimetablesResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getTimetableById() {
+            try {
+                const id = document.getElementById('getTimetableId').value;
+                const response = await fetch(`${API_BASE}/api/timetables/${id}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getTimetableByIdResponse', response, data);
+            } catch (e) { document.getElementById('getTimetableByIdResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getClassSchedule() {
+            try {
+                const className = document.getElementById('classScheduleName').value;
+                const response = await fetch(`${API_BASE}/api/timetables/class/${encodeURIComponent(className)}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('classScheduleResponse', response, data);
+            } catch (e) { document.getElementById('classScheduleResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getClassDaySchedule() {
+            try {
+                const className = document.getElementById('classDayScheduleName').value;
+                const day = document.getElementById('classDayScheduleDay').value;
+                const response = await fetch(`${API_BASE}/api/timetables/class/${encodeURIComponent(className)}/day/${day}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('classDayScheduleResponse', response, data);
+            } catch (e) { document.getElementById('classDayScheduleResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getTeacherSchedule() {
+            try {
+                const id = document.getElementById('teacherScheduleId').value;
+                const response = await fetch(`${API_BASE}/api/timetables/teacher/${id}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('teacherScheduleResponse', response, data);
+            } catch (e) { document.getElementById('teacherScheduleResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getTeacherDaySchedule() {
+            try {
+                const id = document.getElementById('teacherDayScheduleId').value;
+                const day = document.getElementById('teacherDayScheduleDay').value;
+                const response = await fetch(`${API_BASE}/api/timetables/teacher/${id}/day/${day}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('teacherDayScheduleResponse', response, data);
+            } catch (e) { document.getElementById('teacherDayScheduleResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function checkConflicts() {
+            try {
+                const body = JSON.parse(document.getElementById('checkConflictsBody').value);
+                const response = await fetch(`${API_BASE}/api/timetables/check-conflicts`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('checkConflictsResponse', response, data);
+            } catch (e) { document.getElementById('checkConflictsResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function updateTimetable() {
+            try {
+                const id = document.getElementById('updateTimetableId').value;
+                const body = JSON.parse(document.getElementById('updateTimetableBody').value);
+                const response = await fetch(`${API_BASE}/api/timetables/${id}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('updateTimetableResponse', response, data);
+            } catch (e) { document.getElementById('updateTimetableResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function deleteTimetable() {
+            if (!confirm('Delete this timetable entry?')) return;
+            try {
+                const id = document.getElementById('deleteTimetableId').value;
+                const response = await fetch(`${API_BASE}/api/timetables/${id}`, { method: 'DELETE', headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('deleteTimetableResponse', response, data);
+            } catch (e) { document.getElementById('deleteTimetableResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getRoomUsage() {
+            try {
+                const room = document.getElementById('roomUsageRoom').value;
+                const day = document.getElementById('roomUsageDay').value;
+                const response = await fetch(`${API_BASE}/api/timetables/room/${encodeURIComponent(room)}/day/${day}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('roomUsageResponse', response, data);
+            } catch (e) { document.getElementById('roomUsageResponse').textContent = `Error: ${e.message}`; }
+        }
+    </script>
+</body>
+</html>
