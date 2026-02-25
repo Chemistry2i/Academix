@@ -213,4 +213,14 @@ public class ResultController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    /**
+     * Get result statistics
+     * GET /api/results/statistics
+     */
+    @GetMapping("/statistics")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('HEAD_TEACHER') or hasRole('DIRECTOR_OF_STUDIES')")
+    public ResponseEntity<Map<String, Object>> getResultStatistics() {
+        return ResponseEntity.ok(resultService.getResultStatistics());
+    }
 }

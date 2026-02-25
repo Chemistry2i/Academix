@@ -456,4 +456,76 @@ public class ResultService {
         if (aggregate >= 59 && aggregate <= 72) return "Division 4";
         return "Fail";
     }
+
+    /**
+     * Get overall result statistics
+     */
+    public Map<String, Object> getResultStatistics() {
+        List<Result> allResults = resultRepository.findAll();
+
+        Map<String, Object> stats = new HashMap<>();
+
+        // Total results count
+        stats.put("totalResults", allResults.size());
+
+        // Count by grade
+        Map<String, Long> gradeDistribution = allResults.stream()
+            .collect(Collectors.groupingBy(Result::getGrade, Collectors.counting()));
+        stats.put("gradeDistribution", gradeDistribution);
+
+        // Average marks
+        double avgMarks = allResults.stream()
+            .mapToDouble(r -> r.getMarksObtained() != null ? r.getMarksObtained() : 0)
+            .average()
+            .orElse(0.0);
+        stats.put("averageMarks", String.format("%.2f", avgMarks));
+
+        // Highest marks
+        int highestMarks = allResults.stream()
+            .mapToInt(r -> r.getMarksObtained() != null ? r.getMarksObtained() : 0)
+            .max()
+            .orElse(0);
+        stats.put("highestMarks", highestMarks);
+
+        // Lowest marks
+        int lowestMarks = allResults.stream()
+            .mapToInt(r -> r.getMarksObtained() != null ? r.getMarksObtained() : 0)
+            .min()
+            .orElse(0);
+        stats.put("lowestMarks", lowestMarks);
+
+        // Results by academic year
+        Map<String, Long> yearDistribution = allResults.stream()
+            .collect(Collectors.groupingBy(Result::getAcademicYear, Collectors.counting()));
+        stats.put("resultsByYear", yearDistribution);
+
+        // Pass/Fail count
+        long passCount = allResults.stream()
+            .filter(r -> r.getGrade() != null && !r.getGrade().equals("F9") && !r.getGrade().equals("F"))
+            .count();
+        long failCount = allResults.size() - passCount;
+        stats.put("passCount", passCount);
+        stats.put("failCount", failCount);
+        stats.put("passPercentage", allResults.size() > 0 
+            ? String.format("%.2f%%", (passCount * 100.0) / allResults.size()) 
+            : "0.00%");
+
+        // Distinct subjects
+        long distinctSubjects = allResults.stream()
+            .map(Result::getSubjectCode)
+            .distinct()
+            .count();
+        stats.put("distinctSubjects", distinctSubjects);
+
+        // Distinct students
+        long distinctStudents = allResults.stream()
+            .map(Result::getStudentId)
+            .distinct()
+            .count();
+        stats.put("distinctStudents", distinctStudents);
+
+        logger.info("Result statistics retrieved - Total results: {}", allResults.size());
+
+        return stats;
+    }
 }

@@ -107,8 +107,8 @@
             <!-- CALCULATE GRADE -->
             <div class="endpoint-card">
                 <div class="endpoint-header">
-                    <span class="method post">POST</span>
-                    <span class="endpoint-path">/api/grades/calculate</span>
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/grades/calculate?marks={marks}&scale={scale}&isPrincipal={isPrincipal}</span>
                 </div>
                 <p class="endpoint-desc">Calculate grade from marks</p>
                 <div class="inline-inputs">
@@ -117,10 +117,17 @@
                         <input type="number" id="calcMarks" value="75" min="0" max="100">
                     </div>
                     <div class="input-group">
-                        <label>Level Type</label>
-                        <select id="calcLevelType">
+                        <label>Scale</label>
+                        <select id="calcScale">
                             <option value="O_LEVEL">O-Level</option>
                             <option value="A_LEVEL">A-Level</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Is Principal Subject</label>
+                        <select id="calcIsPrincipal">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
                         </select>
                     </div>
                 </div>
@@ -132,7 +139,7 @@
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method get">GET</span>
-                    <span class="endpoint-path">/api/grades/aggregate/{points}</span>
+                    <span class="endpoint-path">/api/grades/aggregate?points={points}</span>
                 </div>
                 <p class="endpoint-desc">Get aggregate interpretation (O-Level: best 8 subjects)</p>
                 <div class="input-group">
@@ -190,12 +197,9 @@
         async function calculateGrade() {
             try {
                 const marks = document.getElementById('calcMarks').value;
-                const levelType = document.getElementById('calcLevelType').value;
-                const response = await fetch(`${API_BASE}/api/grades/calculate`, {
-                    method: 'POST',
-                    headers: getHeaders(),
-                    body: JSON.stringify({ marks: parseFloat(marks), levelType })
-                });
+                const scale = document.getElementById('calcScale').value;
+                const isPrincipal = document.getElementById('calcIsPrincipal').value;
+                const response = await fetch(`${API_BASE}/api/grades/calculate?marks=${marks}&scale=${scale}&isPrincipal=${isPrincipal}`, { headers: getHeaders() });
                 const data = await response.json();
                 displayResponse('calculateResponse', response, data);
             } catch (e) { document.getElementById('calculateResponse').textContent = `Error: ${e.message}`; }
@@ -204,7 +208,7 @@
         async function getAggregateInterpretation() {
             try {
                 const points = document.getElementById('aggregatePoints').value;
-                const response = await fetch(`${API_BASE}/api/grades/aggregate/${points}`, { headers: getHeaders() });
+                const response = await fetch(`${API_BASE}/api/grades/aggregate?points=${points}`, { headers: getHeaders() });
                 const data = await response.json();
                 displayResponse('aggregateResponse', response, data);
             } catch (e) { document.getElementById('aggregateResponse').textContent = `Error: ${e.message}`; }

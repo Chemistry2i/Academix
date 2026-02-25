@@ -160,15 +160,15 @@
                 <div class="response-area" id="getALevelResponse">Response will appear here...</div>
             </div>
 
-            <!-- GET CORE SUBJECTS -->
+            <!-- GET COMPULSORY SUBJECTS -->
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method get">GET</span>
-                    <span class="endpoint-path">/api/subjects/core</span>
+                    <span class="endpoint-path">/api/subjects/compulsory</span>
                 </div>
                 <p class="endpoint-desc">Get core/compulsory subjects</p>
-                <button class="btn btn-primary" onclick="getCoreSubjects()">Send Request</button>
-                <div class="response-area" id="getCoreResponse">Response will appear here...</div>
+                <button class="btn btn-primary" onclick="getCompulsorySubjects()">Send Request</button>
+                <div class="response-area" id="getCompulsoryResponse">Response will appear here...</div>
             </div>
 
             <!-- UPDATE SUBJECT -->
@@ -298,12 +298,12 @@
             } catch (e) { document.getElementById('getALevelResponse').textContent = `Error: ${e.message}`; }
         }
 
-        async function getCoreSubjects() {
+        async function getCompulsorySubjects() {
             try {
-                const response = await fetch(`${API_BASE}/api/subjects/core`, { headers: getHeaders() });
+                const response = await fetch(`${API_BASE}/api/subjects/compulsory`, { headers: getHeaders() });
                 const data = await response.json();
-                displayResponse('getCoreResponse', response, data);
-            } catch (e) { document.getElementById('getCoreResponse').textContent = `Error: ${e.message}`; }
+                displayResponse('getCompulsoryResponse', response, data);
+            } catch (e) { document.getElementById('getCompulsoryResponse').textContent = `Error: ${e.message}`; }
         }
 
         async function updateSubject() {

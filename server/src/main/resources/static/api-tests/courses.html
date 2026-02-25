@@ -118,23 +118,23 @@
                 <div class="response-area" id="getByCodeResponse">Response will appear here...</div>
             </div>
 
-            <!-- GET BY CATEGORY -->
+            <!-- GET BY TYPE -->
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method get">GET</span>
-                    <span class="endpoint-path">/api/courses/category/{category}</span>
+                    <span class="endpoint-path">/api/courses/type/{type}</span>
                 </div>
-                <p class="endpoint-desc">Get courses by category</p>
+                <p class="endpoint-desc">Get courses by type</p>
                 <div class="input-group">
-                    <label>Category</label>
-                    <select id="getByCategory">
+                    <label>Course Type</label>
+                    <select id="getByType">
                         <option value="SCIENCES">Sciences</option>
                         <option value="ARTS">Arts</option>
                         <option value="BUSINESS">Business</option>
                     </select>
                 </div>
-                <button class="btn btn-primary" onclick="getByCategory()">Send Request</button>
-                <div class="response-area" id="getByCategoryResponse">Response will appear here...</div>
+                <button class="btn btn-primary" onclick="getByType()">Send Request</button>
+                <div class="response-area" id="getByTypeResponse">Response will appear here...</div>
             </div>
 
             <!-- UPDATE COURSE -->
@@ -236,13 +236,13 @@
             } catch (e) { document.getElementById('getByCodeResponse').textContent = `Error: ${e.message}`; }
         }
 
-        async function getByCategory() {
+        async function getByType() {
             try {
-                const cat = document.getElementById('getByCategory').value;
-                const response = await fetch(`${API_BASE}/api/courses/category/${cat}`, { headers: getHeaders() });
+                const type = document.getElementById('getByType').value;
+                const response = await fetch(`${API_BASE}/api/courses/type/${type}`, { headers: getHeaders() });
                 const data = await response.json();
-                displayResponse('getByCategoryResponse', response, data);
-            } catch (e) { document.getElementById('getByCategoryResponse').textContent = `Error: ${e.message}`; }
+                displayResponse('getByTypeResponse', response, data);
+            } catch (e) { document.getElementById('getByTypeResponse').textContent = `Error: ${e.message}`; }
         }
 
         async function updateCourse() {

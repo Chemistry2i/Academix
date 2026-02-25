@@ -70,7 +70,7 @@
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method post">POST</span>
-                    <span class="endpoint-path">/api/timetables</span>
+                    <span class="endpoint-path">/api/timetable</span>
                 </div>
                 <p class="endpoint-desc">Create a new timetable entry</p>
                 <div class="input-group">
@@ -95,7 +95,7 @@
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method post">POST</span>
-                    <span class="endpoint-path">/api/timetables/bulk</span>
+                    <span class="endpoint-path">/api/timetable/bulk</span>
                 </div>
                 <p class="endpoint-desc">Create multiple timetable entries</p>
                 <div class="input-group">
@@ -113,7 +113,7 @@
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method get">GET</span>
-                    <span class="endpoint-path">/api/timetables</span>
+                    <span class="endpoint-path">/api/timetable</span>
                 </div>
                 <p class="endpoint-desc">Get all timetable entries</p>
                 <button class="btn btn-primary" onclick="getAllTimetables()">Send Request</button>
@@ -124,7 +124,7 @@
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method get">GET</span>
-                    <span class="endpoint-path">/api/timetables/{id}</span>
+                    <span class="endpoint-path">/api/timetable/{id}</span>
                 </div>
                 <p class="endpoint-desc">Get timetable entry by ID</p>
                 <div class="input-group">
@@ -139,7 +139,7 @@
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method get">GET</span>
-                    <span class="endpoint-path">/api/timetables/class/{className}</span>
+                    <span class="endpoint-path">/api/timetable/class/{className}</span>
                 </div>
                 <p class="endpoint-desc">Get full class schedule</p>
                 <div class="input-group">
@@ -154,7 +154,7 @@
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method get">GET</span>
-                    <span class="endpoint-path">/api/timetables/class/{className}/day/{day}</span>
+                    <span class="endpoint-path">/api/timetable/class/{className}/day/{day}</span>
                 </div>
                 <p class="endpoint-desc">Get class schedule for a specific day</p>
                 <div class="inline-inputs">
@@ -182,7 +182,7 @@
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method get">GET</span>
-                    <span class="endpoint-path">/api/timetables/teacher/{teacherId}</span>
+                    <span class="endpoint-path">/api/timetable/teacher/{teacherId}</span>
                 </div>
                 <p class="endpoint-desc">Get teacher's full schedule</p>
                 <div class="input-group">
@@ -197,7 +197,7 @@
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method get">GET</span>
-                    <span class="endpoint-path">/api/timetables/teacher/{teacherId}/day/{day}</span>
+                    <span class="endpoint-path">/api/timetable/teacher/{teacherId}/day/{day}</span>
                 </div>
                 <p class="endpoint-desc">Get teacher schedule for a specific day</p>
                 <div class="inline-inputs">
@@ -225,7 +225,7 @@
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method post">POST</span>
-                    <span class="endpoint-path">/api/timetables/check-conflicts</span>
+                    <span class="endpoint-path">/api/timetable/check-conflicts</span>
                 </div>
                 <p class="endpoint-desc">Check for scheduling conflicts</p>
                 <div class="input-group">
@@ -246,7 +246,7 @@
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method put">PUT</span>
-                    <span class="endpoint-path">/api/timetables/{id}</span>
+                    <span class="endpoint-path">/api/timetable/{id}</span>
                 </div>
                 <p class="endpoint-desc">Update timetable entry</p>
                 <div class="input-group">
@@ -269,7 +269,7 @@
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method delete">DELETE</span>
-                    <span class="endpoint-path">/api/timetables/{id}</span>
+                    <span class="endpoint-path">/api/timetable/{id}</span>
                 </div>
                 <p class="endpoint-desc">Delete timetable entry</p>
                 <div class="input-group">
@@ -284,7 +284,7 @@
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method get">GET</span>
-                    <span class="endpoint-path">/api/timetables/room/{room}/day/{day}</span>
+                    <span class="endpoint-path">/api/timetable/room/{room}/day/{day}</span>
                 </div>
                 <p class="endpoint-desc">Get room usage for a specific day</p>
                 <div class="inline-inputs">
@@ -328,7 +328,7 @@
         async function createTimetable() {
             try {
                 const body = JSON.parse(document.getElementById('createTimetableBody').value);
-                const response = await fetch(`${API_BASE}/api/timetables`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) });
+                const response = await fetch(`${API_BASE}/api/timetable`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) });
                 const data = await response.json();
                 displayResponse('createTimetableResponse', response, data);
             } catch (e) { document.getElementById('createTimetableResponse').textContent = `Error: ${e.message}`; }
@@ -337,7 +337,7 @@
         async function bulkCreateTimetable() {
             try {
                 const body = JSON.parse(document.getElementById('bulkTimetableBody').value);
-                const response = await fetch(`${API_BASE}/api/timetables/bulk`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) });
+                const response = await fetch(`${API_BASE}/api/timetable/bulk`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) });
                 const data = await response.json();
                 displayResponse('bulkTimetableResponse', response, data);
             } catch (e) { document.getElementById('bulkTimetableResponse').textContent = `Error: ${e.message}`; }
@@ -345,7 +345,7 @@
 
         async function getAllTimetables() {
             try {
-                const response = await fetch(`${API_BASE}/api/timetables`, { headers: getHeaders() });
+                const response = await fetch(`${API_BASE}/api/timetable`, { headers: getHeaders() });
                 const data = await response.json();
                 displayResponse('getAllTimetablesResponse', response, data);
             } catch (e) { document.getElementById('getAllTimetablesResponse').textContent = `Error: ${e.message}`; }
@@ -354,7 +354,7 @@
         async function getTimetableById() {
             try {
                 const id = document.getElementById('getTimetableId').value;
-                const response = await fetch(`${API_BASE}/api/timetables/${id}`, { headers: getHeaders() });
+                const response = await fetch(`${API_BASE}/api/timetable/${id}`, { headers: getHeaders() });
                 const data = await response.json();
                 displayResponse('getTimetableByIdResponse', response, data);
             } catch (e) { document.getElementById('getTimetableByIdResponse').textContent = `Error: ${e.message}`; }
@@ -363,7 +363,7 @@
         async function getClassSchedule() {
             try {
                 const className = document.getElementById('classScheduleName').value;
-                const response = await fetch(`${API_BASE}/api/timetables/class/${encodeURIComponent(className)}`, { headers: getHeaders() });
+                const response = await fetch(`${API_BASE}/api/timetable/class/${encodeURIComponent(className)}`, { headers: getHeaders() });
                 const data = await response.json();
                 displayResponse('classScheduleResponse', response, data);
             } catch (e) { document.getElementById('classScheduleResponse').textContent = `Error: ${e.message}`; }
@@ -373,7 +373,7 @@
             try {
                 const className = document.getElementById('classDayScheduleName').value;
                 const day = document.getElementById('classDayScheduleDay').value;
-                const response = await fetch(`${API_BASE}/api/timetables/class/${encodeURIComponent(className)}/day/${day}`, { headers: getHeaders() });
+                const response = await fetch(`${API_BASE}/api/timetable/class/${encodeURIComponent(className)}/day/${day}`, { headers: getHeaders() });
                 const data = await response.json();
                 displayResponse('classDayScheduleResponse', response, data);
             } catch (e) { document.getElementById('classDayScheduleResponse').textContent = `Error: ${e.message}`; }
@@ -382,7 +382,7 @@
         async function getTeacherSchedule() {
             try {
                 const id = document.getElementById('teacherScheduleId').value;
-                const response = await fetch(`${API_BASE}/api/timetables/teacher/${id}`, { headers: getHeaders() });
+                const response = await fetch(`${API_BASE}/api/timetable/teacher/${id}`, { headers: getHeaders() });
                 const data = await response.json();
                 displayResponse('teacherScheduleResponse', response, data);
             } catch (e) { document.getElementById('teacherScheduleResponse').textContent = `Error: ${e.message}`; }
@@ -392,7 +392,7 @@
             try {
                 const id = document.getElementById('teacherDayScheduleId').value;
                 const day = document.getElementById('teacherDayScheduleDay').value;
-                const response = await fetch(`${API_BASE}/api/timetables/teacher/${id}/day/${day}`, { headers: getHeaders() });
+                const response = await fetch(`${API_BASE}/api/timetable/teacher/${id}/day/${day}`, { headers: getHeaders() });
                 const data = await response.json();
                 displayResponse('teacherDayScheduleResponse', response, data);
             } catch (e) { document.getElementById('teacherDayScheduleResponse').textContent = `Error: ${e.message}`; }
@@ -401,7 +401,7 @@
         async function checkConflicts() {
             try {
                 const body = JSON.parse(document.getElementById('checkConflictsBody').value);
-                const response = await fetch(`${API_BASE}/api/timetables/check-conflicts`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) });
+                const response = await fetch(`${API_BASE}/api/timetable/check-conflicts`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) });
                 const data = await response.json();
                 displayResponse('checkConflictsResponse', response, data);
             } catch (e) { document.getElementById('checkConflictsResponse').textContent = `Error: ${e.message}`; }
@@ -411,7 +411,7 @@
             try {
                 const id = document.getElementById('updateTimetableId').value;
                 const body = JSON.parse(document.getElementById('updateTimetableBody').value);
-                const response = await fetch(`${API_BASE}/api/timetables/${id}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(body) });
+                const response = await fetch(`${API_BASE}/api/timetable/${id}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(body) });
                 const data = await response.json();
                 displayResponse('updateTimetableResponse', response, data);
             } catch (e) { document.getElementById('updateTimetableResponse').textContent = `Error: ${e.message}`; }
@@ -421,7 +421,7 @@
             if (!confirm('Delete this timetable entry?')) return;
             try {
                 const id = document.getElementById('deleteTimetableId').value;
-                const response = await fetch(`${API_BASE}/api/timetables/${id}`, { method: 'DELETE', headers: getHeaders() });
+                const response = await fetch(`${API_BASE}/api/timetable/${id}`, { method: 'DELETE', headers: getHeaders() });
                 const data = await response.json();
                 displayResponse('deleteTimetableResponse', response, data);
             } catch (e) { document.getElementById('deleteTimetableResponse').textContent = `Error: ${e.message}`; }
@@ -431,7 +431,7 @@
             try {
                 const room = document.getElementById('roomUsageRoom').value;
                 const day = document.getElementById('roomUsageDay').value;
-                const response = await fetch(`${API_BASE}/api/timetables/room/${encodeURIComponent(room)}/day/${day}`, { headers: getHeaders() });
+                const response = await fetch(`${API_BASE}/api/timetable/room/${encodeURIComponent(room)}/day/${day}`, { headers: getHeaders() });
                 const data = await response.json();
                 displayResponse('roomUsageResponse', response, data);
             } catch (e) { document.getElementById('roomUsageResponse').textContent = `Error: ${e.message}`; }

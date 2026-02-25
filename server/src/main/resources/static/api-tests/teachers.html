@@ -151,16 +151,16 @@
                 <div class="response-area" id="getTeacherByIdResponse">Response will appear here...</div>
             </div>
 
-            <!-- GET BY TEACHER ID -->
+            <!-- GET BY DATABASE ID (DUPLICATE OF GET BY ID) -->
             <div class="endpoint-card">
                 <div class="endpoint-header">
                     <span class="method get">GET</span>
-                    <span class="endpoint-path">/api/teachers/teacher-id/{teacherId}</span>
+                    <span class="endpoint-path">/api/teachers/{id}</span>
                 </div>
-                <p class="endpoint-desc">Get teacher by teacher ID (e.g., TCH2024001)</p>
+                <p class="endpoint-desc">Get teacher by database ID</p>
                 <div class="input-group">
-                    <label>Teacher ID</label>
-                    <input type="text" id="getByTeacherId" value="TCH2024001">
+                    <label>Database ID</label>
+                    <input type="number" id="getByTeacherId" value="1">
                 </div>
                 <button class="btn btn-primary" onclick="getByTeacherId()">Send Request</button>
                 <div class="response-area" id="getByTeacherIdResponse">Response will appear here...</div>
@@ -324,7 +324,7 @@
         async function getByTeacherId() {
             try {
                 const teacherId = document.getElementById('getByTeacherId').value;
-                const response = await fetch(`${API_BASE}/api/teachers/teacher-id/${teacherId}`, { headers: getHeaders() });
+                const response = await fetch(`${API_BASE}/api/teachers/${teacherId}`, { headers: getHeaders() });
                 const data = await response.json();
                 displayResponse('getByTeacherIdResponse', response, data);
             } catch (e) {
