@@ -199,6 +199,14 @@ public class ResultService {
     }
 
     /**
+     * Get all results
+     */
+    @Transactional(readOnly = true)
+    public List<Result> getAllResults() {
+        return resultRepository.findAll();
+    }
+
+    /**
      * Get result by ID
      */
     @Transactional(readOnly = true)

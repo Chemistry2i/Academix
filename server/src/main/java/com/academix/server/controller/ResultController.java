@@ -57,6 +57,15 @@ public class ResultController {
     }
 
     /**
+     * Get all results
+     * GET /api/results
+     */
+    @GetMapping
+    public ResponseEntity<List<Result>> getAllResults() {
+        return ResponseEntity.ok(resultService.getAllResults());
+    }
+
+    /**
      * Get result by ID
      * GET /api/results/{id}
      */
