@@ -5,7 +5,7 @@ bascially OOP principles
 Enforcing MVC
 
 
-3. Adding student
+3.Adding student
 4.updatng student
 5.disabling student
 6.Adding subject

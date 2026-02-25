@@ -37,7 +37,7 @@ public class Result {
 
     // Student ID (reference to Student entity)
     @NotNull(message = "Student ID is required")
-    @Column(nullable = false)
+    @Column(name = "student_id", nullable = false)
     private Long studentId;
 
     // Student's registration number (for easy reference)
