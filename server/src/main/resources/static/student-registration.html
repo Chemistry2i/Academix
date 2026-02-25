@@ -160,7 +160,7 @@
 
     <script>
         // Base API URL - adjust if your server runs on different port
-        const API_BASE = 'https://organic-winner-pqprvg9gx94f69j7-8080.app.github.dev/api/students';
+        const API_BASE = window.location.origin + '/api/students';
 
         // Student Registration Form Handler
         document.getElementById('studentRegistrationForm').addEventListener('submit', async function(e) {
@@ -203,22 +203,25 @@
                 const result = await response.json();
                 console.log('Success result:', result);
                 
+                // Extract student data from nested response
+                const student = result.student || result;
+                
                 // Display result
                 if (result.message && result.message.includes('success')) {
                     resultDiv.innerHTML = `
                         <h3 style="color: green;">✅ Student Registration Successful!</h3>
                         <div style="background-color: #f0f8ff; padding: 15px; border: 1px solid #ccc;">
-                            <p><strong>🆔 Generated Student ID:</strong> <span style="font-size: 18px; color: blue; font-weight: bold;">${result.studentId || 'N/A'}</span></p>
-                            <p><strong>👤 Student Name:</strong> ${result.fullName || 'N/A'}</p>
-                            <p><strong>📧 Email:</strong> ${result.email || 'N/A'}</p>
-                            <p><strong>🆔 System User ID:</strong> ${result.userId || 'N/A'}</p>
-                            <p><strong>🎓 Current Class:</strong> ${result.currentClass || 'Not specified'}</p>
-                            <p><strong>🏠 Residence:</strong> ${result.residenceStatus || 'Not specified'}</p>
-                            <p><strong>🔐 Password Hashed:</strong> ${result.passwordHashed ? 'Yes ✅' : 'No ❌'}</p>
+                            <p><strong>🆔 Generated Student ID:</strong> <span style="font-size: 18px; color: blue; font-weight: bold;">${student.studentId || 'N/A'}</span></p>
+                            <p><strong>👤 Student Name:</strong> ${student.fullName || 'N/A'}</p>
+                            <p><strong>📧 Email:</strong> ${student.email || 'N/A'}</p>
+                            <p><strong>🆔 System User ID:</strong> ${student.id || 'N/A'}</p>
+                            <p><strong>🎓 Current Class:</strong> ${student.currentClass || 'Not specified'}</p>
+                            <p><strong>🏠 Residence:</strong> ${student.residenceStatus || 'Not specified'}</p>
+                            <p><strong>🔐 Password Hashed:</strong> Yes ✅</p>
                         </div>
                         <div style="background-color: #e8f5e8; padding: 10px; margin-top: 10px; border: 1px solid #4CAF50;">
-                            <p><strong>📋 Important:</strong> Please save your <strong>Student ID: ${result.studentId || 'N/A'}</strong></p>
-                            <p><strong>🔐 Login Credentials:</strong> Your email and generated password have been sent to <strong>${result.email}</strong></p>
+                            <p><strong>📋 Important:</strong> Please save your <strong>Student ID: ${student.studentId || 'N/A'}</strong></p>
+                            <p><strong>🔐 Login Credentials:</strong> Your email and generated password have been sent to <strong>${student.email || 'your registered email'}</strong></p>
                             <p><em>📧 Check your email for login instructions and remember to change your password after first login!</em></p>
                         </div>
                     `;
@@ -250,7 +253,7 @@
                             <li>Error Type: ${error.name}</li>
                         </ul>
                         <p><em>📝 Check browser console for more details</em></p>
-                        <p><em>🔧 Make sure your Spring Boot server is running on https://organic-winner-pqprvg9gx94f69j7-8080.app.github.dev</em></p>
+                        <p><em>🔧 Make sure your Spring Boot server is running on https://didactic-adventure-pjqpq9rpwqgqcr555-8080.app.github.dev</em></p>
                     </div>
                 `;
             }

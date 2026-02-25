@@ -767,7 +767,7 @@ cd Academix/server
 ./mvnw spring-boot:run
 
 # Access H2 Console
-# http://localhost:8080/h2-console
+# http://https://didactic-adventure-pjqpq9rpwqgqcr555-8080.app.github.dev/h2-console
 ```
 
 ### Production Setup

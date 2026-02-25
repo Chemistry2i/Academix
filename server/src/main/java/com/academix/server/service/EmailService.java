@@ -289,4 +289,64 @@ public class EmailService {
             logger.warn("User login details for manual communication - Email: {}, Password: {}", toEmail, generatedPassword);
         }
     }
+
+    /**
+     * Send teacher registration welcome email with academic details and login credentials
+     */
+    public void sendTeacherRegistrationEmail(String toEmail, String fullName, String teacherId, String department, String subjects, String generatedPassword) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject("Welcome to Academix - Your Teacher Account Details");
+            
+            String academicDetails = "";
+            if (department != null && !department.trim().isEmpty()) {
+                academicDetails += "Department: " + department + "\\n";
+            }
+            if (subjects != null && !subjects.trim().isEmpty()) {
+                academicDetails += "Subjects: " + subjects + "\\n";
+            }
+            
+            String emailBody = String.format(
+                "Dear %s,\\n\\n" +
+                "Welcome to Academix School Management System!\\n\\n" +
+                "Your teacher account has been successfully created. Here are your account details:\\n\\n" +
+                "\ud83c\udd94 Teacher ID: %s\\n" +
+                "\ud83d\udce7 Email: %s\\n" +
+                "\ud83d\udd10 Temporary Password: %s\\n" +
+                "%s\\n" +
+                "\ud83d\udcf1 Staff Portal: %s/login\\n\\n" +
+                "IMPORTANT SECURITY INSTRUCTIONS:\\n" +
+                "1. Login using your email and the temporary password above\\n" +
+                "2. Change your password immediately after first login for security\\n" +
+                "3. Keep your login credentials secure and private\\n" +
+                "4. Never share your password with anyone\\n\\n" +
+                "You can change your password anytime from your staff portal.\\n\\n" +
+                "For any questions or support, please contact the administration.\\n\\n" +
+                "Welcome to the Academix family!\\n\\n" +
+                "Best regards,\\n" +
+                "The Academix Administrative Team",
+                fullName, teacherId, toEmail, generatedPassword, academicDetails, frontendUrl
+            );
+            
+            message.setText(emailBody);
+            
+            try {
+                mailSender.send(message);
+                logger.info("Teacher credentials email sent successfully to: {} (Teacher ID: {})", toEmail, teacherId);
+            } catch (Exception mailException) {
+                // Log email content for development instead of breaking registration
+                logger.warn("SMTP sending failed - Teacher credentials for {}: \\nEmail: {}\\nTeacher ID: {}\\nPassword: {}\\nDepartment: {}", 
+                    toEmail, toEmail, teacherId, generatedPassword, department);
+                logger.error("Teacher credentials email sending failed but registration continues: {}", mailException.getMessage());
+                // Don't throw exception - allow registration to continue
+            }
+            
+        } catch (Exception e) {
+            // Log error but don't throw - allow registration to continue
+            logger.error("Teacher credentials email service error for {}, but registration will continue: {}", toEmail, e.getMessage());
+            logger.warn("Teacher login details for manual communication - Email: {}, Teacher ID: {}, Password: {}", toEmail, teacherId, generatedPassword);
+        }
+    }
 }

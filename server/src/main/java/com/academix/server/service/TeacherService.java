@@ -93,11 +93,17 @@ public class TeacherService {
         logger.info("Teacher registered - Email: {}, TeacherId: {}, Department: {}",
             teacher.getEmail(), teacher.getTeacherId(), teacher.getDepartment());
 
-        // Send registration email
+        // Send registration email with teacher-specific details
         try {
-            emailService.sendUserCredentialsEmail(
+            String subjects = teacher.getSubjects() != null && !teacher.getSubjects().isEmpty() ? 
+                String.join(", ", teacher.getSubjects()) : teacher.getPrimarySubject();
+            
+            emailService.sendTeacherRegistrationEmail(
                 teacher.getEmail(),
                 teacher.getFullName(),
+                teacher.getTeacherId(),
+                teacher.getDepartment(),
+                subjects,
                 generatedPassword
             );
         } catch (Exception e) {
