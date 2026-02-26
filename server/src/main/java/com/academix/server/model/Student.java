@@ -35,7 +35,7 @@ public class Student extends User {
     
     @Column(nullable = true, length = 50)
     private String stream; // Stream or specialization (e.g., Science, Arts, Commerce, blue, active)
-    
+
     @Column(nullable = true, length = 50)
     private String house; // House name for boarding students
 

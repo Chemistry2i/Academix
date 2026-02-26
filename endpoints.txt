@@ -1,0 +1,106 @@
+Endpoints in the Academix System:
+
+1. **TeacherController**
+   - POST `/api/teachers` - Create a new teacher
+   - GET `/api/teachers` - Get all teachers
+   - GET `/api/teachers/{id}` - Get teacher by ID
+   - PUT `/api/teachers/{id}` - Update teacher
+   - DELETE `/api/teachers/{id}` - Delete teacher (soft delete)
+   - GET `/api/teachers/{id}/subjects` - Get teacher's subjects
+   - GET `/api/teachers/{id}/classes` - Get teacher's classes
+   - POST `/api/teachers/{id}/upload-marks` - Upload marks
+   - GET `/api/teachers/{id}/attendance` - Get teacher attendance
+   - GET `/api/teachers/{id}/reports` - Get teacher reports
+   - GET `/api/teachers/search` - Search teachers
+   - GET `/api/teachers/department/{department}` - Get teachers by department
+   - GET `/api/teachers/subject/{subject}` - Get teachers by subject
+   - POST `/api/teachers/{id}/subjects` - Assign subject to teacher
+   - DELETE `/api/teachers/{id}/subjects/{subject}` - Remove subject from teacher
+   - POST `/api/teachers/{id}/classes` - Assign class to teacher
+   - DELETE `/api/teachers/{id}/classes/{className}` - Remove class from teacher
+   - GET `/api/teachers/statistics` - Get teacher statistics
+
+2. **SchoolClassController**
+   - POST `/api/classes` - Create a new class
+   - GET `/api/classes` - Get all classes
+   - GET `/api/classes/{id}` - Get class by ID
+   - GET `/api/classes/name/{name}` - Get class by name
+   - GET `/api/classes/year/{academicYear}` - Get classes by academic year
+   - GET `/api/classes/o-level` - Get O-Level classes
+   - GET `/api/classes/a-level` - Get A-Level classes
+   - GET `/api/classes/form/{formLevel}` - Get classes by form level
+   - PUT `/api/classes/{id}` - Update a class
+   - POST `/api/classes/{classId}/teacher/{teacherId}` - Assign class teacher
+   - POST `/api/classes/{classId}/course/{courseId}` - Assign course to class (A-Level)
+   - DELETE `/api/classes/{id}` - Delete a class
+   - GET `/api/classes/search` - Search classes
+   - GET `/api/classes/enrollment-summary` - Get enrollment summary
+   - POST `/api/classes/initialize` - Initialize default classes
+   - GET `/api/classes/statistics` - Get class statistics
+
+3. **SubjectController**
+   - POST `/api/subjects` - Create a new subject
+   - GET `/api/subjects` - Get all subjects
+   - GET `/api/subjects/{id}` - Get subject by ID
+
+4. **TimetableController**
+   - POST `/api/timetable` - Create a new timetable entry
+   - POST `/api/timetable/bulk` - Bulk create timetable entries
+   - GET `/api/timetable` - Get all timetable entries
+   - GET `/api/timetable/{id}` - Get timetable by ID
+   - GET `/api/timetable/class/{className}` - Get timetable by class
+   - GET `/api/timetable/class/{className}/year/{academicYear}/term/{term}` - Get timetable by class, academic year, and term
+
+5. **ResultController**
+   - POST `/api/results` - Create/Enter a result
+   - POST `/api/results/bulk` - Bulk create/enter results
+   - GET `/api/results` - Get all results
+   - GET `/api/results/{id}` - Get result by ID
+   - PUT `/api/results/{id}` - Update a result
+   - DELETE `/api/results/{id}` - Delete a result
+
+6. **AttendanceController**
+   - POST `/api/attendance/mark` - Mark attendance for a student
+   - POST `/api/attendance/bulk` - Bulk mark attendance
+   - GET `/api/attendance/{id}` - Get attendance by ID
+   - PUT `/api/attendance/{id}` - Update attendance record
+   - DELETE `/api/attendance/{id}` - Delete attendance record
+
+7. **ExamController**
+   - POST `/api/exams` - Create a new exam
+   - GET `/api/exams` - Get all exams
+   - GET `/api/exams/{id}` - Get exam by ID
+   - PUT `/api/exams/{id}` - Update an exam
+   - DELETE `/api/exams/{id}` - Delete an exam
+   - POST `/api/exams/{id}/lock` - Lock an exam (prevent marks entry)
+
+8. **AuthController**
+   - POST `/api/auth/register` - User Registration
+   - POST `/api/auth/login` - User Login
+   - POST `/api/auth/forgot-password` - Forgot Password
+   - POST `/api/auth/reset-password` - Reset Password
+
+9. **StudentController**
+    - POST `/api/students` - Create a new student
+    - GET `/api/students` - Get all students
+    - GET `/api/students/{id}` - Get student by ID
+    - PUT `/api/students/{id}` - Update student
+
+10. **EnrollmentController**
+    - POST `/api/enrollments/student/{studentId}/subject/{subjectId}` - Enroll a student in a subject
+    - POST `/api/enrollments/student/{studentId}/subjects/bulk` - Bulk enroll a student in multiple subjects
+    - DELETE `/api/enrollments/student/{studentId}/subject/{subjectId}` - Drop a student from a subject
+
+11. **CourseController**
+    - POST `/api/courses` - Create a new course
+    - GET `/api/courses` - Get all courses
+    - GET `/api/courses/{id}` - Get course by ID
+    - GET `/api/courses/code/{code}` - Get course by code
+    - PUT `/api/courses/{id}` - Update a course
+    - DELETE `/api/courses/{id}` - Delete a course
+
+12. **GradeController**
+    - GET `/api/grades` - Get all Ugandan grading scales
+    - GET `/api/grades/o-level` - Get O-Level grading scale
+    - GET `/api/grades/a-level` - Get A-Level grading scale
+    - GET `/api/grades/calculate` - Calculate grade from marks
