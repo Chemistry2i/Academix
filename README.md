@@ -1,2 +1,2 @@
 # Academix
-Academix is a web-based School Management System developed using the MERN stack (MongoDB, Express.js, React.js, and Node.js). 
+Academix is a web-based School Management System developed Java and Spring-boot. However the java version is 17 or 21 , so check for comptability issues due to varying java versions. 
