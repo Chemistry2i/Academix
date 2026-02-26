@@ -178,7 +178,7 @@ Content-Type: application/json
 
 A comprehensive test page is available at:
 ```
-http://https://organic-winner-pqprvg9gx94f69j7-8080.app.github.dev/auth-test.html
+http://https://didactic-adventure-pjqpq9rpwqgqcr555-8080.app.github.dev/auth-test.html
 ```
 
 This page allows you to test all authentication endpoints interactively.
@@ -187,7 +187,7 @@ This page allows you to test all authentication endpoints interactively.
 
 ```bash
 # Register
-curl -X POST http://https://organic-winner-pqprvg9gx94f69j7-8080.app.github.dev/api/auth/register \
+curl -X POST http://https://didactic-adventure-pjqpq9rpwqgqcr555-8080.app.github.dev/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "firstName": "John",
@@ -199,7 +199,7 @@ curl -X POST http://https://organic-winner-pqprvg9gx94f69j7-8080.app.github.dev/
   }'
 
 # Login
-curl -X POST http://https://organic-winner-pqprvg9gx94f69j7-8080.app.github.dev/api/auth/login \
+curl -X POST http://https://didactic-adventure-pjqpq9rpwqgqcr555-8080.app.github.dev/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "john.doe@example.com",

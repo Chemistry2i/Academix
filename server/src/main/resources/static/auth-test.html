@@ -181,7 +181,7 @@
     </div>
 
     <script>
-        const API_BASE = 'https://organic-winner-pqprvg9gx94f69j7-8080.app.github.dev/api/auth';
+        const API_BASE = window.location.origin + '/api/auth';
 
         async function makeRequest(url, method = 'GET', body = null) {
             try {
