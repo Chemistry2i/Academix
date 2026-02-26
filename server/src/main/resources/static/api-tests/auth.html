@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication API Test - Academix</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; color: #fff; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 30px; }
+        header h1 { font-size: 1.8rem; }
+        header a { color: #00d4ff; text-decoration: none; padding: 8px 16px; border: 1px solid #00d4ff; border-radius: 8px; }
+        .token-status { background: rgba(0,0,0,0.3); padding: 15px 20px; border-radius: 12px; margin-bottom: 25px; display: flex; align-items: center; justify-content: space-between; }
+        .token-status .status-text { font-size: 14px; }
+        .token-status .token-display { font-family: monospace; font-size: 12px; color: #94a3b8; max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .token-status .status-indicator { width: 12px; height: 12px; border-radius: 50%; margin-right: 10px; }
+        .token-status .status-indicator.active { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
+        .token-status .status-indicator.inactive { background: #ef4444; }
+        .token-actions button { margin-left: 10px; padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; }
+        .btn-clear { background: #ef4444; color: #fff; }
+        .btn-copy { background: #3b82f6; color: #fff; }
+        .endpoint-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 20px; }
+        .endpoint-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .endpoint-card.highlight { border: 1px solid #00d4ff; background: rgba(0,212,255,0.05); }
+        .endpoint-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .method { padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+        .method.get { background: #22c55e; color: #000; }
+        .method.post { background: #3b82f6; color: #fff; }
+        .method.put { background: #f59e0b; color: #000; }
+        .method.delete { background: #ef4444; color: #fff; }
+        .endpoint-path { font-family: monospace; color: #94a3b8; font-size: 14px; }
+        .endpoint-desc { color: #94a3b8; font-size: 13px; margin-bottom: 15px; }
+        .input-group { margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+        .input-group input, .input-group select, .input-group textarea { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 13px; }
+        .input-group textarea { min-height: 120px; font-family: monospace; }
+        .inline-inputs { display: flex; gap: 10px; }
+        .inline-inputs .input-group { flex: 1; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; }
+        .btn-primary { background: linear-gradient(90deg, #00d4ff, #7c3aed); color: #fff; }
+        .btn-success { background: #22c55e; color: #000; }
+        .response-area { margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 200px; overflow: auto; white-space: pre-wrap; }
+        .response-area.success { border-left: 3px solid #22c55e; }
+        .response-area.error { border-left: 3px solid #ef4444; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 10px; }
+        .status-badge.s2xx { background: #22c55e; color: #000; }
+        .status-badge.s4xx { background: #f59e0b; color: #000; }
+        .status-badge.s5xx { background: #ef4444; color: #fff; }
+        .info-box { background: rgba(255,193,7,0.1); border: 1px solid #ffc107; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+        .info-box h3 { color: #ffc107; margin-bottom: 10px; }
+        .info-box p { color: #94a3b8; font-size: 13px; line-height: 1.6; }
+        .role-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-right: 5px; }
+        .role-badge.admin { background: #ef4444; }
+        .role-badge.teacher { background: #3b82f6; }
+        .role-badge.student { background: #22c55e; color: #000; }
+        .role-badge.parent { background: #f59e0b; color: #000; }
+        .role-badge.accountant { background: #8b5cf6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔐 Authentication API</h1>
+            <a href="index.html">← Back to Home</a>
+        </header>
+
+        <div class="token-status">
+            <div style="display: flex; align-items: center;">
+                <span class="status-indicator" id="tokenIndicator"></span>
+                <span class="status-text" id="tokenStatus">Checking token...</span>
+            </div>
+            <span class="token-display" id="tokenDisplay"></span>
+            <div class="token-actions">
+                <button class="btn-copy" onclick="copyToken()">Copy Token</button>
+                <button class="btn-clear" onclick="clearToken()">Clear Token</button>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>Available Roles</h3>
+            <p>
+                <span class="role-badge admin">ADMIN</span>
+                <span class="role-badge teacher">TEACHER</span>
+                <span class="role-badge student">STUDENT</span>
+                <span class="role-badge parent">PARENT</span>
+                <span class="role-badge accountant">ACCOUNTANT</span>
+            </p>
+            <p style="margin-top: 10px;">After successful login, the JWT token will be automatically stored and used for subsequent API calls.</p>
+        </div>
+
+        <div class="endpoint-grid">
+            <!-- REGISTER -->
+            <div class="endpoint-card highlight">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/auth/register</span>
+                </div>
+                <p class="endpoint-desc">Register a new user account</p>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="registerBody">{
+  "email": "admin@academix.com",
+  "password": "Admin123!",
+  "firstName": "System",
+  "lastName": "Administrator",
+  "role": "ADMIN"
+}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="register()">Send Request</button>
+                <div class="response-area" id="registerResponse">Response will appear here...</div>
+            </div>
+
+            <!-- LOGIN -->
+            <div class="endpoint-card highlight">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/auth/login</span>
+                </div>
+                <p class="endpoint-desc">Login and get JWT token</p>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="loginBody">{
+  "email": "admin@academix.com",
+  "password": "Admin123!"
+}</textarea>
+                </div>
+                <button class="btn btn-success" onclick="login()">Login & Store Token</button>
+                <div class="response-area" id="loginResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET CURRENT USER -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/auth/me</span>
+                </div>
+                <p class="endpoint-desc">Get current authenticated user info</p>
+                <button class="btn btn-primary" onclick="getCurrentUser()">Send Request</button>
+                <div class="response-area" id="getCurrentUserResponse">Response will appear here...</div>
+            </div>
+
+            <!-- REFRESH TOKEN -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/auth/refresh</span>
+                </div>
+                <p class="endpoint-desc">Refresh JWT token</p>
+                <button class="btn btn-primary" onclick="refreshToken()">Refresh Token</button>
+                <div class="response-area" id="refreshTokenResponse">Response will appear here...</div>
+            </div>
+
+            <!-- LOGOUT -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/auth/logout</span>
+                </div>
+                <p class="endpoint-desc">Logout and invalidate token</p>
+                <button class="btn btn-primary" onclick="logout()" style="background: #ef4444;">Logout</button>
+                <div class="response-area" id="logoutResponse">Response will appear here...</div>
+            </div>
+
+            <!-- FORGOT PASSWORD -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/auth/forgot-password</span>
+                </div>
+                <p class="endpoint-desc">Request password reset email</p>
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="forgotPasswordEmail" value="admin@academix.com">
+                </div>
+                <button class="btn btn-primary" onclick="forgotPassword()">Send Request</button>
+                <div class="response-area" id="forgotPasswordResponse">Response will appear here...</div>
+            </div>
+
+            <!-- RESET PASSWORD -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/auth/reset-password</span>
+                </div>
+                <p class="endpoint-desc">Reset password with token</p>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="resetPasswordBody">{
+  "token": "reset-token-from-email",
+  "newPassword": "NewPassword123!"
+}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="resetPassword()">Send Request</button>
+                <div class="response-area" id="resetPasswordResponse">Response will appear here...</div>
+            </div>
+
+            <!-- VERIFY EMAIL -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/auth/verify-email</span>
+                </div>
+                <p class="endpoint-desc">Verify email with token</p>
+                <div class="input-group">
+                    <label>Verification Token</label>
+                    <input type="text" id="verifyEmailToken" value="verification-token-from-email">
+                </div>
+                <button class="btn btn-primary" onclick="verifyEmail()">Send Request</button>
+                <div class="response-area" id="verifyEmailResponse">Response will appear here...</div>
+            </div>
+
+            <!-- CHANGE PASSWORD -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/auth/change-password</span>
+                </div>
+                <p class="endpoint-desc">Change password (authenticated)</p>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="changePasswordBody">{
+  "currentPassword": "Admin123!",
+  "newPassword": "NewAdmin123!"
+}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="changePassword()">Send Request</button>
+                <div class="response-area" id="changePasswordResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET ALL USERS (ADMIN) -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/users</span>
+                </div>
+                <p class="endpoint-desc">Get all users (Admin only)</p>
+                <button class="btn btn-primary" onclick="getAllUsers()">Send Request</button>
+                <div class="response-area" id="getAllUsersResponse">Response will appear here...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        
+        function updateTokenStatus() {
+            const token = localStorage.getItem('academix_token');
+            const indicator = document.getElementById('tokenIndicator');
+            const status = document.getElementById('tokenStatus');
+            const display = document.getElementById('tokenDisplay');
+            
+            if (token) {
+                indicator.className = 'status-indicator active';
+                status.textContent = 'Token Active';
+                display.textContent = token.substring(0, 50) + '...';
+            } else {
+                indicator.className = 'status-indicator inactive';
+                status.textContent = 'No Token';
+                display.textContent = '';
+            }
+        }
+        
+        function clearToken() {
+            localStorage.removeItem('academix_token');
+            updateTokenStatus();
+        }
+        
+        function copyToken() {
+            const token = localStorage.getItem('academix_token');
+            if (token) {
+                navigator.clipboard.writeText(token);
+                alert('Token copied to clipboard!');
+            }
+        }
+        
+        function getHeaders(includeAuth = true) {
+            const headers = { 'Content-Type': 'application/json' };
+            if (includeAuth) {
+                const token = localStorage.getItem('academix_token');
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+            }
+            return headers;
+        }
+        
+        function displayResponse(elementId, response, data) {
+            const el = document.getElementById(elementId);
+            const statusClass = response.status >= 500 ? 's5xx' : (response.status >= 400 ? 's4xx' : 's2xx');
+            el.className = `response-area ${response.ok ? 'success' : 'error'}`;
+            el.innerHTML = `<span class="status-badge ${statusClass}">${response.status}</span>\n${JSON.stringify(data, null, 2)}`;
+        }
+
+        async function register() {
+            try {
+                const body = JSON.parse(document.getElementById('registerBody').value);
+                const response = await fetch(`${API_BASE}/api/auth/register`, { method: 'POST', headers: getHeaders(false), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('registerResponse', response, data);
+            } catch (e) { document.getElementById('registerResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function login() {
+            try {
+                const body = JSON.parse(document.getElementById('loginBody').value);
+                const response = await fetch(`${API_BASE}/api/auth/login`, { method: 'POST', headers: getHeaders(false), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('loginResponse', response, data);
+                
+                if (response.ok && data.token) {
+                    localStorage.setItem('academix_token', data.token);
+                    updateTokenStatus();
+                }
+            } catch (e) { document.getElementById('loginResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getCurrentUser() {
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/me`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getCurrentUserResponse', response, data);
+            } catch (e) { document.getElementById('getCurrentUserResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function refreshToken() {
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/refresh`, { method: 'POST', headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('refreshTokenResponse', response, data);
+                
+                if (response.ok && data.token) {
+                    localStorage.setItem('academix_token', data.token);
+                    updateTokenStatus();
+                }
+            } catch (e) { document.getElementById('refreshTokenResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function logout() {
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('logoutResponse', response, data);
+                clearToken();
+            } catch (e) { document.getElementById('logoutResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function forgotPassword() {
+            try {
+                const email = document.getElementById('forgotPasswordEmail').value;
+                const response = await fetch(`${API_BASE}/api/auth/forgot-password`, { method: 'POST', headers: getHeaders(false), body: JSON.stringify({ email }) });
+                const data = await response.json();
+                displayResponse('forgotPasswordResponse', response, data);
+            } catch (e) { document.getElementById('forgotPasswordResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function resetPassword() {
+            try {
+                const body = JSON.parse(document.getElementById('resetPasswordBody').value);
+                const response = await fetch(`${API_BASE}/api/auth/reset-password`, { method: 'POST', headers: getHeaders(false), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('resetPasswordResponse', response, data);
+            } catch (e) { document.getElementById('resetPasswordResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function verifyEmail() {
+            try {
+                const token = document.getElementById('verifyEmailToken').value;
+                const response = await fetch(`${API_BASE}/api/auth/verify-email?token=${encodeURIComponent(token)}`, { headers: getHeaders(false) });
+                const data = await response.json();
+                displayResponse('verifyEmailResponse', response, data);
+            } catch (e) { document.getElementById('verifyEmailResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function changePassword() {
+            try {
+                const body = JSON.parse(document.getElementById('changePasswordBody').value);
+                const response = await fetch(`${API_BASE}/api/auth/change-password`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('changePasswordResponse', response, data);
+            } catch (e) { document.getElementById('changePasswordResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getAllUsers() {
+            try {
+                const response = await fetch(`${API_BASE}/api/users`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getAllUsersResponse', response, data);
+            } catch (e) { document.getElementById('getAllUsersResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        // Initialize
+        updateTokenStatus();
+    </script>
+</body>
+</html>

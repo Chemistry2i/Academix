@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enrollments API Test - Academix</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; color: #fff; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 30px; }
+        header h1 { font-size: 1.8rem; }
+        header a { color: #00d4ff; text-decoration: none; padding: 8px 16px; border: 1px solid #00d4ff; border-radius: 8px; }
+        header a:hover { background: #00d4ff; color: #1a1a2e; }
+        .endpoint-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 20px; }
+        .endpoint-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .endpoint-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .method { padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+        .method.get { background: #22c55e; color: #000; }
+        .method.post { background: #3b82f6; color: #fff; }
+        .method.delete { background: #ef4444; color: #fff; }
+        .endpoint-path { font-family: monospace; color: #94a3b8; font-size: 14px; }
+        .endpoint-desc { color: #94a3b8; font-size: 13px; margin-bottom: 15px; }
+        .input-group { margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+        .input-group input, .input-group select { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 13px; }
+        .inline-inputs { display: flex; gap: 10px; }
+        .inline-inputs .input-group { flex: 1; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; }
+        .btn-primary { background: linear-gradient(90deg, #00d4ff, #7c3aed); color: #fff; }
+        .response-area { margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 200px; overflow: auto; white-space: pre-wrap; }
+        .response-area.success { border-left: 3px solid #22c55e; }
+        .response-area.error { border-left: 3px solid #ef4444; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 10px; }
+        .status-badge.s2xx { background: #22c55e; color: #000; }
+        .status-badge.s4xx { background: #f59e0b; color: #000; }
+        .status-badge.s5xx { background: #ef4444; color: #fff; }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .checkbox-group input[type="checkbox"] { width: 18px; height: 18px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📝 Enrollments API</h1>
+            <a href="index.html">← Back to Home</a>
+        </header>
+
+        <div class="endpoint-grid">
+            <!-- ENROLL STUDENT IN SUBJECT -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/enrollments/student/{id}/subject/{id}</span>
+                </div>
+                <p class="endpoint-desc">Enroll a student in a subject</p>
+                <div class="inline-inputs">
+                    <div class="input-group">
+                        <label>Student ID</label>
+                        <input type="number" id="enrollStudentId" value="1">
+                    </div>
+                    <div class="input-group">
+                        <label>Subject ID</label>
+                        <input type="number" id="enrollSubjectId" value="1">
+                    </div>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="isPrincipal">
+                    <label>Is Principal (A-Level)</label>
+                </div>
+                <div class="input-group">
+                    <label>Academic Year</label>
+                    <input type="text" id="enrollAcademicYear" value="2024">
+                </div>
+                <button class="btn btn-primary" onclick="enrollStudentInSubject()">Send Request</button>
+                <div class="response-area" id="enrollSubjectResponse">Response will appear here...</div>
+            </div>
+
+            <!-- DROP STUDENT FROM SUBJECT -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="endpoint-path">/api/enrollments/student/{id}/subject/{id}</span>
+                </div>
+                <p class="endpoint-desc">Remove student from a subject</p>
+                <div class="inline-inputs">
+                    <div class="input-group">
+                        <label>Student ID</label>
+                        <input type="number" id="dropStudentId" value="1">
+                    </div>
+                    <div class="input-group">
+                        <label>Subject ID</label>
+                        <input type="number" id="dropSubjectId" value="1">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="dropStudentFromSubject()" style="background: #ef4444;">Send Request</button>
+                <div class="response-area" id="dropSubjectResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET STUDENT'S SUBJECTS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/enrollments/student/{id}/subjects</span>
+                </div>
+                <p class="endpoint-desc">Get all subjects for a student</p>
+                <div class="input-group">
+                    <label>Student ID</label>
+                    <input type="number" id="getStudentSubjectsId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="getStudentSubjects()">Send Request</button>
+                <div class="response-area" id="getStudentSubjectsResponse">Response will appear here...</div>
+            </div>
+
+            <!-- ENROLL STUDENT IN COURSE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/enrollments/student/{id}/course/{id}</span>
+                </div>
+                <p class="endpoint-desc">Enroll student in A-Level course (auto-enrolls in course subjects)</p>
+                <div class="inline-inputs">
+                    <div class="input-group">
+                        <label>Student ID</label>
+                        <input type="number" id="enrollCourseStudentId" value="1">
+                    </div>
+                    <div class="input-group">
+                        <label>Course ID</label>
+                        <input type="number" id="enrollCourseId" value="1">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Academic Year</label>
+                    <input type="text" id="courseAcademicYear" value="2024">
+                </div>
+                <button class="btn btn-primary" onclick="enrollStudentInCourse()">Send Request</button>
+                <div class="response-area" id="enrollCourseResponse">Response will appear here...</div>
+            </div>
+
+            <!-- ASSIGN TEACHER TO SUBJECT -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/enrollments/teacher/{id}/subject/{id}</span>
+                </div>
+                <p class="endpoint-desc">Assign a teacher to teach a subject</p>
+                <div class="inline-inputs">
+                    <div class="input-group">
+                        <label>Teacher ID</label>
+                        <input type="number" id="assignTeacherId" value="1">
+                    </div>
+                    <div class="input-group">
+                        <label>Subject ID</label>
+                        <input type="number" id="assignSubjectId" value="1">
+                    </div>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="isPrimaryTeacher" checked>
+                    <label>Is Primary Teacher</label>
+                </div>
+                <div class="input-group">
+                    <label>Assigned Classes (comma-separated)</label>
+                    <input type="text" id="assignedClasses" value="S3A,S3B,S4A">
+                </div>
+                <button class="btn btn-primary" onclick="assignTeacherToSubject()">Send Request</button>
+                <div class="response-area" id="assignTeacherResponse">Response will appear here...</div>
+            </div>
+
+            <!-- REMOVE TEACHER FROM SUBJECT -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="endpoint-path">/api/enrollments/teacher/{id}/subject/{id}</span>
+                </div>
+                <p class="endpoint-desc">Remove teacher from a subject</p>
+                <div class="inline-inputs">
+                    <div class="input-group">
+                        <label>Teacher ID</label>
+                        <input type="number" id="removeTeacherId" value="1">
+                    </div>
+                    <div class="input-group">
+                        <label>Subject ID</label>
+                        <input type="number" id="removeSubjectId" value="1">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="removeTeacherFromSubject()" style="background: #ef4444;">Send Request</button>
+                <div class="response-area" id="removeTeacherResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET TEACHER'S SUBJECTS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/enrollments/teacher/{id}/subjects</span>
+                </div>
+                <p class="endpoint-desc">Get all subjects for a teacher</p>
+                <div class="input-group">
+                    <label>Teacher ID</label>
+                    <input type="number" id="getTeacherSubjectsId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="getTeacherSubjects()">Send Request</button>
+                <div class="response-area" id="getTeacherSubjectsResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET STUDENTS IN SUBJECT -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/enrollments/subject/{id}/students</span>
+                </div>
+                <p class="endpoint-desc">Get all students enrolled in a subject</p>
+                <div class="input-group">
+                    <label>Subject ID</label>
+                    <input type="number" id="getSubjectStudentsId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="getSubjectStudents()">Send Request</button>
+                <div class="response-area" id="getSubjectStudentsResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET TEACHERS FOR SUBJECT -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/enrollments/subject/{id}/teachers</span>
+                </div>
+                <p class="endpoint-desc">Get all teachers assigned to a subject</p>
+                <div class="input-group">
+                    <label>Subject ID</label>
+                    <input type="number" id="getSubjectTeachersId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="getSubjectTeachers()">Send Request</button>
+                <div class="response-area" id="getSubjectTeachersResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET ENROLLMENT STATISTICS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/enrollments/statistics</span>
+                </div>
+                <p class="endpoint-desc">Get enrollment statistics</p>
+                <button class="btn btn-primary" onclick="getEnrollmentStatistics()">Send Request</button>
+                <div class="response-area" id="statisticsResponse">Response will appear here...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        function getHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const token = localStorage.getItem('academix_token');
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            return headers;
+        }
+        function displayResponse(elementId, response, data) {
+            const el = document.getElementById(elementId);
+            const statusClass = response.status >= 500 ? 's5xx' : (response.status >= 400 ? 's4xx' : 's2xx');
+            el.className = `response-area ${response.ok ? 'success' : 'error'}`;
+            el.innerHTML = `<span class="status-badge ${statusClass}">${response.status}</span>\n${JSON.stringify(data, null, 2)}`;
+        }
+
+        async function enrollStudentInSubject() {
+            try {
+                const studentId = document.getElementById('enrollStudentId').value;
+                const subjectId = document.getElementById('enrollSubjectId').value;
+                const isPrincipal = document.getElementById('isPrincipal').checked;
+                const academicYear = document.getElementById('enrollAcademicYear').value;
+                const response = await fetch(`${API_BASE}/api/enrollments/student/${studentId}/subject/${subjectId}?isPrincipal=${isPrincipal}&academicYear=${academicYear}`, { method: 'POST', headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('enrollSubjectResponse', response, data);
+            } catch (e) { document.getElementById('enrollSubjectResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function dropStudentFromSubject() {
+            try {
+                const studentId = document.getElementById('dropStudentId').value;
+                const subjectId = document.getElementById('dropSubjectId').value;
+                const response = await fetch(`${API_BASE}/api/enrollments/student/${studentId}/subject/${subjectId}`, { method: 'DELETE', headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('dropSubjectResponse', response, data);
+            } catch (e) { document.getElementById('dropSubjectResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getStudentSubjects() {
+            try {
+                const id = document.getElementById('getStudentSubjectsId').value;
+                const response = await fetch(`${API_BASE}/api/enrollments/student/${id}/subjects`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getStudentSubjectsResponse', response, data);
+            } catch (e) { document.getElementById('getStudentSubjectsResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function enrollStudentInCourse() {
+            try {
+                const studentId = document.getElementById('enrollCourseStudentId').value;
+                const courseId = document.getElementById('enrollCourseId').value;
+                const academicYear = document.getElementById('courseAcademicYear').value;
+                const response = await fetch(`${API_BASE}/api/enrollments/student/${studentId}/course/${courseId}?academicYear=${academicYear}`, { method: 'POST', headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('enrollCourseResponse', response, data);
+            } catch (e) { document.getElementById('enrollCourseResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function assignTeacherToSubject() {
+            try {
+                const teacherId = document.getElementById('assignTeacherId').value;
+                const subjectId = document.getElementById('assignSubjectId').value;
+                const isPrimary = document.getElementById('isPrimaryTeacher').checked;
+                const classes = document.getElementById('assignedClasses').value;
+                const response = await fetch(`${API_BASE}/api/enrollments/teacher/${teacherId}/subject/${subjectId}?isPrimary=${isPrimary}&assignedClasses=${encodeURIComponent(classes)}`, { method: 'POST', headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('assignTeacherResponse', response, data);
+            } catch (e) { document.getElementById('assignTeacherResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function removeTeacherFromSubject() {
+            try {
+                const teacherId = document.getElementById('removeTeacherId').value;
+                const subjectId = document.getElementById('removeSubjectId').value;
+                const response = await fetch(`${API_BASE}/api/enrollments/teacher/${teacherId}/subject/${subjectId}`, { method: 'DELETE', headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('removeTeacherResponse', response, data);
+            } catch (e) { document.getElementById('removeTeacherResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getTeacherSubjects() {
+            try {
+                const id = document.getElementById('getTeacherSubjectsId').value;
+                const response = await fetch(`${API_BASE}/api/enrollments/teacher/${id}/subjects`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getTeacherSubjectsResponse', response, data);
+            } catch (e) { document.getElementById('getTeacherSubjectsResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getSubjectStudents() {
+            try {
+                const id = document.getElementById('getSubjectStudentsId').value;
+                const response = await fetch(`${API_BASE}/api/enrollments/subject/${id}/students`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getSubjectStudentsResponse', response, data);
+            } catch (e) { document.getElementById('getSubjectStudentsResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getSubjectTeachers() {
+            try {
+                const id = document.getElementById('getSubjectTeachersId').value;
+                const response = await fetch(`${API_BASE}/api/enrollments/subject/${id}/teachers`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getSubjectTeachersResponse', response, data);
+            } catch (e) { document.getElementById('getSubjectTeachersResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getEnrollmentStatistics() {
+            try {
+                const response = await fetch(`${API_BASE}/api/enrollments/statistics`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('statisticsResponse', response, data);
+            } catch (e) { document.getElementById('statisticsResponse').textContent = `Error: ${e.message}`; }
+        }
+    </script>
+</body>
+</html>

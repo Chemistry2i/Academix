@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grades API Test - Academix</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; color: #fff; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 30px; }
+        header h1 { font-size: 1.8rem; }
+        header a { color: #00d4ff; text-decoration: none; padding: 8px 16px; border: 1px solid #00d4ff; border-radius: 8px; }
+        .endpoint-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 20px; }
+        .endpoint-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .endpoint-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .method { padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+        .method.get { background: #22c55e; color: #000; }
+        .method.post { background: #3b82f6; color: #fff; }
+        .endpoint-path { font-family: monospace; color: #94a3b8; font-size: 14px; }
+        .endpoint-desc { color: #94a3b8; font-size: 13px; margin-bottom: 15px; }
+        .input-group { margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+        .input-group input, .input-group select { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 13px; }
+        .inline-inputs { display: flex; gap: 10px; }
+        .inline-inputs .input-group { flex: 1; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; }
+        .btn-primary { background: linear-gradient(90deg, #00d4ff, #7c3aed); color: #fff; }
+        .response-area { margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 300px; overflow: auto; white-space: pre-wrap; }
+        .response-area.success { border-left: 3px solid #22c55e; }
+        .response-area.error { border-left: 3px solid #ef4444; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 10px; }
+        .status-badge.s2xx { background: #22c55e; color: #000; }
+        .status-badge.s4xx { background: #f59e0b; color: #000; }
+        .status-badge.s5xx { background: #ef4444; color: #fff; }
+        .grade-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .grade-table th, .grade-table td { padding: 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .grade-table th { background: rgba(0,212,255,0.2); color: #00d4ff; }
+        .info-section { background: rgba(0,212,255,0.1); border-radius: 12px; padding: 20px; margin-bottom: 30px; border: 1px solid #00d4ff; }
+        .info-section h3 { color: #00d4ff; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Grades API (Ugandan Grading System)</h1>
+            <a href="index.html">← Back to Home</a>
+        </header>
+
+        <div class="info-section">
+            <h3>Ugandan Grading Scales Reference</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h4 style="margin-bottom: 10px;">O-Level (UCE) - D1-F9</h4>
+                    <table class="grade-table">
+                        <tr><th>Grade</th><th>Marks</th><th>Points</th></tr>
+                        <tr><td>D1</td><td>80-100</td><td>1</td></tr>
+                        <tr><td>D2</td><td>75-79</td><td>2</td></tr>
+                        <tr><td>C3</td><td>70-74</td><td>3</td></tr>
+                        <tr><td>C4</td><td>65-69</td><td>4</td></tr>
+                        <tr><td>C5</td><td>60-64</td><td>5</td></tr>
+                        <tr><td>C6</td><td>55-59</td><td>6</td></tr>
+                        <tr><td>P7</td><td>45-54</td><td>7</td></tr>
+                        <tr><td>P8</td><td>35-44</td><td>8</td></tr>
+                        <tr><td>F9</td><td>0-34</td><td>9</td></tr>
+                    </table>
+                </div>
+                <div>
+                    <h4 style="margin-bottom: 10px;">A-Level (UACE) - A-F</h4>
+                    <table class="grade-table">
+                        <tr><th>Grade</th><th>Marks</th><th>Points</th></tr>
+                        <tr><td>A</td><td>80-100</td><td>6</td></tr>
+                        <tr><td>B</td><td>70-79</td><td>5</td></tr>
+                        <tr><td>C</td><td>60-69</td><td>4</td></tr>
+                        <tr><td>D</td><td>50-59</td><td>3</td></tr>
+                        <tr><td>E</td><td>40-49</td><td>2</td></tr>
+                        <tr><td>O</td><td>35-39</td><td>1</td></tr>
+                        <tr><td>F</td><td>0-34</td><td>0</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="endpoint-grid">
+            <!-- GET O-LEVEL GRADING SCALE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/grades/o-level</span>
+                </div>
+                <p class="endpoint-desc">Get O-Level (UCE) grading scale</p>
+                <button class="btn btn-primary" onclick="getOLevelScale()">Send Request</button>
+                <div class="response-area" id="oLevelResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET A-LEVEL GRADING SCALE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/grades/a-level</span>
+                </div>
+                <p class="endpoint-desc">Get A-Level (UACE) grading scale</p>
+                <button class="btn btn-primary" onclick="getALevelScale()">Send Request</button>
+                <div class="response-area" id="aLevelResponse">Response will appear here...</div>
+            </div>
+
+            <!-- CALCULATE GRADE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/grades/calculate?marks={marks}&scale={scale}&isPrincipal={isPrincipal}</span>
+                </div>
+                <p class="endpoint-desc">Calculate grade from marks</p>
+                <div class="inline-inputs">
+                    <div class="input-group">
+                        <label>Marks (0-100)</label>
+                        <input type="number" id="calcMarks" value="75" min="0" max="100">
+                    </div>
+                    <div class="input-group">
+                        <label>Scale</label>
+                        <select id="calcScale">
+                            <option value="O_LEVEL">O-Level</option>
+                            <option value="A_LEVEL">A-Level</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Is Principal Subject</label>
+                        <select id="calcIsPrincipal">
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="calculateGrade()">Send Request</button>
+                <div class="response-area" id="calculateResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET AGGREGATE INTERPRETATION -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/grades/aggregate?points={points}</span>
+                </div>
+                <p class="endpoint-desc">Get aggregate interpretation (O-Level: best 8 subjects)</p>
+                <div class="input-group">
+                    <label>Total Points (e.g., 8-72 for O-Level)</label>
+                    <input type="number" id="aggregatePoints" value="12" min="8" max="72">
+                </div>
+                <button class="btn btn-primary" onclick="getAggregateInterpretation()">Send Request</button>
+                <div class="response-area" id="aggregateResponse">Response will appear here...</div>
+            </div>
+        </div>
+
+        <div class="info-section" style="margin-top: 30px;">
+            <h3>O-Level Aggregate Interpretation</h3>
+            <table class="grade-table">
+                <tr><th>Aggregate</th><th>Division</th><th>Interpretation</th></tr>
+                <tr><td>8-32</td><td>Division 1</td><td>Excellent - Qualifies for A-Level Sciences</td></tr>
+                <tr><td>33-45</td><td>Division 2</td><td>Very Good - Qualifies for most A-Level courses</td></tr>
+                <tr><td>46-58</td><td>Division 3</td><td>Good - May qualify for some courses</td></tr>
+                <tr><td>59-72</td><td>Division 4</td><td>Pass - Basic certificate</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        function getHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const token = localStorage.getItem('academix_token');
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            return headers;
+        }
+        function displayResponse(elementId, response, data) {
+            const el = document.getElementById(elementId);
+            const statusClass = response.status >= 500 ? 's5xx' : (response.status >= 400 ? 's4xx' : 's2xx');
+            el.className = `response-area ${response.ok ? 'success' : 'error'}`;
+            el.innerHTML = `<span class="status-badge ${statusClass}">${response.status}</span>\n${JSON.stringify(data, null, 2)}`;
+        }
+
+        async function getOLevelScale() {
+            try {
+                const response = await fetch(`${API_BASE}/api/grades/o-level`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('oLevelResponse', response, data);
+            } catch (e) { document.getElementById('oLevelResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getALevelScale() {
+            try {
+                const response = await fetch(`${API_BASE}/api/grades/a-level`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('aLevelResponse', response, data);
+            } catch (e) { document.getElementById('aLevelResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function calculateGrade() {
+            try {
+                const marks = document.getElementById('calcMarks').value;
+                const scale = document.getElementById('calcScale').value;
+                const isPrincipal = document.getElementById('calcIsPrincipal').value;
+                const response = await fetch(`${API_BASE}/api/grades/calculate?marks=${marks}&scale=${scale}&isPrincipal=${isPrincipal}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('calculateResponse', response, data);
+            } catch (e) { document.getElementById('calculateResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getAggregateInterpretation() {
+            try {
+                const points = document.getElementById('aggregatePoints').value;
+                const response = await fetch(`${API_BASE}/api/grades/aggregate?points=${points}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('aggregateResponse', response, data);
+            } catch (e) { document.getElementById('aggregateResponse').textContent = `Error: ${e.message}`; }
+        }
+    </script>
+</body>
+</html>

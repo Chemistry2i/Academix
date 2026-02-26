@@ -92,21 +92,31 @@ public class EmailService {
             
             message.setText(emailBody);
             
+            // Log complete email template for testing
+            logger.info("\n" +
+                "========== PASSWORD RESET EMAIL TEMPLATE ==========\n" +
+                "TO: {}\n" +
+                "FROM: {}\n" +
+                "SUBJECT: {}\n" +
+                "----- EMAIL BODY -----\n" +
+                "{}\n" +
+                "----- RESET TOKEN FOR TESTING -----\n" +
+                "{}\n" +
+                "===================================================\n",
+                toEmail, fromEmail, message.getSubject(), emailBody, resetToken);
+            
             try {
                 mailSender.send(message);
-                logger.info("Password reset email sent successfully to: {}", toEmail);
+                logger.info("✓ Password reset email sent successfully to: {}", toEmail);
             } catch (Exception mailException) {
                 // Log email content for development instead of throwing exception
-                logger.warn("SMTP sending failed - Password reset email content for {}: \nSubject: {}\nBody: {}", 
-                    toEmail, message.getSubject(), emailBody);
-                logger.warn("Reset token for testing (copy this): {}", resetToken);
-                logger.error("Email sending failed: {}", mailException.getMessage());
+                logger.warn("✗ SMTP sending failed - Password reset email will be displayed above");
+                logger.error("Email sending error: {}", mailException.getMessage());
                 // Don't re-throw - just log the issue
             }
             
         } catch (Exception e) {
             logger.error("Password reset email service error for {}: {}", toEmail, e.getMessage());
-            logger.warn("Password reset token for manual use: {}", resetToken);
             // Don't throw exception - log error and continue
         }
     }
@@ -134,22 +144,34 @@ public class EmailService {
             
             message.setText(emailBody);
             
+            // Log complete email template for testing
+            logger.info("\n" +
+                "========== EMAIL VERIFICATION TEMPLATE ==========\n" +
+                "TO: {}\n" +
+                "FROM: {}\n" +
+                "SUBJECT: {}\n" +
+                "----- EMAIL BODY -----\n" +
+                "{}\n" +
+                "----- VERIFICATION TOKEN FOR TESTING -----\n" +
+                "{}\n" +
+                "----- VERIFICATION LINK FOR TESTING -----\n" +
+                "{}\n" +
+                "===================================================\n",
+                toEmail, fromEmail, message.getSubject(), emailBody, verificationToken, verificationLink);
+            
             try {
                 mailSender.send(message);
-                logger.info("Email verification email sent successfully to: {}", toEmail);
+                logger.info("✓ Email verification email sent successfully to: {}", toEmail);
             } catch (Exception mailException) {
                 // Log email content for development instead of breaking registration
-                logger.warn("SMTP sending failed - Email verification content for {}: \nSubject: {}\nBody: {}", 
-                    toEmail, message.getSubject(), emailBody);
-                logger.warn("Verification token for testing (copy this): {}", verificationToken);
-                logger.error("Email sending failed but registration continues: {}", mailException.getMessage());
+                logger.warn("✗ SMTP sending failed - Email verification template displayed above");
+                logger.error("Email sending error: {}", mailException.getMessage());
                 // Don't throw exception - allow registration to continue
             }
             
         } catch (Exception e) {
             // Log error but don't throw - allow registration to continue
             logger.error("Email service error for {}, but registration will continue: {}", toEmail, e.getMessage());
-            logger.warn("Verification token for manual use: {}", verificationToken);
         }
     }
 
@@ -172,11 +194,22 @@ public class EmailService {
             );
             
             message.setText(emailBody);
-            mailSender.send(message);
             
-            logger.info("Welcome email sent successfully to: {}", toEmail);
+            // Log complete email template for testing
+            logger.info("\n" +
+                "========== WELCOME EMAIL TEMPLATE ==========\n" +
+                "TO: {}\n" +
+                "FROM: {}\n" +
+                "SUBJECT: {}\n" +
+                "----- EMAIL BODY -----\n" +
+                "{}\n" +
+                "=============================================\n",
+                toEmail, fromEmail, message.getSubject(), emailBody);
+            
+            mailSender.send(message);
+            logger.info("✓ Welcome email sent successfully to: {}", toEmail);
         } catch (Exception e) {
-            logger.error("Failed to send welcome email to: {}", toEmail, e);
+            logger.warn("✗ Failed to send welcome email to: {} - Error: {}", toEmail, e.getMessage());
             // We are not throwing exception for welcome email failure
         }
     }
@@ -193,51 +226,64 @@ public class EmailService {
             
             String academicDetails = "";
             if (currentClass != null && !currentClass.trim().isEmpty()) {
-                academicDetails += "Class: " + currentClass + "\\n";
+                academicDetails += "Class: " + currentClass + "\n";
             }
             if (stream != null && !stream.trim().isEmpty()) {
-                academicDetails += "Stream: " + stream + "\\n";
+                academicDetails += "Stream: " + stream + "\n";
             }
             
             String emailBody = String.format(
-                "Dear %s,\\n\\n" +
-                "Welcome to Academix School Management System!\\n\\n" +
-                "Your student account has been successfully created. Here are your account details:\\n\\n" +
-                "\ud83c\udd94 Student ID: %s\\n" +
-                "\ud83d\udce7 Email: %s\\n" +
-                "\ud83d\udd10 Temporary Password: %s\\n" +
-                "%s\\n" +
-                "\ud83d\udcf1 Student Portal: %s/login\\n\\n" +
-                "IMPORTANT SECURITY INSTRUCTIONS:\\n" +
-                "1. Login using your email and the temporary password above\\n" +
-                "2. Change your password immediately after first login for security\\n" +
-                "3. Keep your login credentials secure and private\\n" +
-                "4. Never share your password with anyone\\n\\n" +
-                "You can change your password anytime from your student portal.\\n\\n" +
-                "For any questions or support, please contact our student services.\\n\\n" +
-                "Welcome to the Academix family!\\n\\n" +
-                "Best regards,\\n" +
+                "Dear %s,\n\n" +
+                "Welcome to Academix School Management System!\n\n" +
+                "Your student account has been successfully created. Here are your account details:\n\n" +
+                "🆔 Student ID: %s\n" +
+                "📧 Email: %s\n" +
+                "🔐 Temporary Password: %s\n" +
+                "%s\n" +
+                "📱 Student Portal: %s/login\n\n" +
+                "IMPORTANT SECURITY INSTRUCTIONS:\n" +
+                "1. Login using your email and the temporary password above\n" +
+                "2. Change your password immediately after first login for security\n" +
+                "3. Keep your login credentials secure and private\n" +
+                "4. Never share your password with anyone\n\n" +
+                "You can change your password anytime from your student portal.\n\n" +
+                "For any questions or support, please contact our student services.\n\n" +
+                "Welcome to the Academix family!\n\n" +
+                "Best regards,\n" +
                 "The Academix Administrative Team",
                 fullName, studentId, toEmail, generatedPassword, academicDetails, frontendUrl
             );
             
             message.setText(emailBody);
             
+            // Log complete email template for testing
+            logger.info("\n" +
+                "========== STUDENT REGISTRATION EMAIL TEMPLATE ==========\n" +
+                "TO: {}\n" +
+                "FROM: {}\n" +
+                "SUBJECT: {}\n" +
+                "----- EMAIL BODY -----\n" +
+                "{}\n" +
+                "----- STUDENT CREDENTIALS FOR TESTING -----\n" +
+                "Student ID: {}\n" +
+                "Email: {}\n" +
+                "Temporary Password: {}\n" +
+                "===========================================================\n",
+                toEmail, fromEmail, message.getSubject(), emailBody, studentId, toEmail, generatedPassword);
+            
             try {
                 mailSender.send(message);
-                logger.info("Student credentials email sent successfully to: {} (Student ID: {})", toEmail, studentId);
+                logger.info("✓ Student credentials email sent successfully to: {} (Student ID: {})", toEmail, studentId);
             } catch (Exception mailException) {
                 // Log email content for development instead of breaking registration
-                logger.warn("SMTP sending failed - Student credentials for {}: \\nEmail: {}\\nStudent ID: {}\\nPassword: {}\\nClass: {}", 
-                    toEmail, toEmail, studentId, generatedPassword, currentClass);
-                logger.error("Student credentials email sending failed but registration continues: {}", mailException.getMessage());
+                logger.warn("✗ SMTP sending failed - Student credentials template displayed above");
+                logger.error("Email sending error: {}", mailException.getMessage());
                 // Don't throw exception - allow registration to continue
             }
             
         } catch (Exception e) {
             // Log error but don't throw - allow registration to continue
             logger.error("Student credentials email service error for {}, but registration will continue: {}", toEmail, e.getMessage());
-            logger.warn("Student login details for manual communication - Email: {}, Student ID: {}, Password: {}", toEmail, studentId, generatedPassword);
         }
     }
     
@@ -252,41 +298,126 @@ public class EmailService {
             message.setSubject("Academix Account - Your Login Credentials");
             
             String emailBody = String.format(
-                "Dear %s,\\n\\n" +
-                "Welcome to Academix School Management System!\\n\\n" +
-                "Your account has been successfully created. Here are your login credentials:\\n\\n" +
-                "\ud83d\udce7 Email: %s\\n" +
-                "\ud83d\udd10 Password: %s\\n" +
-                "\ud83d\udcf1 Login URL: %s/login\\n\\n" +
-                "IMPORTANT SECURITY INSTRUCTIONS:\\n" +
-                "1. Login using the credentials above\\n" +
-                "2. Change your password immediately after first login\\n" +
-                "3. Keep your login credentials secure and private\\n" +
-                "4. Never share your password with anyone\\n\\n" +
-                "You can change your password anytime after logging in.\\n\\n" +
-                "For any questions or support, please contact our support team.\\n\\n" +
-                "Best regards,\\n" +
+                "Dear %s,\n\n" +
+                "Welcome to Academix School Management System!\n\n" +
+                "Your account has been successfully created. Here are your login credentials:\n\n" +
+                "📧 Email: %s\n" +
+                "🔐 Password: %s\n" +
+                "📱 Login URL: %s/login\n\n" +
+                "IMPORTANT SECURITY INSTRUCTIONS:\n" +
+                "1. Login using the credentials above\n" +
+                "2. Change your password immediately after first login\n" +
+                "3. Keep your login credentials secure and private\n" +
+                "4. Never share your password with anyone\n\n" +
+                "You can change your password anytime after logging in.\n\n" +
+                "For any questions or support, please contact our support team.\n\n" +
+                "Best regards,\n" +
                 "The Academix Team",
                 fullName, toEmail, generatedPassword, frontendUrl
             );
             
             message.setText(emailBody);
             
+            // Log complete email template for testing
+            logger.info("\n" +
+                "========== USER CREDENTIALS EMAIL TEMPLATE ==========\n" +
+                "TO: {}\n" +
+                "FROM: {}\n" +
+                "SUBJECT: {}\n" +
+                "----- EMAIL BODY -----\n" +
+                "{}\n" +
+                "----- USER CREDENTIALS FOR TESTING -----\n" +
+                "Email: {}\n" +
+                "Temporary Password: {}\n" +
+                "=====================================================\n",
+                toEmail, fromEmail, message.getSubject(), emailBody, toEmail, generatedPassword);
+            
             try {
                 mailSender.send(message);
-                logger.info("User credentials email sent successfully to: {}", toEmail);
+                logger.info("✓ User credentials email sent successfully to: {}", toEmail);
             } catch (Exception mailException) {
                 // Log email content for development instead of breaking registration
-                logger.warn("SMTP sending failed - User credentials for {}: \\nEmail: {}\\nPassword: {}", 
-                    toEmail, toEmail, generatedPassword);
-                logger.error("User credentials email sending failed but registration continues: {}", mailException.getMessage());
+                logger.warn("✗ SMTP sending failed - User credentials template displayed above");
+                logger.error("Email sending error: {}", mailException.getMessage());
                 // Don't throw exception - allow registration to continue
             }
             
         } catch (Exception e) {
             // Log error but don't throw - allow registration to continue
             logger.error("User credentials email service error for {}, but registration will continue: {}", toEmail, e.getMessage());
-            logger.warn("User login details for manual communication - Email: {}, Password: {}", toEmail, generatedPassword);
+        }
+    }
+
+    /**
+     * Send teacher registration welcome email with academic details and login credentials
+     */
+    public void sendTeacherRegistrationEmail(String toEmail, String fullName, String teacherId, String department, String subjects, String generatedPassword) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject("Welcome to Academix - Your Teacher Account Details");
+            
+            String academicDetails = "";
+            if (department != null && !department.trim().isEmpty()) {
+                academicDetails += "Department: " + department + "\n";
+            }
+            if (subjects != null && !subjects.trim().isEmpty()) {
+                academicDetails += "Subjects: " + subjects + "\n";
+            }
+            
+            String emailBody = String.format(
+                "Dear %s,\n\n" +
+                "Welcome to Academix School Management System!\n\n" +
+                "Your teacher account has been successfully created. Here are your account details:\n\n" +
+                "\ud83c\udd94 Teacher ID: %s\n" +
+                "\ud83d\udce7 Email: %s\n" +
+                "\ud83d\udd10 Temporary Password: %s\n" +
+                "%s\n" +
+                "\ud83d\udcf1 Staff Portal: %s/login\n\n" +
+                "IMPORTANT SECURITY INSTRUCTIONS:\n" +
+                "1. Login using your email and the temporary password above\n" +
+                "2. Change your password immediately after first login for security\n" +
+                "3. Keep your login credentials secure and private\n" +
+                "4. Never share your password with anyone\n\n" +
+                "You can change your password anytime from your staff portal.\n\n" +
+                "For any questions or support, please contact the administration.\n\n" +
+                "Welcome to the Academix family!\n\n" +
+                "Best regards,\n" +
+                "The Academix Administrative Team",
+                fullName, teacherId, toEmail, generatedPassword, academicDetails, frontendUrl
+            );
+            
+            message.setText(emailBody);
+            
+            // Log complete email template for testing
+            logger.info("\n" +
+                "========== TEACHER REGISTRATION EMAIL TEMPLATE ==========\n" +
+                "TO: {}\n" +
+                "FROM: {}\n" +
+                "SUBJECT: {}\n" +
+                "----- EMAIL BODY -----\n" +
+                "{}\n" +
+                "----- TEACHER CREDENTIALS FOR TESTING -----\n" +
+                "Teacher ID: {}\n" +
+                "Email: {}\n" +
+                "Temporary Password: {}\n" +
+                "===========================================================\n",
+                toEmail, fromEmail, message.getSubject(), emailBody, teacherId, toEmail, generatedPassword);
+            
+            try {
+                mailSender.send(message);
+                logger.info("✓ Teacher credentials email sent successfully to: {} (Teacher ID: {})", toEmail, teacherId);
+            } catch (Exception mailException) {
+                // Log email content for development instead of breaking registration
+                logger.warn("✗ SMTP sending failed - Teacher credentials template displayed above");
+                logger.error("Email sending error: {}", mailException.getMessage());
+                // Don't throw exception - allow registration to continue
+            }
+            
+        } catch (Exception e) {
+            // Log error but don't throw - allow registration to continue
+            logger.error("Teacher credentials email service error for {}, but registration will continue: {}", toEmail, e.getMessage());
         }
     }
 }

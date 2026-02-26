@@ -297,7 +297,7 @@ public class GeoSecurityService {
 ./mvnw spring-boot:run
 
 # Test enhanced security features
-curl -X POST http://https://organic-winner-pqprvg9gx94f69j7-8080.app.github.dev/api/auth/register \
+curl -X POST http://https://didactic-adventure-pjqpq9rpwqgqcr555-8080.app.github.dev/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"password": "weak"}' 
 # Should return password validation errors
@@ -306,7 +306,7 @@ curl -X POST http://https://organic-winner-pqprvg9gx94f69j7-8080.app.github.dev/
 ### **2. Monitor Security Events**
 ```bash
 # Check security statistics
-curl http://https://organic-winner-pqprvg9gx94f69j7-8080.app.github.dev/api/auth/security-stats
+curl http://https://didactic-adventure-pjqpq9rpwqgqcr555-8080.app.github.dev/api/auth/security-stats
 
 # Monitor application logs for security events
 tail -f logs/spring.log | grep "Security event"

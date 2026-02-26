@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subjects API Test - Academix</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 30px; }
+        header h1 { font-size: 1.8rem; }
+        header a { color: #00d4ff; text-decoration: none; padding: 8px 16px; border: 1px solid #00d4ff; border-radius: 8px; }
+        header a:hover { background: #00d4ff; color: #1a1a2e; }
+        .endpoint-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 20px; }
+        .endpoint-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .endpoint-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .method { padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+        .method.get { background: #22c55e; color: #000; }
+        .method.post { background: #3b82f6; color: #fff; }
+        .method.put { background: #f59e0b; color: #000; }
+        .method.delete { background: #ef4444; color: #fff; }
+        .endpoint-path { font-family: monospace; color: #94a3b8; font-size: 14px; }
+        .endpoint-desc { color: #94a3b8; font-size: 13px; margin-bottom: 15px; }
+        .input-group { margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+        .input-group input, .input-group select, .input-group textarea { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 13px; }
+        .input-group textarea { min-height: 100px; font-family: monospace; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; }
+        .btn-primary { background: linear-gradient(90deg, #00d4ff, #7c3aed); color: #fff; }
+        .response-area { margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 200px; overflow: auto; white-space: pre-wrap; }
+        .response-area.success { border-left: 3px solid #22c55e; }
+        .response-area.error { border-left: 3px solid #ef4444; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 10px; }
+        .status-badge.s2xx { background: #22c55e; color: #000; }
+        .status-badge.s4xx { background: #f59e0b; color: #000; }
+        .status-badge.s5xx { background: #ef4444; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 Subjects API</h1>
+            <a href="index.html">← Back to Home</a>
+        </header>
+
+        <div class="endpoint-grid">
+            <!-- CREATE SUBJECT -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/subjects</span>
+                </div>
+                <p class="endpoint-desc">Create a new subject</p>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="createSubjectBody">{
+  "code": "PHY",
+  "name": "Physics",
+  "description": "Study of matter, energy, and forces",
+  "category": "SCIENCES",
+  "levelType": "BOTH",
+  "isPrincipal": true,
+  "isSubsidiary": false,
+  "isCore": false,
+  "creditUnits": 3
+}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="createSubject()">Send Request</button>
+                <div class="response-area" id="createSubjectResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET ALL SUBJECTS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/subjects</span>
+                </div>
+                <p class="endpoint-desc">Get all subjects</p>
+                <button class="btn btn-primary" onclick="getAllSubjects()">Send Request</button>
+                <div class="response-area" id="getAllSubjectsResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET SUBJECT BY ID -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/subjects/{id}</span>
+                </div>
+                <p class="endpoint-desc">Get subject by ID</p>
+                <div class="input-group">
+                    <label>Subject ID</label>
+                    <input type="number" id="getSubjectId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="getSubjectById()">Send Request</button>
+                <div class="response-area" id="getSubjectByIdResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET BY CODE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/subjects/code/{code}</span>
+                </div>
+                <p class="endpoint-desc">Get subject by code</p>
+                <div class="input-group">
+                    <label>Subject Code</label>
+                    <input type="text" id="getByCode" value="PHY">
+                </div>
+                <button class="btn btn-primary" onclick="getByCode()">Send Request</button>
+                <div class="response-area" id="getByCodeResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET BY CATEGORY -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/subjects/category/{category}</span>
+                </div>
+                <p class="endpoint-desc">Get subjects by category</p>
+                <div class="input-group">
+                    <label>Category</label>
+                    <select id="getByCategory">
+                        <option value="SCIENCES">Sciences</option>
+                        <option value="ARTS">Arts</option>
+                        <option value="LANGUAGES">Languages</option>
+                        <option value="TECHNICAL">Technical</option>
+                        <option value="BUSINESS">Business</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="getByCategory()">Send Request</button>
+                <div class="response-area" id="getByCategoryResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET O-LEVEL SUBJECTS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/subjects/o-level</span>
+                </div>
+                <p class="endpoint-desc">Get O-Level subjects</p>
+                <button class="btn btn-primary" onclick="getOLevelSubjects()">Send Request</button>
+                <div class="response-area" id="getOLevelResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET A-LEVEL SUBJECTS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/subjects/a-level</span>
+                </div>
+                <p class="endpoint-desc">Get A-Level subjects</p>
+                <button class="btn btn-primary" onclick="getALevelSubjects()">Send Request</button>
+                <div class="response-area" id="getALevelResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET COMPULSORY SUBJECTS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/subjects/compulsory</span>
+                </div>
+                <p class="endpoint-desc">Get core/compulsory subjects</p>
+                <button class="btn btn-primary" onclick="getCompulsorySubjects()">Send Request</button>
+                <div class="response-area" id="getCompulsoryResponse">Response will appear here...</div>
+            </div>
+
+            <!-- UPDATE SUBJECT -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method put">PUT</span>
+                    <span class="endpoint-path">/api/subjects/{id}</span>
+                </div>
+                <p class="endpoint-desc">Update subject details</p>
+                <div class="input-group">
+                    <label>Subject ID</label>
+                    <input type="number" id="updateSubjectId" value="1">
+                </div>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="updateSubjectBody">{
+  "description": "Updated description",
+  "creditUnits": 4
+}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="updateSubject()">Send Request</button>
+                <div class="response-area" id="updateSubjectResponse">Response will appear here...</div>
+            </div>
+
+            <!-- DELETE SUBJECT -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="endpoint-path">/api/subjects/{id}</span>
+                </div>
+                <p class="endpoint-desc">Delete a subject</p>
+                <div class="input-group">
+                    <label>Subject ID</label>
+                    <input type="number" id="deleteSubjectId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="deleteSubject()" style="background: #ef4444;">Send Request</button>
+                <div class="response-area" id="deleteSubjectResponse">Response will appear here...</div>
+            </div>
+
+            <!-- INITIALIZE SUBJECTS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/subjects/initialize</span>
+                </div>
+                <p class="endpoint-desc">Initialize default Ugandan subjects</p>
+                <button class="btn btn-primary" onclick="initializeSubjects()">Send Request</button>
+                <div class="response-area" id="initializeResponse">Response will appear here...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        
+        function getHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const token = localStorage.getItem('academix_token');
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            return headers;
+        }
+
+        function displayResponse(elementId, response, data) {
+            const el = document.getElementById(elementId);
+            const statusClass = response.status >= 500 ? 's5xx' : (response.status >= 400 ? 's4xx' : 's2xx');
+            el.className = `response-area ${response.ok ? 'success' : 'error'}`;
+            el.innerHTML = `<span class="status-badge ${statusClass}">${response.status}</span>\n${JSON.stringify(data, null, 2)}`;
+        }
+
+        async function createSubject() {
+            try {
+                const body = JSON.parse(document.getElementById('createSubjectBody').value);
+                const response = await fetch(`${API_BASE}/api/subjects`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('createSubjectResponse', response, data);
+            } catch (e) { document.getElementById('createSubjectResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getAllSubjects() {
+            try {
+                const response = await fetch(`${API_BASE}/api/subjects`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getAllSubjectsResponse', response, data);
+            } catch (e) { document.getElementById('getAllSubjectsResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getSubjectById() {
+            try {
+                const id = document.getElementById('getSubjectId').value;
+                const response = await fetch(`${API_BASE}/api/subjects/${id}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getSubjectByIdResponse', response, data);
+            } catch (e) { document.getElementById('getSubjectByIdResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getByCode() {
+            try {
+                const code = document.getElementById('getByCode').value;
+                const response = await fetch(`${API_BASE}/api/subjects/code/${code}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getByCodeResponse', response, data);
+            } catch (e) { document.getElementById('getByCodeResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getByCategory() {
+            try {
+                const cat = document.getElementById('getByCategory').value;
+                const response = await fetch(`${API_BASE}/api/subjects/category/${cat}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getByCategoryResponse', response, data);
+            } catch (e) { document.getElementById('getByCategoryResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getOLevelSubjects() {
+            try {
+                const response = await fetch(`${API_BASE}/api/subjects/o-level`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getOLevelResponse', response, data);
+            } catch (e) { document.getElementById('getOLevelResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getALevelSubjects() {
+            try {
+                const response = await fetch(`${API_BASE}/api/subjects/a-level`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getALevelResponse', response, data);
+            } catch (e) { document.getElementById('getALevelResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getCompulsorySubjects() {
+            try {
+                const response = await fetch(`${API_BASE}/api/subjects/compulsory`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getCompulsoryResponse', response, data);
+            } catch (e) { document.getElementById('getCompulsoryResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function updateSubject() {
+            try {
+                const id = document.getElementById('updateSubjectId').value;
+                const body = JSON.parse(document.getElementById('updateSubjectBody').value);
+                const response = await fetch(`${API_BASE}/api/subjects/${id}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('updateSubjectResponse', response, data);
+            } catch (e) { document.getElementById('updateSubjectResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function deleteSubject() {
+            if (!confirm('Are you sure?')) return;
+            try {
+                const id = document.getElementById('deleteSubjectId').value;
+                const response = await fetch(`${API_BASE}/api/subjects/${id}`, { method: 'DELETE', headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('deleteSubjectResponse', response, data);
+            } catch (e) { document.getElementById('deleteSubjectResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function initializeSubjects() {
+            try {
+                const response = await fetch(`${API_BASE}/api/subjects/initialize`, { method: 'POST', headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('initializeResponse', response, data);
+            } catch (e) { document.getElementById('initializeResponse').textContent = `Error: ${e.message}`; }
+        }
+    </script>
+</body>
+</html>

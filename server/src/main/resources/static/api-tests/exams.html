@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exams API Test - Academix</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; color: #fff; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 30px; }
+        header h1 { font-size: 1.8rem; }
+        header a { color: #00d4ff; text-decoration: none; padding: 8px 16px; border: 1px solid #00d4ff; border-radius: 8px; }
+        .endpoint-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 20px; }
+        .endpoint-card { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .endpoint-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .method { padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+        .method.get { background: #22c55e; color: #000; }
+        .method.post { background: #3b82f6; color: #fff; }
+        .method.put { background: #f59e0b; color: #000; }
+        .method.delete { background: #ef4444; color: #fff; }
+        .endpoint-path { font-family: monospace; color: #94a3b8; font-size: 14px; }
+        .endpoint-desc { color: #94a3b8; font-size: 13px; margin-bottom: 15px; }
+        .input-group { margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+        .input-group input, .input-group select, .input-group textarea { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 13px; }
+        .input-group textarea { min-height: 120px; font-family: monospace; }
+        .inline-inputs { display: flex; gap: 10px; }
+        .inline-inputs .input-group { flex: 1; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; font-size: 13px; }
+        .btn-primary { background: linear-gradient(90deg, #00d4ff, #7c3aed); color: #fff; }
+        .response-area { margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 200px; overflow: auto; white-space: pre-wrap; }
+        .response-area.success { border-left: 3px solid #22c55e; }
+        .response-area.error { border-left: 3px solid #ef4444; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 10px; }
+        .status-badge.s2xx { background: #22c55e; color: #000; }
+        .status-badge.s4xx { background: #f59e0b; color: #000; }
+        .status-badge.s5xx { background: #ef4444; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📝 Exams API</h1>
+            <a href="index.html">← Back to Home</a>
+        </header>
+
+        <div class="endpoint-grid">
+            <!-- CREATE EXAM -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="endpoint-path">/api/exams</span>
+                </div>
+                <p class="endpoint-desc">Create a new exam</p>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="createExamBody">{
+  "code": "PHY-S3-T1-2024",
+  "name": "Physics Mid-Term Exam",
+  "examType": "MID_TERM",
+  "term": "Term 1",
+  "academicYear": "2024",
+  "formLevel": 3,
+  "subjectId": 1,
+  "examDate": "2024-04-15",
+  "startTime": "09:00:00",
+  "endTime": "12:00:00",
+  "duration": 180,
+  "totalMarks": 100,
+  "passMark": 40
+}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="createExam()">Send Request</button>
+                <div class="response-area" id="createExamResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET ALL EXAMS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/exams</span>
+                </div>
+                <p class="endpoint-desc">Get all exams</p>
+                <button class="btn btn-primary" onclick="getAllExams()">Send Request</button>
+                <div class="response-area" id="getAllExamsResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET EXAM BY ID -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/exams/{id}</span>
+                </div>
+                <p class="endpoint-desc">Get exam by ID</p>
+                <div class="input-group">
+                    <label>Exam ID</label>
+                    <input type="number" id="getExamId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="getExamById()">Send Request</button>
+                <div class="response-area" id="getExamByIdResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET BY SUBJECT -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/exams/subject/{subjectId}</span>
+                </div>
+                <p class="endpoint-desc">Get exams by subject</p>
+                <div class="input-group">
+                    <label>Subject ID</label>
+                    <input type="number" id="getBySubjectId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="getBySubject()">Send Request</button>
+                <div class="response-area" id="getBySubjectResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET BY FORM LEVEL -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/exams/form/{formLevel}</span>
+                </div>
+                <p class="endpoint-desc">Get exams by form level</p>
+                <div class="input-group">
+                    <label>Form Level</label>
+                    <select id="getByFormLevel">
+                        <option value="1">S1</option>
+                        <option value="2">S2</option>
+                        <option value="3" selected>S3</option>
+                        <option value="4">S4</option>
+                        <option value="5">S5</option>
+                        <option value="6">S6</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="getByFormLevel()">Send Request</button>
+                <div class="response-area" id="getByFormLevelResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET BY EXAM TYPE -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/exams/type/{examType}</span>
+                </div>
+                <p class="endpoint-desc">Get exams by type</p>
+                <div class="input-group">
+                    <label>Exam Type</label>
+                    <select id="getByType">
+                        <option value="MID_TERM">Mid-Term</option>
+                        <option value="END_OF_TERM">End of Term</option>
+                        <option value="MOCK">Mock</option>
+                        <option value="UCE">UCE (O-Level)</option>
+                        <option value="UACE">UACE (A-Level)</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="getByType()">Send Request</button>
+                <div class="response-area" id="getByTypeResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET UPCOMING EXAMS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/exams/upcoming</span>
+                </div>
+                <p class="endpoint-desc">Get upcoming exams</p>
+                <button class="btn btn-primary" onclick="getUpcomingExams()">Send Request</button>
+                <div class="response-area" id="upcomingResponse">Response will appear here...</div>
+            </div>
+
+            <!-- UPDATE EXAM -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method put">PUT</span>
+                    <span class="endpoint-path">/api/exams/{id}</span>
+                </div>
+                <p class="endpoint-desc">Update exam details</p>
+                <div class="input-group">
+                    <label>Exam ID</label>
+                    <input type="number" id="updateExamId" value="1">
+                </div>
+                <div class="input-group">
+                    <label>Request Body (JSON)</label>
+                    <textarea id="updateExamBody">{
+  "room": "Hall A",
+  "instructions": "No calculators allowed"
+}</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="updateExam()">Send Request</button>
+                <div class="response-area" id="updateExamResponse">Response will appear here...</div>
+            </div>
+
+            <!-- LOCK EXAM -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method put">PUT</span>
+                    <span class="endpoint-path">/api/exams/{id}/lock</span>
+                </div>
+                <p class="endpoint-desc">Lock exam (prevent result changes)</p>
+                <div class="input-group">
+                    <label>Exam ID</label>
+                    <input type="number" id="lockExamId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="lockExam()">Send Request</button>
+                <div class="response-area" id="lockExamResponse">Response will appear here...</div>
+            </div>
+
+            <!-- UNLOCK EXAM -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method put">PUT</span>
+                    <span class="endpoint-path">/api/exams/{id}/unlock</span>
+                </div>
+                <p class="endpoint-desc">Unlock exam</p>
+                <div class="input-group">
+                    <label>Exam ID</label>
+                    <input type="number" id="unlockExamId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="unlockExam()">Send Request</button>
+                <div class="response-area" id="unlockExamResponse">Response will appear here...</div>
+            </div>
+
+            <!-- PUBLISH RESULTS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method put">PUT</span>
+                    <span class="endpoint-path">/api/exams/{id}/publish</span>
+                </div>
+                <p class="endpoint-desc">Publish exam results</p>
+                <div class="input-group">
+                    <label>Exam ID</label>
+                    <input type="number" id="publishExamId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="publishResults()">Send Request</button>
+                <div class="response-area" id="publishResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET EXAM ANALYTICS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/exams/{id}/analytics</span>
+                </div>
+                <p class="endpoint-desc">Get exam analytics (pass rate, average, etc.)</p>
+                <div class="input-group">
+                    <label>Exam ID</label>
+                    <input type="number" id="analyticsExamId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="getAnalytics()">Send Request</button>
+                <div class="response-area" id="analyticsResponse">Response will appear here...</div>
+            </div>
+
+            <!-- DELETE EXAM -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="endpoint-path">/api/exams/{id}</span>
+                </div>
+                <p class="endpoint-desc">Delete an exam</p>
+                <div class="input-group">
+                    <label>Exam ID</label>
+                    <input type="number" id="deleteExamId" value="1">
+                </div>
+                <button class="btn btn-primary" onclick="deleteExam()" style="background: #ef4444;">Send Request</button>
+                <div class="response-area" id="deleteExamResponse">Response will appear here...</div>
+            </div>
+
+            <!-- GET STATISTICS -->
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="endpoint-path">/api/exams/statistics</span>
+                </div>
+                <p class="endpoint-desc">Get exam statistics</p>
+                <button class="btn btn-primary" onclick="getExamStatistics()">Send Request</button>
+                <div class="response-area" id="statisticsResponse">Response will appear here...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        function getHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const token = localStorage.getItem('academix_token');
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            return headers;
+        }
+        function displayResponse(elementId, response, data) {
+            const el = document.getElementById(elementId);
+            const statusClass = response.status >= 500 ? 's5xx' : (response.status >= 400 ? 's4xx' : 's2xx');
+            el.className = `response-area ${response.ok ? 'success' : 'error'}`;
+            el.innerHTML = `<span class="status-badge ${statusClass}">${response.status}</span>\n${JSON.stringify(data, null, 2)}`;
+        }
+
+        async function createExam() {
+            try {
+                const body = JSON.parse(document.getElementById('createExamBody').value);
+                const response = await fetch(`${API_BASE}/api/exams`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('createExamResponse', response, data);
+            } catch (e) { document.getElementById('createExamResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getAllExams() {
+            try {
+                const response = await fetch(`${API_BASE}/api/exams`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getAllExamsResponse', response, data);
+            } catch (e) { document.getElementById('getAllExamsResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getExamById() {
+            try {
+                const id = document.getElementById('getExamId').value;
+                const response = await fetch(`${API_BASE}/api/exams/${id}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getExamByIdResponse', response, data);
+            } catch (e) { document.getElementById('getExamByIdResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getBySubject() {
+            try {
+                const id = document.getElementById('getBySubjectId').value;
+                const response = await fetch(`${API_BASE}/api/exams/subject/${id}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getBySubjectResponse', response, data);
+            } catch (e) { document.getElementById('getBySubjectResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getByFormLevel() {
+            try {
+                const form = document.getElementById('getByFormLevel').value;
+                const response = await fetch(`${API_BASE}/api/exams/form/${form}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getByFormLevelResponse', response, data);
+            } catch (e) { document.getElementById('getByFormLevelResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getByType() {
+            try {
+                const type = document.getElementById('getByType').value;
+                const response = await fetch(`${API_BASE}/api/exams/type/${type}`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('getByTypeResponse', response, data);
+            } catch (e) { document.getElementById('getByTypeResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getUpcomingExams() {
+            try {
+                const response = await fetch(`${API_BASE}/api/exams/upcoming`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('upcomingResponse', response, data);
+            } catch (e) { document.getElementById('upcomingResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function updateExam() {
+            try {
+                const id = document.getElementById('updateExamId').value;
+                const body = JSON.parse(document.getElementById('updateExamBody').value);
+                const response = await fetch(`${API_BASE}/api/exams/${id}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(body) });
+                const data = await response.json();
+                displayResponse('updateExamResponse', response, data);
+            } catch (e) { document.getElementById('updateExamResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function lockExam() {
+            try {
+                const id = document.getElementById('lockExamId').value;
+                const response = await fetch(`${API_BASE}/api/exams/${id}/lock`, { method: 'PUT', headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('lockExamResponse', response, data);
+            } catch (e) { document.getElementById('lockExamResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function unlockExam() {
+            try {
+                const id = document.getElementById('unlockExamId').value;
+                const response = await fetch(`${API_BASE}/api/exams/${id}/unlock`, { method: 'PUT', headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('unlockExamResponse', response, data);
+            } catch (e) { document.getElementById('unlockExamResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function publishResults() {
+            try {
+                const id = document.getElementById('publishExamId').value;
+                const response = await fetch(`${API_BASE}/api/exams/${id}/publish`, { method: 'PUT', headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('publishResponse', response, data);
+            } catch (e) { document.getElementById('publishResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getAnalytics() {
+            try {
+                const id = document.getElementById('analyticsExamId').value;
+                const response = await fetch(`${API_BASE}/api/exams/${id}/analytics`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('analyticsResponse', response, data);
+            } catch (e) { document.getElementById('analyticsResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function deleteExam() {
+            if (!confirm('Delete this exam?')) return;
+            try {
+                const id = document.getElementById('deleteExamId').value;
+                const response = await fetch(`${API_BASE}/api/exams/${id}`, { method: 'DELETE', headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('deleteExamResponse', response, data);
+            } catch (e) { document.getElementById('deleteExamResponse').textContent = `Error: ${e.message}`; }
+        }
+
+        async function getExamStatistics() {
+            try {
+                const response = await fetch(`${API_BASE}/api/exams/statistics`, { headers: getHeaders() });
+                const data = await response.json();
+                displayResponse('statisticsResponse', response, data);
+            } catch (e) { document.getElementById('statisticsResponse').textContent = `Error: ${e.message}`; }
+        }
+    </script>
+</body>
+</html>
