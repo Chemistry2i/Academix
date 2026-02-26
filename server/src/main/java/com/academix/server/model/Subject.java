@@ -70,7 +70,7 @@ public class Subject {
     @Column(nullable = false)
     private Boolean isArts = false;
 
-    // Paper count (some subjects have multiple papers)
+    // Paper count (some subjects have multiple papers), so we adding a paper count
     @Column(nullable = false)
     private Integer paperCount = 1;
 
