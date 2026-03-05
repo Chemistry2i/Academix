@@ -1,5 +1,9 @@
 Endpoints in the Academix System:
 
+Prepared by Backend Team
+1. Wambogo Hassan Sadat
+2. Ngaluye Remmy
+
 1. **TeacherController**
    - POST `/api/teachers` - Create a new teacher
    - GET `/api/teachers` - Get all teachers
@@ -104,3 +108,5 @@ Endpoints in the Academix System:
     - GET `/api/grades/o-level` - Get O-Level grading scale
     - GET `/api/grades/a-level` - Get A-Level grading scale
     - GET `/api/grades/calculate` - Calculate grade from marks
+
+We soon adding more endpoints as soon as possible!
