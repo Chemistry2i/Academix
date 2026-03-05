@@ -325,6 +325,7 @@ public class StudentController {
      * POST /api/students/register - Legacy registration endpoint
      * @deprecated Use POST /api/students instead
      */
+    @Deprecated
     @PostMapping("/register")
     public ResponseEntity<?> registerStudent(@Valid @RequestBody Student student) {
         return createStudent(student);

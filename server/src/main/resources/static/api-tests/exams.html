@@ -56,19 +56,19 @@
                 <div class="input-group">
                     <label>Request Body (JSON)</label>
                     <textarea id="createExamBody">{
-  "code": "PHY-S3-T1-2024",
-  "name": "Physics Mid-Term Exam",
-  "examType": "MID_TERM",
-  "term": "Term 1",
+  "code": "MOT-2024-T1-S3",
+  "name": "Mid of Term Examinations Term 1 2024 - Form 3",
+  "type": "MOT",
   "academicYear": "2024",
-  "formLevel": 3,
-  "subjectId": 1,
-  "examDate": "2024-04-15",
-  "startTime": "09:00:00",
-  "endTime": "12:00:00",
-  "duration": 180,
+  "term": 1,
+  "targetClasses": ["S3A", "S3B"],
+  "level": "O_LEVEL",
+  "startDate": "2024-04-15",
+  "endDate": "2024-04-18",
+  "gradingScale": "O_LEVEL",
+  "passMark": 40,
   "totalMarks": 100,
-  "passMark": 40
+  "description": "Mid-term examinations for Form 3 students"
 }</textarea>
                 </div>
                 <button class="btn btn-primary" onclick="createExam()">Send Request</button>

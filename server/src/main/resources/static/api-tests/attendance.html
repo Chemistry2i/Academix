@@ -57,13 +57,21 @@
                     <label>Request Body (JSON)</label>
                     <textarea id="markAttendanceBody">{
   "studentId": 1,
-  "subjectId": 1,
-  "classId": 1,
+  "studentNumber": "STU202400001",
+  "studentName": "John Doe",
+  "className": "S3A",
+  "stream": "A",
   "date": "2024-04-15",
   "status": "PRESENT",
+  "sessionType": "FULL_DAY",
   "checkInTime": "08:00:00",
-  "remarks": "On time",
-  "markedById": 1
+  "subjectCode": "PHY",
+  "subjectName": "Physics",
+  "periodNumber": 1,
+  "academicYear": "2024",
+  "term": 1,
+  "weekNumber": 15,
+  "remarks": "On time"
 }</textarea>
                 </div>
                 <button class="btn btn-primary" onclick="markAttendance()">Send Request</button>

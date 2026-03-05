@@ -77,14 +77,21 @@
                     <label>Request Body (JSON)</label>
                     <textarea id="createTimetableBody">{
   "className": "S3A",
-  "subjectId": 1,
-  "teacherId": 1,
+  "stream": "A",
   "dayOfWeek": "MONDAY",
+  "periodNumber": 1,
+  "periodName": "Period 1",
   "startTime": "08:00:00",
   "endTime": "08:40:00",
+  "subjectCode": "PHY",
+  "subjectName": "Physics",
+  "teacherId": 1,
+  "teacherName": "Mr. Smith",
   "room": "Room 101",
+  "building": "Science Block",
+  "academicYear": "2024",
   "term": 1,
-  "academicYear": "2024"
+  "periodType": "LESSON"
 }</textarea>
                 </div>
                 <button class="btn btn-primary" onclick="createTimetable()">Send Request</button>

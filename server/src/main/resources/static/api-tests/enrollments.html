@@ -68,9 +68,15 @@
                     <input type="checkbox" id="isPrincipal">
                     <label>Is Principal (A-Level)</label>
                 </div>
-                <div class="input-group">
-                    <label>Academic Year</label>
-                    <input type="text" id="enrollAcademicYear" value="2024">
+                <div class="inline-inputs">
+                    <div class="input-group">
+                        <label>Academic Year</label>
+                        <input type="text" id="enrollAcademicYear" value="2024">
+                    </div>
+                    <div class="input-group">
+                        <label>Term</label>
+                        <input type="number" id="enrollTerm" value="1" min="1" max="3">
+                    </div>
                 </div>
                 <button class="btn btn-primary" onclick="enrollStudentInSubject()">Send Request</button>
                 <div class="response-area" id="enrollSubjectResponse">Response will appear here...</div>
@@ -266,7 +272,8 @@
                 const subjectId = document.getElementById('enrollSubjectId').value;
                 const isPrincipal = document.getElementById('isPrincipal').checked;
                 const academicYear = document.getElementById('enrollAcademicYear').value;
-                const response = await fetch(`${API_BASE}/api/enrollments/student/${studentId}/subject/${subjectId}?isPrincipal=${isPrincipal}&academicYear=${academicYear}`, { method: 'POST', headers: getHeaders() });
+                const term = document.getElementById('enrollTerm').value;
+                const response = await fetch(`${API_BASE}/api/enrollments/student/${studentId}/subject/${subjectId}?isPrincipal=${isPrincipal}&academicYear=${academicYear}&term=${term}`, { method: 'POST', headers: getHeaders() });
                 const data = await response.json();
                 displayResponse('enrollSubjectResponse', response, data);
             } catch (e) { document.getElementById('enrollSubjectResponse').textContent = `Error: ${e.message}`; }

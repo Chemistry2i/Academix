@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -128,6 +130,7 @@ public class Teacher extends User {
     private List<TeacherSubject> subjectAssignments = new ArrayList<>();
 
     // Classes where this teacher is the class teacher
+    @JsonIgnore
     @OneToMany(mappedBy = "classTeacher", fetch = FetchType.LAZY)
     private List<SchoolClass> classesAsTeacher = new ArrayList<>();
 
