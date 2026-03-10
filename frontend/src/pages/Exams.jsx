@@ -22,6 +22,7 @@ import StatCard from '../components/common/StatCard'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import { useAuth } from '../contexts/AuthContext'
 import { examService } from '../services/examService'
+import ExamRegistration from '../components/exams/ExamRegistration'
 import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
 
@@ -578,6 +579,17 @@ const Exams = () => {
           </div>
         </Card>
       )}
+
+      {/* Exam Registration Modal */}
+      <ExamRegistration
+        isOpen={showAddModal}
+        onClose={() => {
+          setShowAddModal(false)
+          setEditingExam(null)
+        }}
+        onSuccess={loadExams}
+        editingExam={editingExam}
+      />
     </motion.div>
   )
 }

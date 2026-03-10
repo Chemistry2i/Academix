@@ -20,6 +20,7 @@ import StatCard from '../components/common/StatCard'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import { useAuth } from '../contexts/AuthContext'
 import { timetableService } from '../services/timetableService'
+import TimetableRegistration from '../components/timetable/TimetableRegistration'
 import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
 
@@ -527,6 +528,17 @@ const Timetable = () => {
           </div>
         </Card>
       )}
+
+      {/* Timetable Registration Modal */}
+      <TimetableRegistration
+        isOpen={showAddModal}
+        onClose={() => {
+          setShowAddModal(false)
+          setEditingEntry(null)
+        }}
+        onSuccess={loadTimetables}
+        editingEntry={editingEntry}
+      />
     </motion.div>
   )
 }

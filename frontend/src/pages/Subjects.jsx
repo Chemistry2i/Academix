@@ -19,6 +19,7 @@ import StatCard from '../components/common/StatCard'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import { useAuth } from '../contexts/AuthContext'
 import { subjectService } from '../services/subjectService'
+import SubjectRegistration from '../components/subjects/SubjectRegistration'
 import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
 
@@ -550,6 +551,17 @@ const Subjects = () => {
           </div>
         </Card>
       )}
+
+      {/* Subject Registration Modal */}
+      <SubjectRegistration
+        isOpen={showAddModal}
+        onClose={() => {
+          setShowAddModal(false)
+          setEditingSubject(null)
+        }}
+        onSuccess={loadSubjects}
+        editingSubject={editingSubject}
+      />
     </motion.div>
   )
 }

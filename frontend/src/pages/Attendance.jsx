@@ -18,6 +18,7 @@ import DataTable from '../components/common/DataTable'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import { useAuth } from '../contexts/AuthContext'
 import { attendanceService } from '../services/attendanceService'
+import AttendanceRegistration from '../components/attendance/AttendanceRegistration'
 import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
 
@@ -415,6 +416,14 @@ const Attendance = () => {
           </div>
         </Card>
       )}
+
+      {/* Attendance Registration Modal */}
+      <AttendanceRegistration
+        isOpen={showMarkAttendance}
+        onClose={() => setShowMarkAttendance(false)}
+        onSuccess={loadAttendanceData}
+        selectedClass={selectedClass}
+      />
     </motion.div>
   )
 }
