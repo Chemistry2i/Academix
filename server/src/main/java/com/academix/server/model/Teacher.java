@@ -4,6 +4,9 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -24,6 +27,7 @@ import lombok.ToString;
 @ToString(exclude = {"subjectAssignments", "classesAsTeacher"})
 @Entity
 @Table(name = "teachers")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Teacher extends User {
 
     // Unique teacher/staff identifier (e.g., "TCH2024001")
@@ -125,10 +129,12 @@ public class Teacher extends User {
 
     // Subject assignments (proper many-to-many via join entity)
     @OneToMany(mappedBy = "teacher", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore // Prevent circular reference during JSON serialization
     private List<TeacherSubject> subjectAssignments = new ArrayList<>();
 
     // Classes where this teacher is the class teacher
     @OneToMany(mappedBy = "classTeacher", fetch = FetchType.LAZY)
+    @JsonIgnore // Prevent circular reference during JSON serialization
     private List<SchoolClass> classesAsTeacher = new ArrayList<>();
 
     // Enums

@@ -428,6 +428,8 @@ public class TeacherController {
         summary.put("id", teacher.getId());
         summary.put("teacherId", teacher.getTeacherId());
         summary.put("email", teacher.getEmail());
+        summary.put("firstName", teacher.getFirstName());
+        summary.put("lastName", teacher.getLastName());
         summary.put("fullName", teacher.getFullName());
         summary.put("department", teacher.getDepartment());
         summary.put("primarySubject", teacher.getPrimarySubject());

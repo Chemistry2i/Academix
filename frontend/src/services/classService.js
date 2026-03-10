@@ -5,9 +5,33 @@ export const classService = {
   async getClasses() {
     try {
       const response = await apiClient.get('/classes')
-      return response.data
+      console.log('Classes API response:', response)
+      console.log('Classes data:', response.data)
+      console.log('Response data type:', typeof response.data)
+      console.log('Response data is array:', Array.isArray(response.data))
+      
+      // Handle different response formats
+      if (Array.isArray(response.data)) {
+        return response.data
+      } else if (response.data && typeof response.data === 'object') {
+        // If it's an object, try to find an array property
+        const possibleArrays = Object.values(response.data).filter(Array.isArray)
+        if (possibleArrays.length > 0) {
+          console.log('Found array in response object:', possibleArrays[0])
+          return possibleArrays[0]
+        }
+      }
+      
+      console.warn('API response is not an array, returning empty array')
+      return []
     } catch (error) {
       console.error('Error fetching classes:', error)
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      })
       throw error
     }
   },
@@ -59,10 +83,40 @@ export const classService = {
   // Create new class
   async createClass(classData) {
     try {
+      console.log('Creating class with data:', classData)
+      
+      // Check if teacher assignment data is properly formatted
+      if (classData.classTeacher) {
+        console.log('Teacher assignment data:', classData.classTeacher)
+      }
+      
       const response = await apiClient.post('/classes', classData)
+      console.log('Create class response:', response)
+      console.log('Created class data:', response.data)
+      
+      // Validate response structure
+      if (!response.data || typeof response.data !== 'object') {
+        throw new Error('Invalid response format from server')
+      }
+      
       return response.data
     } catch (error) {
       console.error('Error creating class:', error)
+      console.error('Create class error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message
+      })
+      
+      // Provide specific error messages for common issues
+      if (error.response?.status === 400 && error.response?.data?.error?.includes('Teacher not found')) {
+        throw new Error('Selected teacher not found. Please refresh and try again.')
+      }
+      if (error.response?.status === 400 && error.response?.data?.error?.includes('already exists')) {
+        throw new Error('A class with this name already exists for this academic year.')
+      }
+      
       throw error
     }
   },

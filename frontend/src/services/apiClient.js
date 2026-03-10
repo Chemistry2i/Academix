@@ -5,9 +5,10 @@ import toast from 'react-hot-toast'
 // Create axios instance with base configuration
 const apiClient = axios.create({
   baseURL: '/api',
-  timeout: 10000,
+  timeout: 30000, // Increased timeout to 30 seconds
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json' // Explicitly request JSON
   },
 })
 
