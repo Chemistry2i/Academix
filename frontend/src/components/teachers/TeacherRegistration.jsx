@@ -64,10 +64,22 @@ const TeacherRegistration = ({
 
   useEffect(() => {
     if (isOpen) {
+      setCurrentStep(1)
+      setFormErrors({})
+      setSubmitting(false)
       if (editingTeacher) {
         setFormData(editingTeacher)
         setCurrentStep(1)
       } else {
+        setFormData({
+          firstName: '', lastName: '', otherNames: '', email: '', phoneNumber: '',
+          dateOfBirth: '', gender: '', nationality: 'Ugandan', nin: '', maritalStatus: '',
+          teacherId: '', department: '', primarySubject: '', subjects: [],
+          qualifications: '', yearsOfExperience: '', employmentType: 'PERMANENT',
+          employmentStatus: 'ACTIVE', hireDate: '', salary: '', emergencyContact: '',
+          emergencyPhone: '', address: '', isClassTeacher: false, isDepartmentHead: false,
+          profilePicture: null, documents: []
+        })
         generateTeacherId()
       }
     }
@@ -166,7 +178,11 @@ const TeacherRegistration = ({
       if (!formData.phoneNumber.trim()) errors.phoneNumber = 'Phone number is required'
       if (!formData.dateOfBirth) errors.dateOfBirth = 'Date of birth is required'
       if (!formData.gender) errors.gender = 'Gender is required'
-      if (!formData.nin.trim()) errors.nin = 'National ID is required'
+      if (!formData.nin.trim()) {
+        errors.nin = 'National ID is required'
+      } else if (!/^[A-Z0-9]{14}$/.test(formData.nin.trim())) {
+        errors.nin = 'NIN must be exactly 14 alphanumeric characters'
+      }
     }
 
     if (step === 2) {
@@ -207,7 +223,9 @@ const TeacherRegistration = ({
       // Prepare form data for submission
       const teacherData = {
         ...formData,
-        password: formData.nin // Use NIN as temporary password
+        password: formData.nin, // Use NIN as temporary password
+        // Convert empty optional unique fields to null to avoid constraint violations
+        teacherId: formData.teacherId?.trim() || null
       }
 
       if (editingTeacher) {
@@ -222,7 +240,32 @@ const TeacherRegistration = ({
       onClose()
     } catch (error) {
       console.error('Failed to save teacher:', error)
-      toast.error(editingTeacher ? 'Failed to update teacher' : 'Failed to register teacher')
+      
+      // Handle specific error cases
+      let message = editingTeacher ? 'Failed to update teacher' : 'Failed to register teacher'
+      
+      if (error.response?.data?.error) {
+        const errorData = error.response.data.error
+        const errorMsg = typeof errorData === 'string' ? errorData.toLowerCase() : ''
+        if (errorMsg.includes('unique') && errorMsg.includes('nin')) {
+          message = 'This National ID Number (NIN) is already registered in the system'
+        } else if (errorMsg.includes('unique') && errorMsg.includes('email')) {
+          message = 'This email address is already registered in the system'
+        } else if (errorMsg.includes('unique') && errorMsg.includes('teacherid')) {
+          message = 'This Teacher ID is already assigned. Please contact administration.'
+        } else {
+          message = typeof errorData === 'string' ? errorData : (editingTeacher ? 'Failed to update teacher' : 'Failed to register teacher')
+        }
+      } else if (error.message) {
+        message = error.message
+      }
+      
+      toast.error(message)
+      
+      // Handle specific backend validation errors
+      if (error.response?.data?.validationErrors) {
+        setFormErrors(error.response.data.validationErrors)
+      }
     } finally {
       setSubmitting(false)
     }
@@ -349,8 +392,9 @@ const TeacherRegistration = ({
             }`}
           >
             <option value="">Select gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
+            <option value="MALE">Male</option>
+            <option value="FEMALE">Female</option>
+            <option value="OTHER">Other</option>
           </select>
           {formErrors.gender && (
             <p className="text-red-500 text-xs mt-1">{formErrors.gender}</p>
@@ -715,7 +759,8 @@ const TeacherRegistration = ({
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            disabled={submitting}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
           >
             <XMarkIcon className="w-5 h-5 text-gray-500" />
           </button>
@@ -812,7 +857,7 @@ const TeacherRegistration = ({
               >
                 {submitting ? (
                   <>
-                    <LoadingSpinner size={16} className="mr-2" />
+                    <LoadingSpinner size="sm" className="mr-2" />
                     {editingTeacher ? 'Updating...' : 'Registering...'}
                   </>
                 ) : (

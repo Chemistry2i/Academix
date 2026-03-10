@@ -63,11 +63,21 @@ const StudentRegistration = ({
 
   useEffect(() => {
     if (isOpen) {
+      setCurrentStep(1)
+      setFormErrors({})
+      setSubmitting(false)
       loadClasses()
       if (editingStudent) {
         setFormData(editingStudent)
         setCurrentStep(1)
       } else {
+        setFormData({
+          firstName: '', lastName: '', otherNames: '', email: '', phoneNumber: '',
+          dateOfBirth: '', gender: '', nationality: 'Ugandan', nin: '', disabilityStatus: '',
+          currentClass: '', stream: '', house: '', residenceStatus: 'DAY', combination: '',
+          studentId: '', linn: '', district: '', county: '', subCounty: '', parish: '',
+          village: '', profilePicture: null, birthCertificate: null
+        })
         generateStudentId()
       }
     }
@@ -174,8 +184,10 @@ const StudentRegistration = ({
       }
       if (!formData.dateOfBirth) errors.dateOfBirth = 'Date of birth is required'
       if (!formData.gender) errors.gender = 'Gender is required'
-      if (formData.nin && !/^[A-Z0-9]{14}$/.test(formData.nin)) {
-        errors.nin = 'NIN must be 14 alphanumeric characters'
+      if (!formData.nin.trim()) {
+        errors.nin = 'National ID Number (NIN) is required'
+      } else if (!/^[A-Z0-9]{14}$/.test(formData.nin.trim())) {
+        errors.nin = 'NIN must be exactly 14 alphanumeric characters'
       }
     }
     
@@ -231,8 +243,14 @@ const StudentRegistration = ({
       const studentData = {
         ...formData,
         dateOfBirth: formData.dateOfBirth,
-        schoolClass: formData.currentClass ? { id: parseInt(formData.currentClass) } : null
+        schoolClass: formData.currentClass ? { id: parseInt(formData.currentClass) } : null,
+        // Convert empty optional unique fields to null to avoid constraint violations
+        linn: formData.linn?.trim() || null,
+        studentId: formData.studentId?.trim() || null
       }
+
+      // Debug logging to help troubleshoot 400 errors
+      console.log('Submitting student data:', studentData)
 
       let result
       if (editingStudent) {
@@ -269,10 +287,33 @@ const StudentRegistration = ({
       }
 
       onSuccess?.(result)
-      handleClose()
+      onClose()
     } catch (error) {
       console.error('Failed to save student:', error)
-      const message = error.response?.data?.error || error.message || 'Failed to save student'
+      console.error('Error response:', error.response?.data)
+      console.error('Error status:', error.response?.status)
+      
+      // Handle specific error cases
+      let message = 'Failed to save student'
+      
+      if (error.response?.data?.error) {
+        const errorData = error.response.data.error
+        const errorMsg = typeof errorData === 'string' ? errorData.toLowerCase() : ''
+        if (errorMsg.includes('unique') && errorMsg.includes('nin')) {
+          message = 'This National ID Number (NIN) is already registered in the system'
+        } else if (errorMsg.includes('unique') && errorMsg.includes('linn')) {
+          message = 'This LINN (Learner Identification Number) is already registered in the system'
+        } else if (errorMsg.includes('unique') && errorMsg.includes('email')) {
+          message = 'This email address is already registered in the system'
+        } else if (errorMsg.includes('unique') && errorMsg.includes('studentid')) {
+          message = 'This Student ID is already assigned. Please contact administration.'
+        } else {
+          message = typeof errorData === 'string' ? errorData : 'Failed to save student'
+        }
+      } else if (error.message) {
+        message = error.message
+      }
+      
       toast.error(message, { id: loadingToast })
       
       // Handle specific backend validation errors
@@ -542,7 +583,7 @@ const StudentRegistration = ({
                 {/* NIN */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    National ID Number (NIN)
+                    National ID Number (NIN) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -940,7 +981,7 @@ const StudentRegistration = ({
                 >
                   {submitting ? (
                     <>
-                      <LoadingSpinner className="w-4 h-4 mr-2" />
+                      <LoadingSpinner size="sm" className="mr-2" />
                       {editingStudent ? 'Updating...' : 'Registering...'}
                     </>
                   ) : (

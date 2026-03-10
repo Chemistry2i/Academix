@@ -72,7 +72,7 @@ public class StudentService {
         }
 
         // Generate verification token
-        String verificationToken = userService.generateEmailVerificationToken(student);
+        userService.generateEmailVerificationToken(student);
 
         // Save student
         Student savedStudent = studentRepository.save(student);

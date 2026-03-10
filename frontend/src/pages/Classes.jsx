@@ -91,7 +91,8 @@ const Classes = () => {
   const loadTeachers = async () => {
     try {
       const teachersData = await teacherService.getTeachers()
-      setTeachers(teachersData)
+      // Ensure teachersData is always an array
+      setTeachers(Array.isArray(teachersData) ? teachersData : [])
     } catch (error) {
       console.error('Failed to load teachers:', error)
       // Fallback to mock data if API fails
@@ -835,7 +836,7 @@ const Classes = () => {
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                       >
                         <option value="">Select Teacher</option>
-                        {teachers.map(teacher => (
+                        {Array.isArray(teachers) && teachers.map(teacher => (
                           <option key={teacher.id} value={teacher.id}>
                             {teacher.firstName} {teacher.lastName}
                           </option>

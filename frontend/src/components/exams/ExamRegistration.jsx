@@ -215,7 +215,28 @@ const ExamRegistration = ({
       onClose()
     } catch (error) {
       console.error('Failed to save exam:', error)
-      toast.error(error?.message || 'Failed to save exam. Please try again.')
+      
+      // Handle specific error cases
+      let message = 'Failed to save exam. Please try again.'
+      
+      if (error.response?.data?.error) {
+        const errorData = error.response.data.error
+        const errorMsg = typeof errorData === 'string' ? errorData.toLowerCase() : ''
+        if (errorMsg.includes('unique') && errorMsg.includes('code')) {
+          message = 'This exam code is already in use. Please choose a different code.'
+        } else {
+          message = typeof errorData === 'string' ? errorData : 'Failed to save exam. Please try again.'
+        }
+      } else if (error.message) {
+        message = error.message
+      }
+      
+      toast.error(message)
+      
+      // Handle specific backend validation errors
+      if (error.response?.data?.validationErrors) {
+        setFormErrors(error.response.data.validationErrors)
+      }
     } finally {
       setLoading(false)
     }
