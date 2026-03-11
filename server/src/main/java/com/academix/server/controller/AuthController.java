@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.academix.server.dto.AuthDto.*;
+
 import com.academix.server.dto.AuthDto.ApiResponse;
 import com.academix.server.dto.AuthDto.AuthResponse;
 import com.academix.server.dto.AuthDto.ChangePasswordRequest;

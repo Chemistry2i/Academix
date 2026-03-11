@@ -9,6 +9,10 @@ import {
 import Button from '../common/Button'
 import LoadingSpinner from '../common/LoadingSpinner'
 import { timetableService } from '../../services/timetableService'
+import { teacherService } from '../../services/teacherService'
+import { classService } from '../../services/classService'
+import { subjectService } from '../../services/subjectService'
+import { roomService } from '../../services/roomService'
 import toast from 'react-hot-toast'
 
 const TimetableRegistration = ({ 
@@ -18,12 +22,20 @@ const TimetableRegistration = ({
   editingEntry = null 
 }) => {
   const [loading, setLoading] = useState(false)
+  const [initialLoading, setInitialLoading] = useState(true)
   const [formErrors, setFormErrors] = useState({})
   const [conflictCheck, setConflictCheck] = useState(null)
+  
+  // Dynamic data from API
+  const [classes, setClasses] = useState([])
+  const [teachers, setTeachers] = useState([])
+  const [subjects, setSubjects] = useState([])
+  const [rooms, setRooms] = useState([])
+  
   const [formData, setFormData] = useState({
     classCode: '',
     subjectCode: '',
-    teacherCode: '',
+    teacherId: '',
     dayOfWeek: 'MONDAY',
     period: 1,
     startTime: '',
@@ -59,54 +71,74 @@ const TimetableRegistration = ({
   const periods = Array.from({ length: 10 }, (_, i) => i + 1)
   const academicYears = ['2025/2026', '2024/2025', '2023/2024']
 
-  const allClasses = [
-    'S1A', 'S1B', 'S1C',
-    'S2A', 'S2B', 'S2C', 
-    'S3A', 'S3B', 'S3C',
-    'S4A', 'S4B', 'S4C',
-    'S5 PCM', 'S5 PCB', 'S5 HEG', 'S5 BCM',
-    'S6 PCM', 'S6 PCB', 'S6 HEG', 'S6 BCM'
-  ]
+  // Load dynamic data from API
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        setInitialLoading(true)
+        
+        const [classesResponse, teachersResponse, subjectsResponse, roomsResponse] = await Promise.all([
+          classService.getClasses().catch(err => {
+            console.warn('Failed to load classes:', err)
+            return []
+          }),
+          teacherService.getTeachers(true).catch(err => {
+            console.warn('Failed to load teachers:', err)
+            return { teachers: [] }
+          }),
+          subjectService.getAllSubjects().catch(err => {
+            console.warn('Failed to load subjects:', err)
+            return []
+          }),
+          roomService.getAvailableRooms().catch(err => {
+            console.warn('Failed to load rooms:', err)
+            return []
+          })
+        ])
 
-  const allSubjects = [
-    'Mathematics', 'English', 'Physics', 'Chemistry', 'Biology',
-    'History', 'Geography', 'Literature', 'Economics', 'Commerce',
-    'Accounting', 'Computer Studies', 'French', 'Latin', 'RE',
-    'Fine Art', 'Music', 'Physical Education', 'Agriculture',
-    'Political Education', 'General Paper', 'Subsidiary ICT'
-  ]
+        setClasses(Array.isArray(classesResponse) ? classesResponse : [])
+        setTeachers(teachersResponse.teachers || [])
+        setSubjects(Array.isArray(subjectsResponse) ? subjectsResponse : [])
+        setRooms(Array.isArray(roomsResponse) ? roomsResponse : [])
+        
+      } catch (error) {
+        console.error('Error loading initial data:', error)
+        toast.error('Failed to load form data')
+      } finally {
+        setInitialLoading(false)
+      }
+    }
 
-  const commonRooms = [
-    'Room 101', 'Room 102', 'Room 103', 'Room 104', 'Room 105',
-    'Physics Lab', 'Chemistry Lab', 'Biology Lab', 'Computer Lab',
-    'Library', 'Assembly Hall', 'Sports Field', 'Gymnasium'
-  ]
+    if (isOpen) {
+      loadInitialData()
+    }
+  }, [isOpen])
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !initialLoading) {
       setFormErrors({})
       setConflictCheck(null)
       if (editingEntry) {
         setFormData({
-          classCode: editingEntry.classCode || '',
+          classCode: editingEntry.className || '',
           subjectCode: editingEntry.subjectCode || '',
-          teacherCode: editingEntry.teacherCode || '',
+          teacherId: editingEntry.teacherId || '',
           dayOfWeek: editingEntry.dayOfWeek || 'MONDAY',
-          period: editingEntry.period || 1,
+          period: editingEntry.periodNumber || 1,
           startTime: editingEntry.startTime || '',
           endTime: editingEntry.endTime || '',
-          roomNumber: editingEntry.roomNumber || '',
+          roomNumber: editingEntry.room || '',
           academicYear: editingEntry.academicYear || '2025/2026',
           term: editingEntry.term || 1,
-          isLabSession: editingEntry.isLabSession || false,
-          sessionType: editingEntry.sessionType || 'NORMAL',
+          isLabSession: editingEntry.isDoublePeriod || false,
+          sessionType: editingEntry.periodType || 'NORMAL',
           notes: editingEntry.notes || ''
         })
       } else {
         setFormData({
           classCode: '',
           subjectCode: '',
-          teacherCode: '',
+          teacherId: '',
           dayOfWeek: 'MONDAY',
           period: 1,
           startTime: '',
@@ -120,7 +152,7 @@ const TimetableRegistration = ({
         })
       }
     }
-  }, [isOpen, editingEntry])
+  }, [isOpen, editingEntry, initialLoading])
 
   const validateForm = () => {
     const errors = {}
@@ -133,8 +165,8 @@ const TimetableRegistration = ({
       errors.subjectCode = 'Subject is required'
     }
 
-    if (!formData.teacherCode?.trim()) {
-      errors.teacherCode = 'Teacher is required'
+    if (!formData.teacherId) {
+      errors.teacherId = 'Teacher is required'
     }
 
     if (!formData.startTime) {
@@ -174,13 +206,13 @@ const TimetableRegistration = ({
     }))
 
     // Clear conflict check when key fields change
-    if (['classCode', 'teacherCode', 'dayOfWeek', 'period', 'startTime', 'endTime'].includes(name)) {
+    if (['classCode', 'teacherId', 'dayOfWeek', 'period', 'startTime', 'endTime'].includes(name)) {
       setConflictCheck(null)
     }
   }
 
   const checkForConflicts = async () => {
-    if (!formData.classCode || !formData.teacherCode || !formData.dayOfWeek || !formData.startTime || !formData.endTime) {
+    if (!formData.classCode || !formData.teacherId || !formData.dayOfWeek || !formData.startTime || !formData.endTime) {
       toast.error('Please fill in all required fields before checking conflicts')
       return
     }
@@ -188,10 +220,10 @@ const TimetableRegistration = ({
     try {
       setLoading(true)
       const conflicts = await timetableService.checkTimetableConflicts({
-        classCode: formData.classCode,
-        teacherCode: formData.teacherCode,
+        className: formData.classCode,
+        teacherId: parseInt(formData.teacherId),
         dayOfWeek: formData.dayOfWeek,
-        period: formData.period,
+        periodNumber: formData.period,
         startTime: formData.startTime,
         endTime: formData.endTime,
         academicYear: formData.academicYear,
@@ -232,11 +264,29 @@ const TimetableRegistration = ({
     try {
       setLoading(true)
       
+      // Map frontend field names to backend field names with proper data types
+      const mappedData = {
+        className: formData.classCode,
+        periodNumber: parseInt(formData.period),
+        dayOfWeek: formData.dayOfWeek,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
+        subjectCode: formData.subjectCode,
+        teacherId: parseInt(formData.teacherId),
+        room: formData.roomNumber,
+        academicYear: formData.academicYear,
+        term: parseInt(formData.term),
+        isDoublePeriod: formData.isLabSession,
+        periodType: formData.sessionType === 'NORMAL' ? 'LESSON' : formData.sessionType,
+        notes: formData.notes || null,
+        isActive: true
+      }
+      
       if (editingEntry) {
-        await timetableService.updateTimetableEntry(editingEntry.id, formData)
+        await timetableService.updateTimetableEntry(editingEntry.id, mappedData)
         toast.success('Timetable entry updated successfully!')
       } else {
-        await timetableService.createTimetableEntry(formData)
+        await timetableService.createTimetableEntry(mappedData)
         toast.success('Timetable entry created successfully!')
       }
       
@@ -286,14 +336,20 @@ const TimetableRegistration = ({
             </div>
             <button
               onClick={handleClose}
-              disabled={loading}
+              disabled={loading || initialLoading}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {initialLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <LoadingSpinner />
+              <span className="ml-3 text-gray-600">Loading form data...</span>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
@@ -308,12 +364,12 @@ const TimetableRegistration = ({
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 ${
                     formErrors.classCode ? 'border-red-300' : 'border-gray-300'
                   }`}
-                  disabled={loading}
+                  disabled={loading || initialLoading}
                 >
                   <option value="">Select a class</option>
-                  {allClasses.map((className) => (
-                    <option key={className} value={className}>
-                      {className}
+                  {classes.map((cls) => (
+                    <option key={cls.id || cls.className} value={cls.className || cls.name}>
+                      {cls.className || cls.name}
                     </option>
                   ))}
                 </select>
@@ -334,12 +390,12 @@ const TimetableRegistration = ({
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 ${
                     formErrors.subjectCode ? 'border-red-300' : 'border-gray-300'
                   }`}
-                  disabled={loading}
+                  disabled={loading || initialLoading}
                 >
                   <option value="">Select a subject</option>
-                  {allSubjects.map((subject) => (
-                    <option key={subject} value={subject}>
-                      {subject}
+                  {subjects.map((subject) => (
+                    <option key={subject.id || subject.code} value={subject.code || subject.subjectCode}>
+                      {subject.name || subject.subjectName}
                     </option>
                   ))}
                 </select>
@@ -349,23 +405,28 @@ const TimetableRegistration = ({
               </div>
 
               <div>
-                <label htmlFor="teacherCode" className="block text-sm font-medium text-gray-700 mb-2">
-                  Teacher Code *
+                <label htmlFor="teacherId" className="block text-sm font-medium text-gray-700 mb-2">
+                  Teacher *
                 </label>
-                <input
-                  type="text"
-                  id="teacherCode"
-                  name="teacherCode"
-                  value={formData.teacherCode}
+                <select
+                  id="teacherId"
+                  name="teacherId"
+                  value={formData.teacherId}
                   onChange={handleInputChange}
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-                    formErrors.teacherCode ? 'border-red-300' : 'border-gray-300'
+                    formErrors.teacherId ? 'border-red-300' : 'border-gray-300'
                   }`}
-                  placeholder="e.g., TCH001"
-                  disabled={loading}
-                />
-                {formErrors.teacherCode && (
-                  <p className="text-red-500 text-xs mt-1">{formErrors.teacherCode}</p>
+                  disabled={loading || initialLoading}
+                >
+                  <option value="">Select a teacher</option>
+                  {teachers.map((teacher) => (
+                    <option key={teacher.id} value={teacher.id}>
+                      {teacher.firstName} {teacher.lastName} ({teacher.employeeId || teacher.code})
+                    </option>
+                  ))}
+                </select>
+                {formErrors.teacherId && (
+                  <p className="text-red-500 text-xs mt-1">{formErrors.teacherId}</p>
                 )}
               </div>
             </div>
@@ -487,12 +548,13 @@ const TimetableRegistration = ({
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 ${
                     formErrors.roomNumber ? 'border-red-300' : 'border-gray-300'
                   }`}
-                  disabled={loading}
+                  disabled={loading || initialLoading}
                 >
                   <option value="">Select a room</option>
-                  {commonRooms.map((room) => (
-                    <option key={room} value={room}>
-                      {room}
+                  {rooms.map((room) => (
+                    <option key={room.id || room.roomNumber} value={room.roomNumber}>
+                      {room.roomNumber} - {room.roomName || room.roomType}
+                      {room.building && ` (${room.building})`}
                     </option>
                   ))}
                 </select>
@@ -647,6 +709,7 @@ const TimetableRegistration = ({
               </Button>
             </div>
           </form>
+          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>

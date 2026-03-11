@@ -62,6 +62,25 @@ const Classes = () => {
 
   // Load data on component mount
   useEffect(() => {
+    console.log('Classes component mounted')
+    
+    // Check backend connectivity first
+    const checkBackend = async () => {
+      try {
+        const response = await fetch('/api/classes', { method: 'HEAD' })
+        console.log('Backend connectivity check - Status:', response.status)
+        if (!response.ok) {
+          toast.error('Backend server may not be running. Please start the Spring Boot server.')
+          return
+        }
+      } catch (error) {
+        console.error('Backend connectivity check failed:', error)
+        toast.error('Cannot connect to backend server. Please ensure Spring Boot server is running on port 8080.')
+        return
+      }
+    }
+    
+    checkBackend()
     loadClasses()
     loadTeachers()
   }, [])
@@ -69,10 +88,14 @@ const Classes = () => {
   const loadClasses = async () => {
     try {
       setLoading(true)
+      console.log('Loading classes...')
       const data = await classService.getClasses()
+      console.log('Classes loaded:', data)
+      console.log('Is array?', Array.isArray(data))
+      console.log('Length:', data?.length)
       setClasses(Array.isArray(data) ? data : [])
       
-      if (data.length === 0) {
+      if ((Array.isArray(data) ? data : []).length === 0) {
         toast('No classes found. Create your first class!', {
           icon: '📚',
           duration: 4000,
@@ -90,20 +113,30 @@ const Classes = () => {
 
   const loadTeachers = async () => {
     try {
+      console.log('🔄 Loading teachers...')
       const teachersData = await teacherService.getTeachers()
-      setTeachers(teachersData)
+      console.log('📡 Teachers API Response:', teachersData)
+      
+      // Extract teachers array from the response object
+      const teachersArray = teachersData?.teachers || teachersData || []
+      console.log('👥 Extracted teachers array:', teachersArray)
+      
+      setTeachers(Array.isArray(teachersArray) ? teachersArray : [])
+      
+      if (teachersArray.length === 0) {
+        console.log('⚠️ No teachers found in database')
+        toast('No teachers found. Please create teachers first!', {
+          icon: '👨‍🏫',
+          duration: 4000,
+        })
+      } else {
+        console.log(`✅ Successfully loaded ${teachersArray.length} teachers`)
+      }
     } catch (error) {
-      console.error('Failed to load teachers:', error)
-      // Fallback to mock data if API fails
-      const mockTeachers = [
-        { id: 1, firstName: 'John', lastName: 'Smith', email: 'john.smith@school.edu' },
-        { id: 2, firstName: 'Sarah', lastName: 'Johnson', email: 'sarah.johnson@school.edu' },
-        { id: 3, firstName: 'Mike', lastName: 'Brown', email: 'mike.brown@school.edu' },
-        { id: 4, firstName: 'Lisa', lastName: 'Wilson', email: 'lisa.wilson@school.edu' },
-        { id: 5, firstName: 'David', lastName: 'Davis', email: 'david.davis@school.edu' },
-      ]
-      setTeachers(mockTeachers)
-      toast.error('Failed to load teachers from server, using offline data')
+      console.error('❌ Failed to load teachers:', error)
+      // Keep teachers as empty array - no more fallback mock data
+      setTeachers([])
+      toast.error('Failed to load teachers from server')
     }
   }
 
@@ -291,6 +324,15 @@ const Classes = () => {
         classTeacher: formData.classTeacher?.id ? { id: formData.classTeacher.id } : null
       }
 
+      console.log('Submitting class data:', classData)
+      console.log('Original form data:', formData)
+      console.log('Teacher assignment:', {
+        hasTeacher: !!formData.classTeacher,
+        teacherId: formData.classTeacher?.id,
+        teacherName: formData.classTeacher ? `${formData.classTeacher.firstName} ${formData.classTeacher.lastName}` : 'None',
+        submittingAs: classData.classTeacher
+      })
+
       let result
       if (editingClass) {
         result = await classService.updateClass(editingClass.id, classData)
@@ -300,17 +342,31 @@ const Classes = () => {
         )
       } else {
         result = await classService.createClass(classData)
+        console.log('Class creation result:', result)
         toast.success(
           `Class "${result.name || classData.name}" created successfully! ${result.maxCapacity} student capacity.`,
           { id: loadingToast }
         )
       }
 
+      console.log('About to reload classes after creation/update...')
       await loadClasses() // Reload classes
+      console.log('Classes reloaded after creation/update')
       resetForm()
     } catch (error) {
       console.error('Failed to save class:', error)
-      const message = error.response?.data?.error || error.message || 'Failed to save class'
+      
+      // Handle specific teacher assignment errors
+      let message = error.response?.data?.error || error.message || 'Failed to save class'
+      
+      if (message.includes('Teacher not found')) {
+        message = 'The selected teacher could not be found. Please refresh the page and try again.'
+      } else if (message.includes('already exists')) {
+        message = 'A class with this name already exists for this academic year.'
+      } else if (message.includes('Invalid response format')) {
+        message = 'Server error during teacher assignment. Please try again.'
+      }
+      
       toast.error(message, { id: loadingToast })
       
       // Handle specific backend validation errors
@@ -442,6 +498,12 @@ const Classes = () => {
   const totalStudents = classes.reduce((sum, cls) => sum + (cls.currentCount || 0), 0)
   const totalCapacity = classes.reduce((sum, cls) => sum + (cls.maxCapacity || 50), 0)
   const avgUtilization = totalCapacity > 0 ? Math.round((totalStudents / totalCapacity) * 100) : 0
+
+  // Debug logging
+  console.log('Classes render - current classes:', classes)
+  console.log('Classes render - classes length:', classes?.length)
+  console.log('Classes render - classes type:', typeof classes, Array.isArray(classes))
+  console.log('Classes render - loading state:', loading)
 
   // Show loading spinner while data is being fetched
   if (loading) {
@@ -835,12 +897,29 @@ const Classes = () => {
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                       >
                         <option value="">Select Teacher</option>
-                        {teachers.map(teacher => (
-                          <option key={teacher.id} value={teacher.id}>
-                            {teacher.firstName} {teacher.lastName}
-                          </option>
-                        ))}
+                        {Array.isArray(teachers) && teachers.length > 0 ? (
+                          teachers.map(teacher => (
+                            <option key={teacher.id} value={teacher.id}>
+                              {teacher.firstName && teacher.lastName 
+                                ? `${teacher.firstName} ${teacher.lastName}` 
+                                : teacher.fullName || `Teacher ${teacher.id}`} 
+                              {teacher.department ? ` (${teacher.department})` : ''}
+                            </option>
+                          ))
+                        ) : (
+                          <option disabled>No teachers available - Create teachers first</option>
+                        )}
                       </select>
+                      {teachers.length === 0 && (
+                        <p className="mt-1 text-sm text-yellow-600">
+                          ⚠️ No teachers found. Please go to Teachers page and create teachers first.
+                        </p>
+                      )}
+                      {process.env.NODE_ENV === 'development' && (
+                        <p className="mt-1 text-xs text-gray-500">
+                          Debug: {teachers.length} teachers loaded
+                        </p>
+                      )}
                     </div>
 
                     <div>

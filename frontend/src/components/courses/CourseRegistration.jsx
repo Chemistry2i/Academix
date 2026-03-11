@@ -48,6 +48,9 @@ const CourseRegistration = ({
 
   useEffect(() => {
     if (isOpen) {
+      setCurrentStep(1)
+      setFormErrors({})
+      setSubmitting(false)
       if (editingCourse) {
         setFormData({
           ...editingCourse,
@@ -245,7 +248,28 @@ const CourseRegistration = ({
       onClose()
     } catch (error) {
       console.error('Failed to save course:', error)
-      toast.error(editingCourse ? 'Failed to update course' : 'Failed to create course')
+      
+      // Handle specific error cases
+      let message = editingCourse ? 'Failed to update course' : 'Failed to create course'
+      
+      if (error.response?.data?.error) {
+        const errorData = error.response.data.error
+        const errorMsg = typeof errorData === 'string' ? errorData.toLowerCase() : ''
+        if (errorMsg.includes('unique') && errorMsg.includes('code')) {
+          message = 'This course code is already in use. Please choose a different code.'
+        } else {
+          message = typeof errorData === 'string' ? errorData : (editingCourse ? 'Failed to update course' : 'Failed to create course')
+        }
+      } else if (error.message) {
+        message = error.message
+      }
+      
+      toast.error(message)
+      
+      // Handle specific backend validation errors
+      if (error.response?.data?.validationErrors) {
+        setFormErrors(error.response.data.validationErrors)
+      }
     } finally {
       setSubmitting(false)
     }
@@ -540,7 +564,8 @@ const CourseRegistration = ({
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            disabled={submitting}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
           >
             <XMarkIcon className="w-5 h-5 text-gray-500" />
           </button>
@@ -637,7 +662,7 @@ const CourseRegistration = ({
               >
                 {submitting ? (
                   <>
-                    <LoadingSpinner size={16} className="mr-2" />
+                    <LoadingSpinner size="sm" className="mr-2" />
                     {editingCourse ? 'Updating...' : 'Creating...'}
                   </>
                 ) : (

@@ -47,12 +47,16 @@ const Dashboard = () => {
   const { user } = useAuth()
   const [currentTime, setCurrentTime] = useState(new Date())
   const [stats, setStats] = useState({
-    totalStudents: 1247,
-    totalTeachers: 89,
-    totalCourses: 24,
-    averageGrade: 78.5
+    totalStudents: 0,
+    totalTeachers: 0,
+    totalSubjects: 0,
+    totalClasses: 0,
+    activeStudents: 0,
+    activeTeachers: 0,
+    averageAttendance: 0,
+    todayAttendance: 0
   })
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   // Update time every minute
   useEffect(() => {
@@ -68,9 +72,27 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       setLoading(true)
       try {
-        // In a real app, you'd fetch from your API
-        // const data = await dashboardService.getStats()
-        // setStats(data)
+        const response = await dashboardService.getStats()
+        if (response.success) {
+          setStats({
+            totalStudents: response.data.totalStudents || 0,
+            totalTeachers: response.data.totalTeachers || 0,
+            totalSubjects: response.data.totalSubjects || 0,
+            totalClasses: response.data.totalClasses || 0,
+            activeStudents: response.data.activeStudents || 0,
+            activeTeachers: response.data.activeTeachers || 0,
+            averageAttendance: response.data.averageAttendance || 0,
+            todayAttendance: response.data.todayAttendance || 0,
+            maleStudents: response.data.maleStudents || 0,
+            femaleStudents: response.data.femaleStudents || 0,
+            permanentTeachers: response.data.permanentTeachers || 0,
+            contractTeachers: response.data.contractTeachers || 0,
+            ongoingExams: response.data.ongoingExams || 0,
+            upcomingExams: response.data.upcomingExams || 0
+          })
+        } else {
+          console.error('Failed to fetch dashboard stats:', response.message)
+        }
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
       } finally {
@@ -255,35 +277,39 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Students"
-          value={stats.totalStudents.toLocaleString()}
-          change="+12%"
+          value={loading ? "..." : stats.totalStudents.toLocaleString()}
+          change={loading ? "" : `Active: ${stats.activeStudents}`}
           changeType="positive"
           icon={AcademicCapIcon}
           color="blue"
+          loading={loading}
         />
         <StatCard
           title="Total Teachers"
-          value={stats.totalTeachers}
-          change="+3%"
+          value={loading ? "..." : stats.totalTeachers.toLocaleString()}
+          change={loading ? "" : `Active: ${stats.activeTeachers}`}
           changeType="positive"
           icon={UserGroupIcon}
           color="green"
+          loading={loading}
         />
         <StatCard
-          title="Active Courses"
-          value={stats.totalCourses}
-          change="+2"
+          title="Total Subjects"
+          value={loading ? "..." : stats.totalSubjects.toLocaleString()}
+          change={loading ? "" : `Classes: ${stats.totalClasses}`}
           changeType="positive"
           icon={BookOpenIcon}
           color="purple"
+          loading={loading}
         />
         <StatCard
-          title="Average Grade"
-          value={`${stats.averageGrade}%`}
-          change="+2.3%"
+          title="Attendance Today"
+          value={loading ? "..." : stats.todayAttendance.toLocaleString()}
+          change={loading ? "" : `Avg: ${Math.round(stats.averageAttendance)}%`}
           changeType="positive"
           icon={ChartBarIcon}
           color="yellow"
+          loading={loading}
         />
       </div>
 

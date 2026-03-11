@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
   DocumentChartBarIcon, 
@@ -11,10 +11,18 @@ import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import DataTable from '../components/common/DataTable'
 import StatCard from '../components/common/StatCard'
+import { reportsService } from '../services/reportsService'
 
 const Reports = () => {
   const [selectedReport, setSelectedReport] = useState('academic')
   const [dateRange, setDateRange] = useState('thisMonth')
+  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState({
+    reportsGenerated: 0,
+    pendingReports: 0,
+    dataCoverage: 0,
+    downloadRate: 0
+  })
 
   const reportTypes = [
     { id: 'academic', name: 'Academic Reports', icon: ChartBarIcon },
@@ -58,11 +66,11 @@ const Reports = () => {
     }
   ]
 
-  const stats = [
-    { title: 'Reports Generated', value: '24', change: '+12%', trend: 'up' },
-    { title: 'Pending Reports', value: '3', change: '+1', trend: 'up' },
-    { title: 'Data Coverage', value: '98%', change: '+2%', trend: 'up' },
-    { title: 'Download Rate', value: '87%', change: '+5%', trend: 'up' }
+  const statsDisplay = [
+    { title: 'Reports Generated', value: loading ? '...' : stats.reportsGenerated.toString(), change: '', trend: 'up' },
+    { title: 'Pending Reports', value: loading ? '...' : stats.pendingReports.toString(), change: '', trend: 'up' },
+    { title: 'Data Coverage', value: loading ? '...' : `${stats.dataCoverage}%`, change: '', trend: 'up' },
+    { title: 'Download Rate', value: loading ? '...' : `${stats.downloadRate}%`, change: '', trend: 'up' }
   ]
 
   const columns = [
@@ -112,7 +120,7 @@ const Reports = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
+        {statsDisplay.map((stat, index) => (
           <motion.div
             key={stat.title}
             initial={{ opacity: 0, y: 20 }}

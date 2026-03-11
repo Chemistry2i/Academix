@@ -11,15 +11,20 @@ import {
   BuildingLibraryIcon,
   UserIcon,
   FunnelIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  TableCellsIcon,
+  ListBulletIcon
 } from '@heroicons/react/24/outline'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import DataTable from '../components/common/DataTable'
 import StatCard from '../components/common/StatCard'
 import LoadingSpinner from '../components/common/LoadingSpinner'
+import TimetableGridView from '../components/timetable/TimetableGridView'
 import { useAuth } from '../contexts/AuthContext'
 import { timetableService } from '../services/timetableService'
+import { teacherService } from '../services/teacherService'
+import { classService } from '../services/classService'
 import TimetableRegistration from '../components/timetable/TimetableRegistration'
 import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
@@ -30,6 +35,13 @@ const Timetable = () => {
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingEntry, setEditingEntry] = useState(null)
+  const [viewMode, setViewMode] = useState('table') // 'table' or 'grid'
+  const [gridViewConfig, setGridViewConfig] = useState({
+    type: 'class', // 'class' or 'teacher'
+    targetId: ''
+  })
+  const [availableClasses, setAvailableClasses] = useState([])
+  const [availableTeachers, setAvailableTeachers] = useState([])
   const [filters, setFilters] = useState({
     className: '',
     dayOfWeek: '',
@@ -59,7 +71,28 @@ const Timetable = () => {
   useEffect(() => {
     loadTimetables()
     loadStatistics()
+    loadSelectData()
   }, [filters])
+
+  const loadSelectData = async () => {
+    try {
+      const [classesResponse, teachersResponse] = await Promise.all([
+        classService.getClasses().catch(err => {
+          console.warn('Failed to load classes:', err)
+          return []
+        }),
+        teacherService.getTeachers(true).catch(err => {
+          console.warn('Failed to load teachers:', err)
+          return { teachers: [] }
+        })
+      ])
+
+      setAvailableClasses(Array.isArray(classesResponse) ? classesResponse : [])
+      setAvailableTeachers(teachersResponse.teachers || [])
+    } catch (error) {
+      console.error('Failed to load select data:', error)
+    }
+  }
 
   const loadTimetables = async () => {
     try {
@@ -496,37 +529,146 @@ const Timetable = () => {
         />
       </div>
 
-      {/* Timetable Table */}
-      {timetables.length > 0 ? (
-        <DataTable
-          data={timetables}
-          columns={columns}
-          searchable
-          sortable
-          pagination
-          pageSize={15}
+      {/* View Mode Controls */}
+      <Card>
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">Timetable View</h3>
+            
+            {/* View Mode Toggle */}
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'table' 
+                      ? 'bg-white text-gray-900 shadow-sm' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <ListBulletIcon className="w-4 h-4 mr-2" />
+                  Table View
+                </button>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'grid' 
+                      ? 'bg-white text-gray-900 shadow-sm' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <TableCellsIcon className="w-4 h-4 mr-2" />
+                  Grid View
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Grid View Controls */}
+          {viewMode === 'grid' && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  View Type
+                </label>
+                <select
+                  value={gridViewConfig.type}
+                  onChange={(e) => setGridViewConfig(prev => ({ 
+                    ...prev, 
+                    type: e.target.value, 
+                    targetId: '' 
+                  }))}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="class">Class Timetable</option>
+                  <option value="teacher">Teacher Timetable</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select {gridViewConfig.type === 'class' ? 'Class' : 'Teacher'}
+                </label>
+                {gridViewConfig.type === 'class' ? (
+                  <select
+                    value={gridViewConfig.targetId}
+                    onChange={(e) => setGridViewConfig(prev => ({ 
+                      ...prev, 
+                      targetId: e.target.value 
+                    }))}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select a class</option>
+                    {availableClasses.map((cls) => (
+                      <option key={cls.id || cls.className} value={cls.className || cls.name}>
+                        {cls.className || cls.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <select
+                    value={gridViewConfig.targetId}
+                    onChange={(e) => setGridViewConfig(prev => ({ 
+                      ...prev, 
+                      targetId: e.target.value 
+                    }))}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select a teacher</option>
+                    {availableTeachers.map((teacher) => (
+                      <option key={teacher.id} value={teacher.id}>
+                        {teacher.firstName} {teacher.lastName} ({teacher.employeeId || teacher.code})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Timetable Content */}
+      {viewMode === 'grid' ? (
+        <TimetableGridView
+          viewType={gridViewConfig.type}
+          targetId={gridViewConfig.targetId}
+          academicYear={filters.academicYear}
+          term={filters.term}
         />
       ) : (
-        <Card>
-          <div className="p-12 text-center">
-            <CalendarIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No timetable entries</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              No timetable entries found for the current filters.
-            </p>
-            {hasAnyRole(['ADMIN', 'HEAD_TEACHER', 'DIRECTOR_OF_STUDIES']) && (
-              <div className="mt-6">
-                <Button 
-                  onClick={handleAddEntry}
-                  className="flex items-center mx-auto"
-                >
-                  <PlusIcon className="w-5 h-5 mr-2" />
-                  Add Schedule Entry
-                </Button>
-              </div>
-            )}
-          </div>
-        </Card>
+        /* Timetable Table */
+        timetables.length > 0 ? (
+          <DataTable
+            data={timetables}
+            columns={columns}
+            searchable
+            sortable
+            pagination
+            pageSize={15}
+          />
+        ) : (
+          <Card>
+            <div className="p-12 text-center">
+              <CalendarIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No timetable entries</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                No timetable entries found for the current filters.
+              </p>
+              {hasAnyRole(['ADMIN', 'HEAD_TEACHER', 'DIRECTOR_OF_STUDIES']) && (
+                <div className="mt-6">
+                  <Button 
+                    onClick={handleAddEntry}
+                    className="flex items-center mx-auto"
+                  >
+                    <PlusIcon className="w-5 h-5 mr-2" />
+                    Add Schedule Entry
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Card>
+        )
       )}
 
       {/* Timetable Registration Modal */}

@@ -2,6 +2,7 @@ package com.academix.server.model;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -14,6 +15,7 @@ import lombok.Data;
 @Table(name = "classes", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"name", "academic_year"})
 })
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class SchoolClass {
 
     @Id
@@ -40,16 +42,19 @@ public class SchoolClass {
     // Course/combination for A-Level classes
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Course course;
 
     // Class teacher
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_teacher_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Teacher classTeacher;
 
     // Assistant class teacher
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assistant_teacher_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Teacher assistantClassTeacher;
 
     // Academic year

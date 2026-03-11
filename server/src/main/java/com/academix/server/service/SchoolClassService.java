@@ -44,6 +44,32 @@ public class SchoolClassService {
             throw new RuntimeException("Class already exists for this academic year: " + schoolClass.getName());
         }
 
+        // Resolve class teacher if provided
+        if (schoolClass.getClassTeacher() != null) {
+            Long teacherId = schoolClass.getClassTeacher().getId();
+            if (teacherId != null) {
+                Teacher teacher = teacherRepository.findById(teacherId)
+                    .orElseThrow(() -> new RuntimeException("Teacher not found with ID: " + teacherId));
+                schoolClass.setClassTeacher(teacher);
+                logger.info("Assigned class teacher {} to class {}", teacher.getFullName(), schoolClass.getName());
+            } else {
+                schoolClass.setClassTeacher(null);
+            }
+        }
+
+        // Resolve assistant class teacher if provided
+        if (schoolClass.getAssistantClassTeacher() != null) {
+            Long assistantTeacherId = schoolClass.getAssistantClassTeacher().getId();
+            if (assistantTeacherId != null) {
+                Teacher assistantTeacher = teacherRepository.findById(assistantTeacherId)
+                    .orElseThrow(() -> new RuntimeException("Assistant teacher not found with ID: " + assistantTeacherId));
+                schoolClass.setAssistantClassTeacher(assistantTeacher);
+                logger.info("Assigned assistant class teacher {} to class {}", assistantTeacher.getFullName(), schoolClass.getName());
+            } else {
+                schoolClass.setAssistantClassTeacher(null);
+            }
+        }
+
         // Set level type based on form level
         if (schoolClass.getLevelType() == null) {
             schoolClass.setLevelType(schoolClass.getFormLevel() <= 4 
@@ -56,7 +82,9 @@ public class SchoolClassService {
         }
 
         SchoolClass saved = schoolClassRepository.save(schoolClass);
-        logger.info("Class created: {}", saved.getName());
+        logger.info("Class created: {} with teacher: {}", 
+            saved.getName(), 
+            saved.getClassTeacher() != null ? saved.getClassTeacher().getFullName() : "No teacher assigned");
         return saved;
     }
 
@@ -65,7 +93,18 @@ public class SchoolClassService {
      */
     @Transactional(readOnly = true)
     public List<SchoolClass> getAllClasses() {
-        return schoolClassRepository.findAll();
+        List<SchoolClass> classes = schoolClassRepository.findAll();
+        // Force load the teacher relationships to avoid lazy loading issues
+        classes.forEach(schoolClass -> {
+            if (schoolClass.getClassTeacher() != null) {
+                // This will trigger the lazy loading and ensure teacher data is fetched
+                schoolClass.getClassTeacher().getFullName();
+            }
+            if (schoolClass.getAssistantClassTeacher() != null) {
+                schoolClass.getAssistantClassTeacher().getFullName();
+            }
+        });
+        return classes;
     }
 
     /**
@@ -142,7 +181,40 @@ public class SchoolClassService {
             schoolClass.setNotes(details.getNotes());
         }
 
-        logger.info("Class updated: {}", schoolClass.getName());
+        // Handle class teacher assignment/update
+        if (details.getClassTeacher() != null) {
+            Long teacherId = details.getClassTeacher().getId();
+            if (teacherId != null) {
+                Teacher teacher = teacherRepository.findById(teacherId)
+                    .orElseThrow(() -> new RuntimeException("Teacher not found with ID: " + teacherId));
+                schoolClass.setClassTeacher(teacher);
+                logger.info("Updated class teacher for class {} to {}", schoolClass.getName(), teacher.getFullName());
+            } else {
+                schoolClass.setClassTeacher(null);
+                logger.info("Removed class teacher from class {}", schoolClass.getName());
+            }
+        } else {
+            // If classTeacher field is present but null, remove assignment
+            schoolClass.setClassTeacher(null);
+            logger.info("Cleared class teacher assignment for class {}", schoolClass.getName());
+        }
+
+        // Handle assistant class teacher assignment/update
+        if (details.getAssistantClassTeacher() != null) {
+            Long assistantTeacherId = details.getAssistantClassTeacher().getId();
+            if (assistantTeacherId != null) {
+                Teacher assistantTeacher = teacherRepository.findById(assistantTeacherId)
+                    .orElseThrow(() -> new RuntimeException("Assistant teacher not found with ID: " + assistantTeacherId));
+                schoolClass.setAssistantClassTeacher(assistantTeacher);
+                logger.info("Updated assistant class teacher for class {} to {}", schoolClass.getName(), assistantTeacher.getFullName());
+            } else {
+                schoolClass.setAssistantClassTeacher(null);
+            }
+        }
+
+        logger.info("Class updated: {} with teacher: {}", 
+            schoolClass.getName(),
+            schoolClass.getClassTeacher() != null ? schoolClass.getClassTeacher().getFullName() : "No teacher assigned");
         return schoolClassRepository.save(schoolClass);
     }
 
