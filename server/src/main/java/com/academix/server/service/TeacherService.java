@@ -13,7 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
+import com.academix.server.model.Department;
 import com.academix.server.model.Teacher;
+import com.academix.server.repository.DepartmentRepository;
 import com.academix.server.repository.TeacherRepository;
 
 @Service
@@ -26,6 +30,9 @@ public class TeacherService {
     private TeacherRepository teacherRepository;
 
     @Autowired
+    private DepartmentRepository departmentRepository;
+
+    @Autowired
     private UserService userService;
 
     @Autowired
@@ -35,6 +42,12 @@ public class TeacherService {
      * Create a new teacher
      */
     public Teacher createTeacher(Teacher teacher) {
+        // Resolve departmentName string to a Department entity
+        if (teacher.getDepartmentName() != null && !teacher.getDepartmentName().isBlank()) {
+            departmentRepository.findByNameIgnoreCase(teacher.getDepartmentName())
+                .ifPresent(teacher::setDepartment);
+        }
+
         // Validate unique constraints
         if (teacherRepository.existsByEmail(teacher.getEmail())) {
             throw new RuntimeException("Email already exists: " + teacher.getEmail());
@@ -46,10 +59,11 @@ public class TeacherService {
         }
 
         // Generate teacher ID
-        String generatedTeacherId = generateTeacherId(teacher.getDepartment());
+        String departmentName = (teacher.getDepartment() != null) ? teacher.getDepartment().getName() : null;
+        String generatedTeacherId = generateTeacherId(departmentName);
         int attempts = 0;
         while (teacherRepository.existsByTeacherId(generatedTeacherId) && attempts < 10) {
-            generatedTeacherId = generateTeacherId(teacher.getDepartment());
+            generatedTeacherId = generateTeacherId(departmentName);
             attempts++;
         }
         teacher.setTeacherId(generatedTeacherId);
@@ -102,7 +116,7 @@ public class TeacherService {
                 teacher.getEmail(),
                 teacher.getFullName(),
                 teacher.getTeacherId(),
-                teacher.getDepartment(),
+                departmentName,
                 subjects,
                 generatedPassword
             );
@@ -181,7 +195,10 @@ public class TeacherService {
         }
 
         // Update employment info
-        if (teacherDetails.getDepartment() != null) {
+        if (teacherDetails.getDepartmentName() != null && !teacherDetails.getDepartmentName().isBlank()) {
+            departmentRepository.findByNameIgnoreCase(teacherDetails.getDepartmentName())
+                .ifPresent(teacher::setDepartment);
+        } else if (teacherDetails.getDepartment() != null) {
             teacher.setDepartment(teacherDetails.getDepartment());
         }
         if (teacherDetails.getPrimarySubject() != null) {
@@ -321,7 +338,7 @@ public class TeacherService {
      */
     @Transactional(readOnly = true)
     public List<Teacher> getTeachersByDepartment(String department) {
-        return teacherRepository.findByDepartment(department);
+        return teacherRepository.findByDepartment_Name(department);
     }
 
     /**

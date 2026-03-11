@@ -221,8 +221,10 @@ const TeacherRegistration = ({
     setSubmitting(true)
     try {
       // Prepare form data for submission
+      const { department, ...rest } = formData
       const teacherData = {
-        ...formData,
+        ...rest,
+        departmentName: department || null,
         password: formData.nin, // Use NIN as temporary password
         // Convert empty optional unique fields to null to avoid constraint violations
         teacherId: formData.teacherId?.trim() || null

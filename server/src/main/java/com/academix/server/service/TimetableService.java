@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.academix.server.model.Timetable;
+import com.academix.server.model.Teacher;
 import com.academix.server.repository.TimetableRepository;
 
 @Service
@@ -24,6 +25,31 @@ public class TimetableService {
 
     @Autowired
     private TimetableRepository timetableRepository;
+    
+    @Autowired
+    private TeacherService teacherService;
+
+    /**
+     * Populate teacher name based on teacher ID
+     */
+    private void populateTeacherName(Timetable timetable) {
+        if (timetable.getTeacherId() != null) {
+            try {
+                Optional<Teacher> teacher = teacherService.getTeacherById(timetable.getTeacherId());
+                if (teacher.isPresent()) {
+                    Teacher t = teacher.get();
+                    String teacherName = t.getFirstName() + " " + t.getLastName();
+                    timetable.setTeacherName(teacherName);
+                } else {
+                    logger.warn("Teacher not found with ID: {}", timetable.getTeacherId());
+                    timetable.setTeacherName("Teacher Not Found");
+                }
+            } catch (Exception e) {
+                logger.error("Error fetching teacher with ID: {}", timetable.getTeacherId(), e);
+                timetable.setTeacherName("Error Loading Teacher");
+            }
+        }
+    }
 
     /**
      * Create a new timetable entry
@@ -31,6 +57,9 @@ public class TimetableService {
     public Timetable createTimetableEntry(Timetable timetable) {
         // Validate no conflicts
         validateNoConflicts(timetable, null);
+
+        // Populate teacher name if teacherId is provided
+        populateTeacherName(timetable);
 
         if (timetable.getIsActive() == null) {
             timetable.setIsActive(true);
@@ -43,8 +72,8 @@ public class TimetableService {
         }
 
         Timetable saved = timetableRepository.save(timetable);
-        logger.info("Timetable entry created: {} - {} - Period {}", 
-            saved.getClassName(), saved.getDayOfWeek(), saved.getPeriodNumber());
+        logger.info("Timetable entry created: {} - {} - Period {} - Teacher: {}", 
+            saved.getClassName(), saved.getDayOfWeek(), saved.getPeriodNumber(), saved.getTeacherName());
         return saved;
     }
 
@@ -174,6 +203,8 @@ public class TimetableService {
         }
         if (details.getTeacherId() != null) {
             timetable.setTeacherId(details.getTeacherId());
+            // Populate teacher name when teacherId is updated
+            populateTeacherName(timetable);
         }
         if (details.getTeacherName() != null) {
             timetable.setTeacherName(details.getTeacherName());

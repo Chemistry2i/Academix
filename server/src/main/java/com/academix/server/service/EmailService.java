@@ -10,6 +10,8 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+import com.academix.server.model.Staff;
+
 @Service
 public class EmailService {
 
@@ -418,6 +420,82 @@ public class EmailService {
         } catch (Exception e) {
             // Log error but don't throw - allow registration to continue
             logger.error("Teacher credentials email service error for {}, but registration will continue: {}", toEmail, e.getMessage());
+        }
+    }
+
+    /**
+     * Send staff registration welcome email with details and login credentials
+     */
+    public void sendStaffRegistrationEmail(Staff staff, String generatedPassword) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(staff.getEmail());
+            message.setSubject("Welcome to Academix - Your Staff Account Details");
+            
+            String staffDetails = "";
+            if (staff.getDepartment() != null && !staff.getDepartment().trim().isEmpty()) {
+                staffDetails += "Department: " + staff.getDepartment() + "\n";
+            }
+            if (staff.getPosition() != null && !staff.getPosition().trim().isEmpty()) {
+                staffDetails += "Position: " + staff.getPosition() + "\n";
+            }
+            if (staff.getContractType() != null) {
+                staffDetails += "Contract Type: " + staff.getContractDisplayName() + "\n";
+            }
+            
+            String emailBody = String.format(
+                "Dear %s,\n\n" +
+                "Welcome to Academix School Management System!\n\n" +
+                "Your staff account has been successfully created. Here are your account details:\n\n" +
+                "\ud83c\udd94 Staff ID: %s\n" +
+                "\ud83d\udce7 Email: %s\n" +
+                "\ud83d\udd10 Temporary Password: %s\n" +
+                "%s\n" +
+                "\ud83d\udcf1 Staff Portal: %s/login\n\n" +
+                "IMPORTANT SECURITY INSTRUCTIONS:\n" +
+                "1. Login using your email and the temporary password above\n" +
+                "2. Change your password immediately after first login for security\n" +
+                "3. Keep your login credentials secure and private\n" +
+                "4. Never share your password with anyone\n\n" +
+                "You can change your password anytime from your staff portal.\n\n" +
+                "For any questions or support, please contact the administration.\n\n" +
+                "Welcome to the Academix family!\n\n" +
+                "Best regards,\n" +
+                "The Academix Administrative Team",
+                staff.getFullName(), staff.getStaffId(), staff.getEmail(), generatedPassword, staffDetails, frontendUrl
+            );
+            
+            message.setText(emailBody);
+            
+            // Log complete email template for testing
+            logger.info("\n" +
+                "========== STAFF REGISTRATION EMAIL TEMPLATE ==========\n" +
+                "TO: {}\n" +
+                "FROM: {}\n" +
+                "SUBJECT: {}\n" +
+                "----- EMAIL BODY -----\n" +
+                "{}\n" +
+                "----- STAFF CREDENTIALS FOR TESTING -----\n" +
+                "Staff ID: {}\n" +
+                "Email: {}\n" +
+                "Temporary Password: {}\n" +
+                "===========================================================\n",
+                staff.getEmail(), fromEmail, message.getSubject(), emailBody, staff.getStaffId(), staff.getEmail(), generatedPassword);
+            
+            try {
+                mailSender.send(message);
+                logger.info("✓ Staff credentials email sent successfully to: {} (Staff ID: {})", staff.getEmail(), staff.getStaffId());
+            } catch (Exception mailException) {
+                // Log email content for development instead of breaking registration
+                logger.warn("✗ SMTP sending failed - Staff credentials template displayed above");
+                logger.error("Email sending error: {}", mailException.getMessage());
+                // Don't throw exception - allow registration to continue
+            }
+            
+        } catch (Exception e) {
+            // Log error but don't throw - allow registration to continue
+            logger.error("Staff credentials email service error for {}, but registration will continue: {}", staff.getEmail(), e.getMessage());
         }
     }
 }

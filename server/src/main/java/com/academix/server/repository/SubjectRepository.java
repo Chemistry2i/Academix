@@ -63,4 +63,9 @@ public interface SubjectRepository extends JpaRepository<Subject, Long> {
 
     // Count active
     long countByIsActiveTrue();
+
+    // Count students in department subjects (for Department service)
+    @Query("SELECT COUNT(DISTINCT ss.student.id) FROM StudentSubject ss WHERE ss.subject.department = " +
+           "(SELECT d.name FROM Department d WHERE d.id = :departmentId)")
+    Long countStudentsInDepartmentSubjects(@Param("departmentId") Long departmentId);
 }

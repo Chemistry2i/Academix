@@ -27,8 +27,8 @@ public interface TeacherRepository extends JpaRepository<Teacher, Long> {
     boolean existsByTeacherId(String teacherId);
     boolean existsByRegistrationNumber(String registrationNumber);
 
-    // Find by department
-    List<Teacher> findByDepartment(String department);
+    // Find by department name
+    List<Teacher> findByDepartment_Name(String departmentName);
 
     // Find by primary subject
     List<Teacher> findByPrimarySubject(String primarySubject);
@@ -70,7 +70,7 @@ public interface TeacherRepository extends JpaRepository<Teacher, Long> {
 
     // Advanced search with filters
     @Query("SELECT t FROM Teacher t WHERE " +
-           "(:department IS NULL OR t.department = :department) AND " +
+           "(:department IS NULL OR t.department.name = :department) AND " +
            "(:employmentType IS NULL OR t.employmentType = :employmentType) AND " +
            "(:employmentStatus IS NULL OR t.employmentStatus = :employmentStatus) AND " +
            "(:isClassTeacher IS NULL OR t.isClassTeacher = :isClassTeacher) AND " +
@@ -83,8 +83,8 @@ public interface TeacherRepository extends JpaRepository<Teacher, Long> {
         @Param("isActive") Boolean isActive
     );
 
-    // Count by department
-    long countByDepartment(String department);
+    // Count by department name
+    long countByDepartment_Name(String departmentName);
 
     // Count active teachers
     long countByIsActiveTrue();

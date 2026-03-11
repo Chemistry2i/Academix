@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
@@ -16,8 +17,11 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -56,9 +60,19 @@ public class Teacher extends User {
     @Column(nullable = true)
     private LocalDate contractEndDate;
 
-    // Department (e.g., Science, Arts, Languages)
-    @Column(nullable = true, length = 100)
-    private String department;
+    // Department name input (used for create/update; resolved to a Department entity in the service)
+    @Transient
+    @JsonProperty("departmentName")
+    private String departmentName;
+
+    // Department relationship (member of department)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private Department department;
+    
+    // Department headed by this teacher
+    @OneToOne(mappedBy = "departmentHead", cascade = CascadeType.ALL)
+    private Department headedDepartment;
 
     // Primary subject taught
     @Column(nullable = true, length = 100)
