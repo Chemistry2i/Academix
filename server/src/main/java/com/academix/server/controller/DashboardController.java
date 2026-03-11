@@ -18,7 +18,6 @@ import com.academix.server.service.SchoolClassService;
 import com.academix.server.service.StudentService;
 import com.academix.server.service.SubjectService;
 import com.academix.server.service.TeacherService;
-import com.academix.server.service.TimetableService;
 
 @RestController
 @RequestMapping("/api/dashboard")
@@ -43,9 +42,6 @@ public class DashboardController {
     private ExamService examService;
 
     @Autowired
-    private TimetableService timetableService;
-
-    @Autowired
     private AttendanceService attendanceService;
 
     /**
@@ -62,42 +58,41 @@ public class DashboardController {
             Map<String, Object> subjectStats = subjectService.getSubjectStatistics();
             Map<String, Object> examStats = examService.getExamStatistics();
             Map<String, Object> classStats = schoolClassService.getClassStatistics();
-            Map<String, Object> timetableStats = timetableService.getTimetableStatistics();
             
             // Extract key metrics for dashboard overview
-            dashboardStats.put("totalStudents", studentStats.get("total"));
-            dashboardStats.put("totalTeachers", teacherStats.get("total"));
-            dashboardStats.put("totalSubjects", subjectStats.get("total"));
-            dashboardStats.put("totalClasses", classStats.get("total"));
+            dashboardStats.put("totalStudents", studentStats.get("totalStudents"));
+            dashboardStats.put("totalTeachers", teacherStats.get("totalTeachers"));
+            dashboardStats.put("totalSubjects", subjectStats.get("totalSubjects"));
+            dashboardStats.put("totalClasses", classStats.get("totalClasses"));
             
             // Student breakdown
-            dashboardStats.put("activeStudents", studentStats.get("active"));
-            dashboardStats.put("inactiveStudents", studentStats.get("inactive"));
-            dashboardStats.put("maleStudents", studentStats.get("male"));
-            dashboardStats.put("femaleStudents", studentStats.get("female"));
+            dashboardStats.put("activeStudents", studentStats.get("activeStudents"));
+            dashboardStats.put("inactiveStudents", studentStats.get("inactiveStudents"));
+            dashboardStats.put("maleStudents", studentStats.get("maleStudents"));
+            dashboardStats.put("femaleStudents", studentStats.get("femaleStudents"));
             
             // Teacher breakdown
-            dashboardStats.put("activeTeachers", teacherStats.get("active"));
-            dashboardStats.put("permanentTeachers", teacherStats.get("permanent"));
-            dashboardStats.put("contractTeachers", teacherStats.get("contract"));
+            dashboardStats.put("activeTeachers", teacherStats.get("activeTeachers"));
+            dashboardStats.put("permanentTeachers", teacherStats.get("permanentTeachers"));
+            dashboardStats.put("contractTeachers", teacherStats.get("contractTeachers"));
             dashboardStats.put("classTeachers", teacherStats.get("classTeachers"));
             
             // Academic breakdown
-            dashboardStats.put("activeSubjects", subjectStats.get("active"));
-            dashboardStats.put("compulsorySubjects", subjectStats.get("compulsory"));
-            dashboardStats.put("electiveSubjects", subjectStats.get("elective"));
+            dashboardStats.put("activeSubjects", subjectStats.get("activeSubjects"));
+            dashboardStats.put("compulsorySubjects", subjectStats.get("compulsorySubjects"));
+            dashboardStats.put("electiveSubjects", subjectStats.get("electiveSubjects"));
             
             // Recent activity counts
-            dashboardStats.put("totalExams", examStats.get("total"));
-            dashboardStats.put("ongoingExams", examStats.get("ongoing"));
-            dashboardStats.put("upcomingExams", examStats.get("upcoming"));
+            dashboardStats.put("totalExams", examStats.get("totalExams"));
+            dashboardStats.put("ongoingExams", examStats.get("ongoingExams"));
+            dashboardStats.put("upcomingExams", examStats.get("upcomingExams"));
             
             // Attendance summary (if available)
             try {
                 Map<String, Object> attendanceStats = attendanceService.getAttendanceStatistics();
                 if (attendanceStats != null) {
                     dashboardStats.put("todayAttendance", attendanceStats.get("todayPresent"));
-                    dashboardStats.put("averageAttendance", attendanceStats.get("averageAttendanceRate"));
+                    dashboardStats.put("averageAttendance", attendanceStats.get("todayAttendanceRate"));
                 }
             } catch (Exception e) {
                 logger.warn("Could not fetch attendance statistics: {}", e.getMessage());
