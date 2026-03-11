@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   PlusIcon,
   BookOpenIcon,
@@ -10,7 +10,8 @@ import {
   BeakerIcon,
   PaintBrushIcon,
   WrenchScrewdriverIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 import Button from '../../components/common/Button'
 import StatCard from '../../components/common/StatCard'
@@ -27,6 +28,7 @@ const Courses = () => {
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingCourse, setEditingCourse] = useState(null)
+  const [viewCourse, setViewCourse] = useState(null)
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -189,30 +191,33 @@ const Courses = () => {
       header: 'Actions',
       sortable: false,
       render: (_, course) => (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => handleViewCourse(course)}
-            className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-blue-200 rounded text-blue-600 hover:bg-blue-50 transition-colors"
             title="View Details"
           >
             <EyeIcon className="w-4 h-4" />
+            View
           </button>
           {hasAnyRole(['ADMIN', 'HEAD_TEACHER']) && (
             <>
               <button
                 onClick={() => handleEditCourse(course)}
-                className="text-yellow-600 hover:text-yellow-900 p-1 hover:bg-yellow-50 rounded transition-colors"
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-yellow-200 rounded text-yellow-600 hover:bg-yellow-50 transition-colors"
                 title="Edit Course"
               >
                 <PencilIcon className="w-4 h-4" />
+                Edit
               </button>
               {hasAnyRole(['ADMIN']) && (
                 <button
                   onClick={() => handleDeleteCourse(course)}
-                  className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-red-200 rounded text-red-600 hover:bg-red-50 transition-colors"
                   title="Delete Course"
                 >
                   <TrashIcon className="w-4 h-4" />
+                  Delete
                 </button>
               )}
             </>
@@ -223,36 +228,7 @@ const Courses = () => {
   ]
 
   const handleViewCourse = (course) => {
-    const principalSubjects = Array.isArray(course.principalSubjects) 
-      ? course.principalSubjects.join(', ') 
-      : 'None'
-    const subsidiarySubjects = Array.isArray(course.subsidiarySubjects)
-      ? course.subsidiarySubjects.join(', ')
-      : 'None'
-    
-    Swal.fire({
-      title: `${course.code} - ${course.name}`,
-      html: `
-        <div class="text-left space-y-2">
-          <p><strong>Code:</strong> ${course.code}</p>
-          <p><strong>Type:</strong> ${course.type}</p>
-          <p><strong>Level:</strong> ${course.level}</p>
-          <p><strong>Principal Subjects:</strong> ${principalSubjects}</p>
-          <p><strong>Subsidiary Subjects:</strong> ${subsidiarySubjects}</p>
-          <p><strong>Current Enrollment:</strong> ${course.currentEnrollment || 0}</p>
-          ${course.maxStudents > 0 ? `<p><strong>Max Students:</strong> ${course.maxStudents}</p>` : ''}
-          ${course.description ? `<p><strong>Description:</strong> ${course.description}</p>` : ''}
-          ${course.requirements ? `<p><strong>Requirements:</strong> ${course.requirements}</p>` : ''}
-          ${course.careerPaths ? `<p><strong>Career Paths:</strong> ${course.careerPaths}</p>` : ''}
-          <p><strong>Status:</strong> ${course.isActive !== false ? 'Active' : 'Inactive'}</p>
-        </div>
-      `,
-      icon: 'info',
-      customClass: {
-        container: 'font-outfit',
-        popup: 'rounded-xl'
-      }
-    })
+    setViewCourse(course)
   }
 
   const handleEditCourse = (course) => {
@@ -513,6 +489,192 @@ const Courses = () => {
         onSuccess={handleCourseSuccess}
         editingCourse={editingCourse}
       />
+
+      {/* View Course Modal */}
+      <AnimatePresence>
+        {viewCourse && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden"
+              style={{ maxHeight: 'calc(100vh - 3rem)' }}
+              initial={{ opacity: 0, y: 40, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            >
+              {/* Header */}
+              <div className="shrink-0 bg-primary-700 text-white px-6 py-5">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
+                      <AcademicCapIcon className="w-7 h-7 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold">{viewCourse.name}</h2>
+                      <p className="text-primary-200 text-sm mt-0.5">{viewCourse.code}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          viewCourse.isActive !== false
+                            ? 'bg-green-400/20 text-green-100 ring-1 ring-green-300/40'
+                            : 'bg-red-400/20 text-red-100 ring-1 ring-red-300/40'
+                        }`}>
+                          {viewCourse.isActive !== false ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setViewCourse(null)}
+                    className="text-white/70 hover:text-white transition-colors mt-1"
+                  >
+                    <XMarkIcon className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick-stat strip */}
+              <div className="shrink-0 bg-primary-600 text-white px-6 py-3">
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <div>
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Type</span>
+                    <p className="font-medium">{viewCourse.type || '—'}</p>
+                  </div>
+                  <div className="border-l border-primary-500 pl-4">
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Level</span>
+                    <p className="font-medium">{viewCourse.level || '—'}</p>
+                  </div>
+                  <div className="border-l border-primary-500 pl-4">
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Enrollment</span>
+                    <p className="font-medium">{viewCourse.currentEnrollment || 0}{viewCourse.maxStudents > 0 ? ` / ${viewCourse.maxStudents}` : ''}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scrollable body */}
+              <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+                {/* Course Info */}
+                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border-b border-gray-200">
+                    <span className="w-5 h-5 rounded bg-blue-600 flex items-center justify-center">
+                      <AcademicCapIcon className="w-3 h-3 text-white" />
+                    </span>
+                    <h3 className="text-sm font-semibold text-blue-800">Course Details</h3>
+                  </div>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {[
+                        ['Code', viewCourse.code],
+                        ['Name', viewCourse.name],
+                        ['Type', viewCourse.type],
+                        ['Level', viewCourse.level],
+                        ['Enrollment', viewCourse.currentEnrollment || 0],
+                        ['Max Students', viewCourse.maxStudents > 0 ? viewCourse.maxStudents : 'Unlimited'],
+                        ['Status', viewCourse.isActive !== false ? 'Active' : 'Inactive'],
+                      ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                        <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                          <td className="px-4 py-2 text-gray-900">{val}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Principal Subjects */}
+                {Array.isArray(viewCourse.principalSubjects) && viewCourse.principalSubjects.length > 0 && (
+                  <div className="rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-sky-50 border-b border-gray-200">
+                      <span className="w-5 h-5 rounded bg-sky-600 flex items-center justify-center">
+                        <BookOpenIcon className="w-3 h-3 text-white" />
+                      </span>
+                      <h3 className="text-sm font-semibold text-sky-800">Principal Subjects</h3>
+                    </div>
+                    <div className="px-4 py-3 flex flex-wrap gap-2">
+                      {viewCourse.principalSubjects.map((subj, i) => (
+                        <span key={i} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-sky-100 text-sky-800 border border-sky-200">
+                          {subj}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Subsidiary Subjects */}
+                {Array.isArray(viewCourse.subsidiarySubjects) && viewCourse.subsidiarySubjects.length > 0 && (
+                  <div className="rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border-b border-gray-200">
+                      <span className="w-5 h-5 rounded bg-emerald-600 flex items-center justify-center">
+                        <BeakerIcon className="w-3 h-3 text-white" />
+                      </span>
+                      <h3 className="text-sm font-semibold text-emerald-800">Subsidiary Subjects</h3>
+                    </div>
+                    <div className="px-4 py-3 flex flex-wrap gap-2">
+                      {viewCourse.subsidiarySubjects.map((subj, i) => (
+                        <span key={i} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          {subj}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Notes */}
+                {(viewCourse.description || viewCourse.requirements || viewCourse.careerPaths) && (
+                  <div className="rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border-b border-gray-200">
+                      <span className="w-5 h-5 rounded bg-amber-600 flex items-center justify-center">
+                        <PaintBrushIcon className="w-3 h-3 text-white" />
+                      </span>
+                      <h3 className="text-sm font-semibold text-amber-800">Additional Information</h3>
+                    </div>
+                    <table className="w-full text-sm">
+                      <tbody>
+                        {[
+                          ['Description', viewCourse.description],
+                          ['Requirements', viewCourse.requirements],
+                          ['Career Paths', viewCourse.careerPaths],
+                        ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                          <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td className="px-4 py-2 text-gray-500 font-medium w-44 align-top">{label}</td>
+                            <td className="px-4 py-2 text-gray-900">{val}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="shrink-0 border-t border-gray-200 px-6 py-4 flex items-center justify-between bg-gray-50">
+                <span className="text-xs text-gray-500">{viewCourse.code} — {viewCourse.level}</span>
+                <div className="flex gap-2">
+                  {hasAnyRole(['ADMIN', 'HEAD_TEACHER']) && (
+                    <button
+                      onClick={() => { setViewCourse(null); handleEditCourse(viewCourse) }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-yellow-300 rounded-lg text-yellow-700 hover:bg-yellow-50 transition-colors"
+                    >
+                      <PencilIcon className="w-4 h-4" />
+                      Edit
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setViewCourse(null)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

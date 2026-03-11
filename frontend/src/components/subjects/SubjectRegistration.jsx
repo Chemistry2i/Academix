@@ -23,7 +23,7 @@ const SubjectRegistration = ({
     code: '',
     description: '',
     level: 'O_LEVEL',
-    category: 'LANGUAGE',
+    category: 'LANGUAGES',
     paperCount: 1,
     maxMarksPerPaper: 100,
     isCompulsory: false,
@@ -41,13 +41,15 @@ const SubjectRegistration = ({
   ]
 
   const subjectCategories = [
-    { value: 'LANGUAGE', label: 'Language' },
-    { value: 'SCIENCE', label: 'Science' },
+    { value: 'LANGUAGES', label: 'Languages' },
     { value: 'MATHEMATICS', label: 'Mathematics' },
-    { value: 'SOCIAL_STUDIES', label: 'Social Studies' },
-    { value: 'ARTS', label: 'Arts' },
+    { value: 'SCIENCES', label: 'Sciences' },
+    { value: 'HUMANITIES', label: 'Humanities' },
+    { value: 'RELIGIOUS_EDUCATION', label: 'Religious Education' },
     { value: 'TECHNICAL', label: 'Technical' },
-    { value: 'RELIGIOUS', label: 'Religious Studies' }
+    { value: 'VOCATIONAL', label: 'Vocational' },
+    { value: 'CREATIVE_ARTS', label: 'Creative Arts' },
+    { value: 'PHYSICAL_EDUCATION', label: 'Physical Education' }
   ]
 
   useEffect(() => {
@@ -59,7 +61,7 @@ const SubjectRegistration = ({
           code: editingSubject.code || '',
           description: editingSubject.description || '',
           level: editingSubject.level || 'O_LEVEL',
-          category: editingSubject.category || 'LANGUAGE',
+          category: editingSubject.category || 'LANGUAGES',
           paperCount: editingSubject.paperCount || 1,
           maxMarksPerPaper: editingSubject.maxMarksPerPaper || 100,
           isCompulsory: editingSubject.isCompulsory || false,
@@ -75,7 +77,7 @@ const SubjectRegistration = ({
           code: '',
           description: '',
           level: 'O_LEVEL',
-          category: 'LANGUAGE',
+          category: 'LANGUAGES',
           paperCount: 1,
           maxMarksPerPaper: 100,
           isCompulsory: false,

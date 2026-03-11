@@ -198,22 +198,24 @@ const Classes = () => {
       key: 'actions',
       header: 'Actions',
       render: (_, row) => (
-        <div className="flex space-x-2">
+        <div className="flex gap-1">
           <Button
             size="sm"
             variant="outline"
             onClick={() => handleEdit(row)}
-            className="hover:bg-blue-50 hover:border-blue-300"
+            className="inline-flex items-center gap-1 text-yellow-600 border-yellow-200 hover:bg-yellow-50 hover:border-yellow-300"
           >
             <PencilIcon className="w-4 h-4" />
+            Edit
           </Button>
           <Button
             size="sm"
             variant="outline"
-            className="text-red-600 hover:text-red-700 hover:bg-red-50 hover:border-red-300"
+            className="inline-flex items-center gap-1 text-red-600 border-red-200 hover:text-red-700 hover:bg-red-50 hover:border-red-300"
             onClick={() => handleDeleteClick(row)}
           >
             <TrashIcon className="w-4 h-4" />
+            Delete
           </Button>
         </div>
       )

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   UsersIcon, 
   PlusIcon,
@@ -9,7 +9,9 @@ import {
   PencilIcon,
   TrashIcon,
   EyeIcon,
-  XMarkIcon
+  XMarkIcon,
+  MapPinIcon,
+  UserIcon
 } from '@heroicons/react/24/outline'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -314,153 +316,229 @@ const Staff = () => {
       />
 
       {/* View Staff Modal */}
-      {showViewModal && selectedStaff && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <motion.div 
-            className="bg-white rounded-lg shadow-lg w-full max-w-2xl m-4 max-h-[90vh] overflow-y-auto"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
+      <AnimatePresence>
+        {showViewModal && selectedStaff && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           >
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">Staff Details</h2>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setShowViewModal(false)}
-                >
-                  <XMarkIcon className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Personal Information</h3>
-                  <div className="space-y-2">
-                    <div>
-                      <span className="text-sm font-medium text-gray-500">Full Name:</span>
-                      <span className="ml-2 text-sm text-gray-900">{selectedStaff.fullName}</span>
+            <motion.div
+              className="bg-white rounded-xl shadow-2xl w-full max-w-3xl flex flex-col overflow-hidden"
+              style={{ maxHeight: 'calc(100vh - 3rem)' }}
+              initial={{ opacity: 0, y: 40, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            >
+              {/* Header */}
+              <div className="shrink-0 bg-primary-700 text-white px-6 py-5">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-xl font-bold">
+                      {selectedStaff.fullName?.[0] || ''}
                     </div>
                     <div>
-                      <span className="text-sm font-medium text-gray-500">Staff ID:</span>
-                      <span className="ml-2 text-sm text-gray-900">{selectedStaff.staffId}</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-500">Email:</span>
-                      <span className="ml-2 text-sm text-gray-900">{selectedStaff.email}</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-500">Phone:</span>
-                      <span className="ml-2 text-sm text-gray-900">{selectedStaff.phoneNumber || 'N/A'}</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-500">Gender:</span>
-                      <span className="ml-2 text-sm text-gray-900">{selectedStaff.gender || 'N/A'}</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-500">Date of Birth:</span>
-                      <span className="ml-2 text-sm text-gray-900">
-                        {selectedStaff.dateOfBirth ? new Date(selectedStaff.dateOfBirth).toLocaleDateString() : 'N/A'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-500">Nationality:</span>
-                      <span className="ml-2 text-sm text-gray-900">{selectedStaff.nationality || 'N/A'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Employment Information</h3>
-                  <div className="space-y-2">
-                    <div>
-                      <span className="text-sm font-medium text-gray-500">Department:</span>
-                      <span className="ml-2 text-sm text-gray-900">{selectedStaff.department}</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-500">Position:</span>
-                      <span className="ml-2 text-sm text-gray-900">{selectedStaff.position}</span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-500">Status:</span>
-                      <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                        selectedStaff.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-                        selectedStaff.status === 'ON_LEAVE' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {staffService.getStatusDisplay(selectedStaff.status)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-500">Contract Type:</span>
-                      <span className="ml-2 text-sm text-gray-900">
-                        {staffService.getContractDisplay(selectedStaff.contractType)}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-500">Join Date:</span>
-                      <span className="ml-2 text-sm text-gray-900">
-                        {selectedStaff.joinDate ? new Date(selectedStaff.joinDate).toLocaleDateString() : 'N/A'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-500">Experience:</span>
-                      <span className="ml-2 text-sm text-gray-900">
-                        {selectedStaff.experience ? `${selectedStaff.experience} years` : 'N/A'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-500">Qualification:</span>
-                      <span className="ml-2 text-sm text-gray-900">{selectedStaff.qualification || 'N/A'}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {selectedStaff.address && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Address</h3>
-                  <p className="text-sm text-gray-900">{selectedStaff.address}</p>
-                </div>
-              )}
-
-              {(selectedStaff.emergencyContactName || selectedStaff.emergencyContactNumber) && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Emergency Contact</h3>
-                  <div className="space-y-2">
-                    {selectedStaff.emergencyContactName && (
-                      <div>
-                        <span className="text-sm font-medium text-gray-500">Name:</span>
-                        <span className="ml-2 text-sm text-gray-900">{selectedStaff.emergencyContactName}</span>
+                      <h2 className="text-xl font-bold">{selectedStaff.fullName}</h2>
+                      <p className="text-primary-200 text-sm mt-0.5">{selectedStaff.staffId || 'No ID'}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          selectedStaff.status === 'ACTIVE'
+                            ? 'bg-green-400/20 text-green-100 ring-1 ring-green-300/40'
+                            : selectedStaff.status === 'ON_LEAVE'
+                            ? 'bg-yellow-400/20 text-yellow-100 ring-1 ring-yellow-300/40'
+                            : 'bg-red-400/20 text-red-100 ring-1 ring-red-300/40'
+                        }`}>
+                          {staffService.getStatusDisplay(selectedStaff.status)}
+                        </span>
+                        {selectedStaff.gender && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white">
+                            {selectedStaff.gender}
+                          </span>
+                        )}
                       </div>
-                    )}
-                    {selectedStaff.emergencyContactNumber && (
-                      <div>
-                        <span className="text-sm font-medium text-gray-500">Phone:</span>
-                        <span className="ml-2 text-sm text-gray-900">{selectedStaff.emergencyContactNumber}</span>
-                      </div>
-                    )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowViewModal(false)}
+                    className="text-white/70 hover:text-white transition-colors mt-1"
+                  >
+                    <XMarkIcon className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick-stat strip */}
+              <div className="shrink-0 bg-primary-600 text-white px-6 py-3">
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <div>
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Department</span>
+                    <p className="font-medium">{selectedStaff.department || '—'}</p>
+                  </div>
+                  <div className="border-l border-primary-500 pl-4">
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Position</span>
+                    <p className="font-medium">{selectedStaff.position || '—'}</p>
+                  </div>
+                  <div className="border-l border-primary-500 pl-4">
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Contract</span>
+                    <p className="font-medium">{staffService.getContractDisplay(selectedStaff.contractType) || '—'}</p>
                   </div>
                 </div>
-              )}
-            </div>
-
-            <div className="p-6 border-t border-gray-200">
-              <div className="flex justify-end gap-3">
-                <Button onClick={() => setShowViewModal(false)}>Close</Button>
-                <Button onClick={() => {
-                  setShowViewModal(false)
-                  handleEdit(selectedStaff)
-                }}>
-                  Edit Staff
-                </Button>
               </div>
-            </div>
+
+              {/* Scrollable body */}
+              <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+                {/* Personal Information */}
+                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border-b border-gray-200">
+                    <span className="w-5 h-5 rounded bg-blue-600 flex items-center justify-center">
+                      <UserIcon className="w-3 h-3 text-white" />
+                    </span>
+                    <h3 className="text-sm font-semibold text-blue-800">Personal Information</h3>
+                  </div>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {[
+                        ['Full Name', selectedStaff.fullName],
+                        ['Staff ID', selectedStaff.staffId],
+                        ['Date of Birth', selectedStaff.dateOfBirth ? new Date(selectedStaff.dateOfBirth).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : null],
+                        ['Gender', selectedStaff.gender],
+                        ['Nationality', selectedStaff.nationality],
+                      ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                        <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                          <td className="px-4 py-2 text-gray-900">{val}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Employment Information */}
+                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-sky-50 border-b border-gray-200">
+                    <span className="w-5 h-5 rounded bg-sky-600 flex items-center justify-center">
+                      <BriefcaseIcon className="w-3 h-3 text-white" />
+                    </span>
+                    <h3 className="text-sm font-semibold text-sky-800">Employment Information</h3>
+                  </div>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {[
+                        ['Department', selectedStaff.department],
+                        ['Position', selectedStaff.position],
+                        ['Status', staffService.getStatusDisplay(selectedStaff.status)],
+                        ['Contract Type', staffService.getContractDisplay(selectedStaff.contractType)],
+                        ['Join Date', selectedStaff.joinDate ? new Date(selectedStaff.joinDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : null],
+                        ['Experience', selectedStaff.experience ? `${selectedStaff.experience} years` : null],
+                        ['Qualification', selectedStaff.qualification],
+                      ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                        <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                          <td className="px-4 py-2 text-gray-900">{val}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Contact */}
+                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border-b border-gray-200">
+                    <span className="w-5 h-5 rounded bg-emerald-600 flex items-center justify-center">
+                      <PhoneIcon className="w-3 h-3 text-white" />
+                    </span>
+                    <h3 className="text-sm font-semibold text-emerald-800">Contact Information</h3>
+                  </div>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {[
+                        ['Email', selectedStaff.email],
+                        ['Phone', selectedStaff.phoneNumber],
+                      ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                        <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                          <td className="px-4 py-2 text-gray-900">{val}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Address */}
+                {selectedStaff.address && (
+                  <div className="rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border-b border-gray-200">
+                      <span className="w-5 h-5 rounded bg-amber-600 flex items-center justify-center">
+                        <MapPinIcon className="w-3 h-3 text-white" />
+                      </span>
+                      <h3 className="text-sm font-semibold text-amber-800">Address</h3>
+                    </div>
+                    <table className="w-full text-sm">
+                      <tbody>
+                        <tr className="bg-white">
+                          <td className="px-4 py-2 text-gray-500 font-medium w-44">Address</td>
+                          <td className="px-4 py-2 text-gray-900">{selectedStaff.address}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Emergency Contact */}
+                {(selectedStaff.emergencyContactName || selectedStaff.emergencyContactNumber) && (
+                  <div className="rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-purple-50 border-b border-gray-200">
+                      <span className="w-5 h-5 rounded bg-purple-600 flex items-center justify-center">
+                        <PhoneIcon className="w-3 h-3 text-white" />
+                      </span>
+                      <h3 className="text-sm font-semibold text-purple-800">Emergency Contact</h3>
+                    </div>
+                    <table className="w-full text-sm">
+                      <tbody>
+                        {[
+                          ['Name', selectedStaff.emergencyContactName],
+                          ['Phone', selectedStaff.emergencyContactNumber],
+                        ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                          <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                            <td className="px-4 py-2 text-gray-900">{val}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="shrink-0 border-t border-gray-200 px-6 py-4 flex items-center justify-between bg-gray-50">
+                <span className="text-xs text-gray-500">
+                  {selectedStaff.joinDate
+                    ? `Joined: ${new Date(selectedStaff.joinDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                    : ''}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setShowViewModal(false); handleEdit(selectedStaff) }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-yellow-300 rounded-lg text-yellow-700 hover:bg-yellow-50 transition-colors"
+                  >
+                    <PencilIcon className="w-4 h-4" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => setShowViewModal(false)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   )
 }
