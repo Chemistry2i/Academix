@@ -74,6 +74,9 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     
     // Count active students
     long countByIsActiveTrue();
+
+    // Count students by gender
+    long countByGender(String gender);
     
     // Find students by district
     List<Student> findByDistrict(String district);

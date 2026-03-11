@@ -294,27 +294,30 @@ const Rooms = () => {
       key: 'actions',
       header: 'Actions',
       render: (_, room) => (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => handleView(room)}
-            className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-blue-200 rounded text-blue-600 hover:bg-blue-50 transition-colors"
             title="View Details"
           >
             <EyeIcon className="w-4 h-4" />
+            View
           </button>
           <button
             onClick={() => handleEdit(room)}
-            className="p-1 text-indigo-600 hover:bg-indigo-50 rounded"
+            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-indigo-200 rounded text-indigo-600 hover:bg-indigo-50 transition-colors"
             title="Edit Room"
           >
             <PencilIcon className="w-4 h-4" />
+            Edit
           </button>
           <button
             onClick={() => handleDelete(room)}
-            className="p-1 text-red-600 hover:bg-red-50 rounded"
+            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-red-200 rounded text-red-600 hover:bg-red-50 transition-colors"
             title="Delete Room"
           >
             <TrashIcon className="w-4 h-4" />
+            Delete
           </button>
         </div>
       )
@@ -718,99 +721,170 @@ const Rooms = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={() => setIsViewModalOpen(false)}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, y: 40, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden"
+              style={{ maxHeight: 'calc(100vh - 3rem)' }}
             >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">
-                  Room Details: {viewingRoom.roomNumber}
-                </h2>
-                <button
-                  onClick={() => setIsViewModalOpen(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <XMarkIcon className="w-5 h-5" />
-                </button>
+              {/* Header */}
+              <div className="shrink-0 bg-primary-700 text-white px-6 py-5">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
+                      <BuildingStorefrontIcon className="w-7 h-7 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold">{viewingRoom.roomNumber}</h2>
+                      {viewingRoom.roomName && <p className="text-primary-200 text-sm mt-0.5">{viewingRoom.roomName}</p>}
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          viewingRoom.isAvailable
+                            ? 'bg-green-400/20 text-green-100 ring-1 ring-green-300/40'
+                            : 'bg-red-400/20 text-red-100 ring-1 ring-red-300/40'
+                        }`}>
+                          {viewingRoom.isAvailable ? 'Available' : 'Unavailable'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsViewModalOpen(false)}
+                    className="text-white/70 hover:text-white transition-colors mt-1"
+                  >
+                    <XMarkIcon className="w-6 h-6" />
+                  </button>
+                </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              {/* Quick-stat strip */}
+              <div className="shrink-0 bg-primary-600 text-white px-6 py-3">
+                <div className="flex flex-wrap gap-4 text-sm">
                   <div>
-                    <span className="text-sm font-medium text-gray-500">Room Number</span>
-                    <p className="text-gray-900 mt-1">{viewingRoom.roomNumber}</p>
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Type</span>
+                    <p className="font-medium">{roomTypes.find(t => t.value === viewingRoom.roomType)?.label || viewingRoom.roomType || '—'}</p>
                   </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">Room Name</span>
-                    <p className="text-gray-900 mt-1">{viewingRoom.roomName || 'Not specified'}</p>
+                  <div className="border-l border-primary-500 pl-4">
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Capacity</span>
+                    <p className="font-medium">{viewingRoom.capacity || '—'}</p>
                   </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">Type</span>
-                    <p className="text-gray-900 mt-1">
-                      {roomTypes.find(type => type.value === viewingRoom.roomType)?.label || viewingRoom.roomType}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">Capacity</span>
-                    <p className="text-gray-900 mt-1">{viewingRoom.capacity || 'Not specified'}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">Building</span>
-                    <p className="text-gray-900 mt-1">{viewingRoom.building || 'Not specified'}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">Floor</span>
-                    <p className="text-gray-900 mt-1">{viewingRoom.floor || 'Not specified'}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">Status</span>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-1 ${
-                      viewingRoom.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {viewingRoom.isAvailable ? 'Available' : 'Unavailable'}
+                  {viewingRoom.building && (
+                    <div className="border-l border-primary-500 pl-4">
+                      <span className="text-primary-300 text-xs uppercase tracking-wider">Building</span>
+                      <p className="font-medium">{viewingRoom.building}</p>
+                    </div>
+                  )}
+                  {viewingRoom.floor && (
+                    <div className="border-l border-primary-500 pl-4">
+                      <span className="text-primary-300 text-xs uppercase tracking-wider">Floor</span>
+                      <p className="font-medium">{viewingRoom.floor}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Scrollable body */}
+              <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+                {/* Room Details */}
+                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border-b border-gray-200">
+                    <span className="w-5 h-5 rounded bg-blue-600 flex items-center justify-center">
+                      <CubeIcon className="w-3 h-3 text-white" />
                     </span>
+                    <h3 className="text-sm font-semibold text-blue-800">Room Details</h3>
                   </div>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {[
+                        ['Room Number', viewingRoom.roomNumber],
+                        ['Room Name', viewingRoom.roomName],
+                        ['Type', roomTypes.find(t => t.value === viewingRoom.roomType)?.label || viewingRoom.roomType],
+                        ['Capacity', viewingRoom.capacity],
+                        ['Status', viewingRoom.isAvailable ? 'Available' : 'Unavailable'],
+                      ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                        <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                          <td className="px-4 py-2 text-gray-900">{val}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
 
-                {viewingRoom.location && (
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">Location</span>
-                    <p className="text-gray-900 mt-1">{viewingRoom.location}</p>
+                {/* Location */}
+                {(viewingRoom.building || viewingRoom.floor || viewingRoom.location) && (
+                  <div className="rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border-b border-gray-200">
+                      <span className="w-5 h-5 rounded bg-amber-600 flex items-center justify-center">
+                        <MapPinIcon className="w-3 h-3 text-white" />
+                      </span>
+                      <h3 className="text-sm font-semibold text-amber-800">Location</h3>
+                    </div>
+                    <table className="w-full text-sm">
+                      <tbody>
+                        {[
+                          ['Building', viewingRoom.building],
+                          ['Floor', viewingRoom.floor],
+                          ['Location', viewingRoom.location],
+                        ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                          <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                            <td className="px-4 py-2 text-gray-900">{val}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
 
-                {viewingRoom.equipment && (
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">Equipment & Facilities</span>
-                    <p className="text-gray-900 mt-1">{viewingRoom.equipment}</p>
-                  </div>
-                )}
-
-                {viewingRoom.notes && (
-                  <div>
-                    <span className="text-sm font-medium text-gray-500">Notes</span>
-                    <p className="text-gray-900 mt-1">{viewingRoom.notes}</p>
+                {/* Facilities */}
+                {(viewingRoom.equipment || viewingRoom.notes) && (
+                  <div className="rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border-b border-gray-200">
+                      <span className="w-5 h-5 rounded bg-emerald-600 flex items-center justify-center">
+                        <WrenchScrewdriverIcon className="w-3 h-3 text-white" />
+                      </span>
+                      <h3 className="text-sm font-semibold text-emerald-800">Facilities & Notes</h3>
+                    </div>
+                    <table className="w-full text-sm">
+                      <tbody>
+                        {[
+                          ['Equipment', viewingRoom.equipment],
+                          ['Notes', viewingRoom.notes],
+                        ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                          <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                            <td className="px-4 py-2 text-gray-900">{val}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
 
-              <div className="flex justify-end space-x-3 pt-6">
-                <Button
-                  onClick={() => {
-                    setIsViewModalOpen(false)
-                    handleEdit(viewingRoom)
-                  }}
-                  className="bg-primary-600 hover:bg-primary-700"
-                >
-                  <PencilIcon className="w-4 h-4 mr-2" />
-                  Edit Room
-                </Button>
+              {/* Footer */}
+              <div className="shrink-0 border-t border-gray-200 px-6 py-4 flex items-center justify-between bg-gray-50">
+                <span className="text-xs text-gray-500">{viewingRoom.roomNumber} — {viewingRoom.roomType || 'Room'}</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setIsViewModalOpen(false); handleEdit(viewingRoom) }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-yellow-300 rounded-lg text-yellow-700 hover:bg-yellow-50 transition-colors"
+                  >
+                    <PencilIcon className="w-4 h-4" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => setIsViewModalOpen(false)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>

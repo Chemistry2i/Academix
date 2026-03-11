@@ -229,26 +229,30 @@ const Departments = () => {
       key: 'actions', 
       header: 'Actions',
       render: (value, row) => (
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           <Button 
             size="sm" 
             variant="outline"
             onClick={() => handleEditDepartment(row)}
-            className="p-1"
+            className="inline-flex items-center gap-1 text-yellow-600 border-yellow-200 hover:bg-yellow-50 hover:border-yellow-300"
           >
             <PencilIcon className="h-4 w-4" />
+            Edit
           </Button>
           <Button 
             size="sm" 
-            variant="ghost"
+            variant="outline"
             onClick={() => handleDeleteDepartment(row.id)}
             disabled={actionLoading === row.id}
-            className="p-1 text-red-600 hover:text-red-700"
+            className="inline-flex items-center gap-1 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
           >
             {actionLoading === row.id ? (
               <LoadingSpinner size="xs" />
             ) : (
-              <TrashIcon className="h-4 w-4" />
+              <>
+                <TrashIcon className="h-4 w-4" />
+                Delete
+              </>
             )}
           </Button>
         </div>

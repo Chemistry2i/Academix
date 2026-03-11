@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   ClipboardDocumentCheckIcon,
   UserGroupIcon,
@@ -9,7 +9,9 @@ import {
   PencilIcon,
   TrashIcon,
   FunnelIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  XMarkIcon,
+  UserIcon
 } from '@heroicons/react/24/outline'
 import Card from '../components/common/Card'
 import StatCard from '../components/common/StatCard'
@@ -37,6 +39,7 @@ const Attendance = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [selectedClass, setSelectedClass] = useState('')
   const [showMarkAttendance, setShowMarkAttendance] = useState(false)
+  const [viewRecord, setViewRecord] = useState(null)
   const [classes] = useState(['S1A', 'S1B', 'S2A', 'S2B', 'S3A', 'S3B', 'S4A', 'S4B', 'S5 PCM', 'S5 PCB', 'S5 HEG', 'S6 PCM', 'S6 PCB', 'S6 HEG'])
 
   useEffect(() => {
@@ -151,30 +154,33 @@ const Attendance = () => {
       header: 'Actions',
       sortable: false,
       render: (_, record) => (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => handleViewAttendance(record)}
-            className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-blue-200 rounded text-blue-600 hover:bg-blue-50 transition-colors"
             title="View Details"
           >
             <EyeIcon className="w-4 h-4" />
+            View
           </button>
           {hasAnyRole(['ADMIN', 'TEACHER', 'CLASS_TEACHER']) && (
             <>
               <button
                 onClick={() => handleEditAttendance(record)}
-                className="text-yellow-600 hover:text-yellow-900 p-1 hover:bg-yellow-50 rounded transition-colors"
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-yellow-200 rounded text-yellow-600 hover:bg-yellow-50 transition-colors"
                 title="Edit Attendance"
               >
                 <PencilIcon className="w-4 h-4" />
+                Edit
               </button>
               {hasAnyRole(['ADMIN']) && (
                 <button
                   onClick={() => handleDeleteAttendance(record)}
-                  className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-red-200 rounded text-red-600 hover:bg-red-50 transition-colors"
                   title="Delete Record"
                 >
                   <TrashIcon className="w-4 h-4" />
+                  Delete
                 </button>
               )}
             </>
@@ -185,29 +191,7 @@ const Attendance = () => {
   ]
 
   const handleViewAttendance = (record) => {
-    Swal.fire({
-      title: `Attendance Details - ${record.studentName}`,
-      html: `
-        <div class="text-left space-y-2">
-          <p><strong>Student:</strong> ${record.studentName} (${record.studentNumber})</p>
-          <p><strong>Class:</strong> ${record.className}${record.stream ? ` - ${record.stream}` : ''}</p>
-          <p><strong>Date:</strong> ${record.date}</p>
-          <p><strong>Status:</strong> ${record.status}</p>
-          <p><strong>Session:</strong> ${record.sessionType?.replace('_', ' ') || 'Full Day'}</p>
-          ${record.checkInTime ? `<p><strong>Check In:</strong> ${record.checkInTime}</p>` : ''}
-          ${record.checkOutTime ? `<p><strong>Check Out:</strong> ${record.checkOutTime}</p>` : ''}
-          ${record.subjectName ? `<p><strong>Subject:</strong> ${record.subjectName}</p>` : ''}
-          ${record.absenceReason ? `<p><strong>Absence Reason:</strong> ${record.absenceReason}</p>` : ''}
-          ${record.absenceNote ? `<p><strong>Note:</strong> ${record.absenceNote}</p>` : ''}
-          ${record.markedByName ? `<p><strong>Marked By:</strong> ${record.markedByName}</p>` : ''}
-        </div>
-      `,
-      icon: 'info',
-      customClass: {
-        container: 'font-outfit',
-        popup: 'rounded-xl'
-      }
-    })
+    setViewRecord(record)
   }
 
   const handleEditAttendance = (record) => {
@@ -424,6 +408,191 @@ const Attendance = () => {
         onSuccess={loadAttendanceData}
         selectedClass={selectedClass}
       />
+
+      {/* View Attendance Record Modal */}
+      <AnimatePresence>
+        {viewRecord && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden"
+              style={{ maxHeight: 'calc(100vh - 3rem)' }}
+              initial={{ opacity: 0, y: 40, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            >
+              {/* Header */}
+              <div className="shrink-0 bg-primary-700 text-white px-6 py-5">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-2xl font-bold">
+                      {viewRecord.studentName?.[0] || <UserIcon className="w-7 h-7" />}
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold">{viewRecord.studentName}</h2>
+                      <p className="text-primary-200 text-sm mt-0.5">{viewRecord.studentNumber}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          viewRecord.status === 'PRESENT'
+                            ? 'bg-green-400/20 text-green-100 ring-1 ring-green-300/40'
+                            : viewRecord.status === 'ABSENT'
+                              ? 'bg-red-400/20 text-red-100 ring-1 ring-red-300/40'
+                              : 'bg-yellow-400/20 text-yellow-100 ring-1 ring-yellow-300/40'
+                        }`}>
+                          {viewRecord.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setViewRecord(null)}
+                    className="text-white/70 hover:text-white transition-colors mt-1"
+                  >
+                    <XMarkIcon className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick-stat strip */}
+              <div className="shrink-0 bg-primary-600 text-white px-6 py-3">
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <div>
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Class</span>
+                    <p className="font-medium">{viewRecord.className}{viewRecord.stream ? ` (${viewRecord.stream})` : ''}</p>
+                  </div>
+                  <div className="border-l border-primary-500 pl-4">
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Date</span>
+                    <p className="font-medium">{viewRecord.date}</p>
+                  </div>
+                  <div className="border-l border-primary-500 pl-4">
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Session</span>
+                    <p className="font-medium">{viewRecord.sessionType?.replace('_', ' ') || 'Full Day'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scrollable body */}
+              <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+                {/* Attendance Info */}
+                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border-b border-gray-200">
+                    <span className="w-5 h-5 rounded bg-blue-600 flex items-center justify-center">
+                      <ClipboardDocumentCheckIcon className="w-3 h-3 text-white" />
+                    </span>
+                    <h3 className="text-sm font-semibold text-blue-800">Attendance Details</h3>
+                  </div>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {[
+                        ['Date', viewRecord.date],
+                        ['Status', viewRecord.status],
+                        ['Session', viewRecord.sessionType?.replace('_', ' ') || 'Full Day'],
+                        ['Class', viewRecord.className],
+                        ['Stream', viewRecord.stream],
+                      ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                        <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                          <td className="px-4 py-2 text-gray-900">{val}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Times */}
+                {(viewRecord.checkInTime || viewRecord.checkOutTime) && (
+                  <div className="rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-sky-50 border-b border-gray-200">
+                      <span className="w-5 h-5 rounded bg-sky-600 flex items-center justify-center">
+                        <CalendarDaysIcon className="w-3 h-3 text-white" />
+                      </span>
+                      <h3 className="text-sm font-semibold text-sky-800">Check In / Out</h3>
+                    </div>
+                    <table className="w-full text-sm">
+                      <tbody>
+                        {[
+                          ['Check In', viewRecord.checkInTime],
+                          ['Check Out', viewRecord.checkOutTime],
+                        ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                          <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                            <td className="px-4 py-2 text-gray-900">{val}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Subject & Staff */}
+                {(viewRecord.subjectName || viewRecord.markedByName) && (
+                  <div className="rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border-b border-gray-200">
+                      <span className="w-5 h-5 rounded bg-emerald-600 flex items-center justify-center">
+                        <UserGroupIcon className="w-3 h-3 text-white" />
+                      </span>
+                      <h3 className="text-sm font-semibold text-emerald-800">Subject & Staff</h3>
+                    </div>
+                    <table className="w-full text-sm">
+                      <tbody>
+                        {[
+                          ['Subject', viewRecord.subjectName],
+                          ['Marked By', viewRecord.markedByName],
+                        ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                          <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                            <td className="px-4 py-2 text-gray-900">{val}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Absence Notes */}
+                {(viewRecord.absenceReason || viewRecord.absenceNote) && (
+                  <div className="rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border-b border-gray-200">
+                      <span className="w-5 h-5 rounded bg-amber-600 flex items-center justify-center">
+                        <ClipboardDocumentCheckIcon className="w-3 h-3 text-white" />
+                      </span>
+                      <h3 className="text-sm font-semibold text-amber-800">Absence Notes</h3>
+                    </div>
+                    <table className="w-full text-sm">
+                      <tbody>
+                        {[
+                          ['Reason', viewRecord.absenceReason],
+                          ['Note', viewRecord.absenceNote],
+                        ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                          <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td className="px-4 py-2 text-gray-500 font-medium w-44 align-top">{label}</td>
+                            <td className="px-4 py-2 text-gray-900">{val}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="shrink-0 border-t border-gray-200 px-6 py-4 flex items-center justify-end bg-gray-50">
+                <button
+                  onClick={() => setViewRecord(null)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }

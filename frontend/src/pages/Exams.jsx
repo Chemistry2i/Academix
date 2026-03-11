@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   DocumentTextIcon,
   PlusIcon,
@@ -13,7 +13,8 @@ import {
   LockOpenIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -32,6 +33,7 @@ const Exams = () => {
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingExam, setEditingExam] = useState(null)
+  const [viewExam, setViewExam] = useState(null)
   const [stats, setStats] = useState({
     total: 0,
     scheduled: 0,
@@ -232,37 +234,45 @@ const Exams = () => {
       header: 'Actions',
       sortable: false,
       render: (_, exam) => (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => handleViewExam(exam)}
-            className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-blue-200 rounded text-blue-600 hover:bg-blue-50 transition-colors"
             title="View Details"
           >
             <EyeIcon className="w-4 h-4" />
+            View
           </button>
           {hasAnyRole(['ADMIN', 'HEAD_TEACHER', 'DIRECTOR_OF_STUDIES']) && (
             <>
               <button
                 onClick={() => handleEditExam(exam)}
-                className="text-yellow-600 hover:text-yellow-900 p-1 hover:bg-yellow-50 rounded transition-colors"
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-yellow-200 rounded text-yellow-600 hover:bg-yellow-50 transition-colors"
                 title="Edit Exam"
               >
                 <PencilIcon className="w-4 h-4" />
+                Edit
               </button>
               <button
                 onClick={() => handleToggleLock(exam)}
-                className={`${exam.isLocked ? 'text-green-600 hover:text-green-900' : 'text-red-600 hover:text-red-900'} p-1 hover:bg-gray-50 rounded transition-colors`}
+                className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border rounded transition-colors ${
+                  exam.isLocked
+                    ? 'border-green-200 text-green-600 hover:bg-green-50'
+                    : 'border-orange-200 text-orange-600 hover:bg-orange-50'
+                }`}
                 title={exam.isLocked ? 'Unlock Exam' : 'Lock Exam'}
               >
                 {exam.isLocked ? <LockOpenIcon className="w-4 h-4" /> : <LockClosedIcon className="w-4 h-4" />}
+                {exam.isLocked ? 'Unlock' : 'Lock'}
               </button>
               {hasAnyRole(['ADMIN']) && (
                 <button
                   onClick={() => handleDeleteExam(exam)}
-                  className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-red-200 rounded text-red-600 hover:bg-red-50 transition-colors"
                   title="Delete Exam"
                 >
                   <TrashIcon className="w-4 h-4" />
+                  Delete
                 </button>
               )}
             </>
@@ -273,31 +283,7 @@ const Exams = () => {
   ]
 
   const handleViewExam = (exam) => {
-    Swal.fire({
-      title: `${exam.code} - ${exam.name}`,
-      html: `
-        <div class="text-left space-y-2">
-          <p><strong>Code:</strong> ${exam.code}</p>
-          <p><strong>Type:</strong> ${exam.type}</p>
-          <p><strong>Level:</strong> ${exam.level?.replace('_', '-')}</p>
-          <p><strong>Academic Year:</strong> ${exam.academicYear}</p>
-          <p><strong>Term:</strong> ${exam.term}</p>
-          <p><strong>Start Date:</strong> ${exam.startDate}</p>
-          <p><strong>End Date:</strong> ${exam.endDate}</p>
-          ${exam.marksEntryDeadline ? `<p><strong>Marks Entry Deadline:</strong> ${new Date(exam.marksEntryDeadline).toLocaleDateString()}</p>` : ''}
-          <p><strong>Target Classes:</strong> ${Array.isArray(exam.targetClasses) ? exam.targetClasses.join(', ') : 'None'}</p>
-          <p><strong>Status:</strong> ${exam.status?.replace('_', ' ')}</p>
-          <p><strong>Locked:</strong> ${exam.isLocked ? 'Yes' : 'No'}</p>
-          <p><strong>Published:</strong> ${exam.isPublished ? 'Yes' : 'No'}</p>
-          ${exam.description ? `<p><strong>Description:</strong> ${exam.description}</p>` : ''}
-        </div>
-      `,
-      icon: 'info',
-      customClass: {
-        container: 'font-outfit',
-        popup: 'rounded-xl'
-      }
-    })
+    setViewExam(exam)
   }
 
   const handleEditExam = (exam) => {
@@ -590,6 +576,213 @@ const Exams = () => {
         onSuccess={loadExams}
         editingExam={editingExam}
       />
+
+      {/* View Exam Modal */}
+      <AnimatePresence>
+        {viewExam && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden"
+              style={{ maxHeight: 'calc(100vh - 3rem)' }}
+              initial={{ opacity: 0, y: 40, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            >
+              {/* Header */}
+              <div className="shrink-0 bg-primary-700 text-white px-6 py-5">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
+                      <DocumentTextIcon className="w-7 h-7 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold">{viewExam.name}</h2>
+                      <p className="text-primary-200 text-sm mt-0.5">{viewExam.code}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          viewExam.status === 'COMPLETED'
+                            ? 'bg-green-400/20 text-green-100 ring-1 ring-green-300/40'
+                            : viewExam.status === 'IN_PROGRESS'
+                            ? 'bg-yellow-400/20 text-yellow-100 ring-1 ring-yellow-300/40'
+                            : viewExam.status === 'CANCELLED'
+                            ? 'bg-red-400/20 text-red-100 ring-1 ring-red-300/40'
+                            : 'bg-blue-400/20 text-blue-100 ring-1 ring-blue-300/40'
+                        }`}>
+                          {viewExam.status?.replace(/_/g, ' ') || 'SCHEDULED'}
+                        </span>
+                        {viewExam.isPublished && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white">
+                            Published
+                          </span>
+                        )}
+                        {viewExam.isLocked && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white">
+                            Locked
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setViewExam(null)}
+                    className="text-white/70 hover:text-white transition-colors mt-1"
+                  >
+                    <XMarkIcon className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick-stat strip */}
+              <div className="shrink-0 bg-primary-600 text-white px-6 py-3">
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <div>
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Type</span>
+                    <p className="font-medium">{viewExam.type || '—'}</p>
+                  </div>
+                  <div className="border-l border-primary-500 pl-4">
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Level</span>
+                    <p className="font-medium">{viewExam.level?.replace(/_/g, '-') || '—'}</p>
+                  </div>
+                  <div className="border-l border-primary-500 pl-4">
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Year</span>
+                    <p className="font-medium">{viewExam.academicYear || '—'}</p>
+                  </div>
+                  <div className="border-l border-primary-500 pl-4">
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Term</span>
+                    <p className="font-medium">{viewExam.term || '—'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scrollable body */}
+              <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+                {/* Exam Details */}
+                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border-b border-gray-200">
+                    <span className="w-5 h-5 rounded bg-blue-600 flex items-center justify-center">
+                      <DocumentTextIcon className="w-3 h-3 text-white" />
+                    </span>
+                    <h3 className="text-sm font-semibold text-blue-800">Exam Details</h3>
+                  </div>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {[
+                        ['Code', viewExam.code],
+                        ['Name', viewExam.name],
+                        ['Type', viewExam.type],
+                        ['Level', viewExam.level?.replace(/_/g, '-')],
+                        ['Academic Year', viewExam.academicYear],
+                        ['Term', viewExam.term],
+                        ['Status', viewExam.status?.replace(/_/g, ' ')],
+                      ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                        <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                          <td className="px-4 py-2 text-gray-900">{val}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Schedule */}
+                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-sky-50 border-b border-gray-200">
+                    <span className="w-5 h-5 rounded bg-sky-600 flex items-center justify-center">
+                      <CalendarDaysIcon className="w-3 h-3 text-white" />
+                    </span>
+                    <h3 className="text-sm font-semibold text-sky-800">Schedule</h3>
+                  </div>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {[
+                        ['Start Date', viewExam.startDate],
+                        ['End Date', viewExam.endDate],
+                        ['Marks Deadline', viewExam.marksEntryDeadline ? new Date(viewExam.marksEntryDeadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : null],
+                      ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                        <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                          <td className="px-4 py-2 text-gray-900">{val}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Target Classes */}
+                {Array.isArray(viewExam.targetClasses) && viewExam.targetClasses.length > 0 && (
+                  <div className="rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border-b border-gray-200">
+                      <span className="w-5 h-5 rounded bg-emerald-600 flex items-center justify-center">
+                        <AcademicCapIcon className="w-3 h-3 text-white" />
+                      </span>
+                      <h3 className="text-sm font-semibold text-emerald-800">Target Classes</h3>
+                    </div>
+                    <div className="p-4 flex flex-wrap gap-1.5">
+                      {viewExam.targetClasses.map((cls, i) => (
+                        <span key={i} className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                          {cls}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Settings */}
+                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border-b border-gray-200">
+                    <span className="w-5 h-5 rounded bg-amber-600 flex items-center justify-center">
+                      <LockClosedIcon className="w-3 h-3 text-white" />
+                    </span>
+                    <h3 className="text-sm font-semibold text-amber-800">Settings</h3>
+                  </div>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {[
+                        ['Locked', viewExam.isLocked ? 'Yes' : 'No'],
+                        ['Published', viewExam.isPublished ? 'Yes' : 'No'],
+                        viewExam.description ? ['Description', viewExam.description] : null,
+                      ].filter(row => row != null).map(([label, val], i) => (
+                        <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                          <td className="px-4 py-2 text-gray-900">{val}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="shrink-0 border-t border-gray-200 px-6 py-4 flex items-center justify-between bg-gray-50">
+                <span className="text-xs text-gray-500">{viewExam.code} — Term {viewExam.term}, {viewExam.academicYear}</span>
+                <div className="flex gap-2">
+                  {hasAnyRole(['ADMIN']) && (
+                    <button
+                      onClick={() => { setViewExam(null); handleEditExam(viewExam) }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-yellow-300 rounded-lg text-yellow-700 hover:bg-yellow-50 transition-colors"
+                    >
+                      <PencilIcon className="w-4 h-4" />
+                      Edit
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setViewExam(null)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }

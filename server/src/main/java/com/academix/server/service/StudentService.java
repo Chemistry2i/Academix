@@ -363,8 +363,13 @@ public class StudentService {
     @Transactional(readOnly = true)
     public Map<String, Object> getStudentStatistics() {
         Map<String, Object> stats = new HashMap<>();
-        stats.put("totalStudents", studentRepository.count());
-        stats.put("activeStudents", studentRepository.countByIsActiveTrue());
+        long total = studentRepository.count();
+        long active = studentRepository.countByIsActiveTrue();
+        stats.put("totalStudents", total);
+        stats.put("activeStudents", active);
+        stats.put("inactiveStudents", total - active);
+        stats.put("maleStudents", studentRepository.countByGender("MALE"));
+        stats.put("femaleStudents", studentRepository.countByGender("FEMALE"));
         stats.put("boardingStudents", studentRepository.findByResidenceStatus(Student.ResidenceStatus.BOARDING).size());
         stats.put("dayStudents", studentRepository.findByResidenceStatus(Student.ResidenceStatus.DAY).size());
         return stats;

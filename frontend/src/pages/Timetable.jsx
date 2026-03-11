@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   CalendarIcon,
   PlusIcon,
@@ -13,7 +13,9 @@ import {
   FunnelIcon,
   ArrowDownTrayIcon,
   TableCellsIcon,
-  ListBulletIcon
+  ListBulletIcon,
+  XMarkIcon,
+  MapPinIcon
 } from '@heroicons/react/24/outline'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -35,6 +37,7 @@ const Timetable = () => {
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingEntry, setEditingEntry] = useState(null)
+  const [viewEntry, setViewEntry] = useState(null)
   const [viewMode, setViewMode] = useState('table') // 'table' or 'grid'
   const [gridViewConfig, setGridViewConfig] = useState({
     type: 'class', // 'class' or 'teacher'
@@ -252,29 +255,32 @@ const Timetable = () => {
       header: 'Actions',
       sortable: false,
       render: (_, entry) => (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => handleViewEntry(entry)}
-            className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-blue-200 rounded text-blue-600 hover:bg-blue-50 transition-colors"
             title="View Details"
           >
             <EyeIcon className="w-4 h-4" />
+            View
           </button>
           {hasAnyRole(['ADMIN', 'HEAD_TEACHER', 'DIRECTOR_OF_STUDIES']) && (
             <>
               <button
                 onClick={() => handleEditEntry(entry)}
-                className="text-yellow-600 hover:text-yellow-900 p-1 hover:bg-yellow-50 rounded transition-colors"
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-yellow-200 rounded text-yellow-600 hover:bg-yellow-50 transition-colors"
                 title="Edit Entry"
               >
                 <PencilIcon className="w-4 h-4" />
+                Edit
               </button>
               <button
                 onClick={() => handleDeleteEntry(entry)}
-                className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded transition-colors"
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-red-200 rounded text-red-600 hover:bg-red-50 transition-colors"
                 title="Delete Entry"
               >
                 <TrashIcon className="w-4 h-4" />
+                Delete
               </button>
             </>
           )}
@@ -284,29 +290,7 @@ const Timetable = () => {
   ]
 
   const handleViewEntry = (entry) => {
-    Swal.fire({
-      title: `${entry.className} - ${entry.subjectName}`,
-      html: `
-        <div class="text-left space-y-2">
-          <p><strong>Class:</strong> ${entry.className}${entry.stream ? ` (${entry.stream})` : ''}</p>
-          <p><strong>Subject:</strong> ${entry.subjectName} (${entry.subjectCode})</p>
-          <p><strong>Teacher:</strong> ${entry.teacherName || 'Not Assigned'}</p>
-          <p><strong>Day:</strong> ${entry.dayOfWeek}</p>
-          <p><strong>Period:</strong> ${entry.periodNumber}${entry.periodName ? ` - ${entry.periodName}` : ''}</p>
-          <p><strong>Time:</strong> ${entry.startTime} - ${entry.endTime}</p>
-          <p><strong>Room:</strong> ${entry.room || 'TBA'}</p>
-          ${entry.building ? `<p><strong>Building:</strong> ${entry.building}</p>` : ''}
-          <p><strong>Type:</strong> ${entry.periodType || 'LESSON'}</p>
-          <p><strong>Term:</strong> ${entry.term} (${entry.academicYear})</p>
-          ${entry.isDoublePerod ? '<p><strong>Double Period:</strong> Yes</p>' : ''}
-        </div>
-      `,
-      icon: 'info',
-      customClass: {
-        container: 'font-outfit',
-        popup: 'rounded-xl'
-      }
-    })
+    setViewEntry(entry)
   }
 
   const handleEditEntry = (entry) => {
@@ -681,6 +665,183 @@ const Timetable = () => {
         onSuccess={loadTimetables}
         editingEntry={editingEntry}
       />
+
+      {/* View Timetable Entry Modal */}
+      <AnimatePresence>
+        {viewEntry && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden"
+              style={{ maxHeight: 'calc(100vh - 3rem)' }}
+              initial={{ opacity: 0, y: 40, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            >
+              {/* Header */}
+              <div className="shrink-0 bg-primary-700 text-white px-6 py-5">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
+                      <CalendarIcon className="w-7 h-7 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold">{viewEntry.className}</h2>
+                      <p className="text-primary-200 text-sm mt-0.5">{viewEntry.subjectName}{viewEntry.subjectCode ? ` (${viewEntry.subjectCode})` : ''}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white">
+                          {viewEntry.periodType || 'LESSON'}
+                        </span>
+                        {viewEntry.isDoublePerod && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-400/20 text-yellow-100 ring-1 ring-yellow-300/40">
+                            Double Period
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setViewEntry(null)}
+                    className="text-white/70 hover:text-white transition-colors mt-1"
+                  >
+                    <XMarkIcon className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick-stat strip */}
+              <div className="shrink-0 bg-primary-600 text-white px-6 py-3">
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <div>
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Day</span>
+                    <p className="font-medium">{viewEntry.dayOfWeek || '—'}</p>
+                  </div>
+                  <div className="border-l border-primary-500 pl-4">
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Period</span>
+                    <p className="font-medium">{viewEntry.periodNumber}{viewEntry.periodName ? ` – ${viewEntry.periodName}` : ''}</p>
+                  </div>
+                  <div className="border-l border-primary-500 pl-4">
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Time</span>
+                    <p className="font-medium">{viewEntry.startTime} – {viewEntry.endTime}</p>
+                  </div>
+                  {viewEntry.room && (
+                    <div className="border-l border-primary-500 pl-4">
+                      <span className="text-primary-300 text-xs uppercase tracking-wider">Room</span>
+                      <p className="font-medium">{viewEntry.room}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Scrollable body */}
+              <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+                {/* Schedule Info */}
+                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border-b border-gray-200">
+                    <span className="w-5 h-5 rounded bg-blue-600 flex items-center justify-center">
+                      <CalendarIcon className="w-3 h-3 text-white" />
+                    </span>
+                    <h3 className="text-sm font-semibold text-blue-800">Schedule</h3>
+                  </div>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {[
+                        ['Class', viewEntry.stream ? `${viewEntry.className} (${viewEntry.stream})` : viewEntry.className],
+                        ['Subject', viewEntry.subjectName],
+                        ['Subject Code', viewEntry.subjectCode],
+                        ['Day', viewEntry.dayOfWeek],
+                        ['Period', viewEntry.periodNumber + (viewEntry.periodName ? ` – ${viewEntry.periodName}` : '')],
+                        ['Time', `${viewEntry.startTime} – ${viewEntry.endTime}`],
+                        ['Type', viewEntry.periodType || 'LESSON'],
+                      ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                        <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                          <td className="px-4 py-2 text-gray-900">{val}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Teacher & Room */}
+                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border-b border-gray-200">
+                    <span className="w-5 h-5 rounded bg-emerald-600 flex items-center justify-center">
+                      <UserIcon className="w-3 h-3 text-white" />
+                    </span>
+                    <h3 className="text-sm font-semibold text-emerald-800">Teacher & Room</h3>
+                  </div>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {[
+                        ['Teacher', viewEntry.teacherName || 'Not Assigned'],
+                        ['Room', viewEntry.room || 'TBA'],
+                        ['Building', viewEntry.building],
+                      ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                        <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                          <td className="px-4 py-2 text-gray-900">{val}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Term */}
+                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border-b border-gray-200">
+                    <span className="w-5 h-5 rounded bg-amber-600 flex items-center justify-center">
+                      <ClockIcon className="w-3 h-3 text-white" />
+                    </span>
+                    <h3 className="text-sm font-semibold text-amber-800">Term & Year</h3>
+                  </div>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {[
+                        ['Term', viewEntry.term],
+                        ['Academic Year', viewEntry.academicYear],
+                        ['Double Period', viewEntry.isDoublePerod ? 'Yes' : 'No'],
+                      ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                        <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                          <td className="px-4 py-2 text-gray-900">{val}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="shrink-0 border-t border-gray-200 px-6 py-4 flex items-center justify-between bg-gray-50">
+                <span className="text-xs text-gray-500">{viewEntry.className} — {viewEntry.dayOfWeek}, Period {viewEntry.periodNumber}</span>
+                <div className="flex gap-2">
+                  {hasAnyRole(['ADMIN']) && (
+                    <button
+                      onClick={() => { setViewEntry(null); handleEditEntry(viewEntry) }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-yellow-300 rounded-lg text-yellow-700 hover:bg-yellow-50 transition-colors"
+                    >
+                      <PencilIcon className="w-4 h-4" />
+                      Edit
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setViewEntry(null)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }

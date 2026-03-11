@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   PlusIcon,
   PencilIcon,
@@ -10,7 +10,8 @@ import {
   BeakerIcon,
   PaintBrushIcon,
   CogIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
@@ -29,6 +30,7 @@ const Subjects = () => {
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingSubject, setEditingSubject] = useState(null)
+  const [viewSubject, setViewSubject] = useState(null)
   const [stats, setStats] = useState({
     total: 0,
     oLevel: 0,
@@ -234,30 +236,33 @@ const Subjects = () => {
       header: 'Actions',
       sortable: false,
       render: (_, subject) => (
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => handleViewSubject(subject)}
-            className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-blue-200 rounded text-blue-600 hover:bg-blue-50 transition-colors"
             title="View Details"
           >
             <EyeIcon className="w-4 h-4" />
+            View
           </button>
           {hasAnyRole(['ADMIN', 'HEAD_TEACHER']) && (
             <>
               <button
                 onClick={() => handleEditSubject(subject)}
-                className="text-yellow-600 hover:text-yellow-900 p-1 hover:bg-yellow-50 rounded transition-colors"
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-yellow-200 rounded text-yellow-600 hover:bg-yellow-50 transition-colors"
                 title="Edit Subject"
               >
                 <PencilIcon className="w-4 h-4" />
+                Edit
               </button>
               {hasAnyRole(['ADMIN']) && (
                 <button
                   onClick={() => handleDeleteSubject(subject)}
-                  className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-red-200 rounded text-red-600 hover:bg-red-50 transition-colors"
                   title="Delete Subject"
                 >
                   <TrashIcon className="w-4 h-4" />
+                  Delete
                 </button>
               )}
             </>
@@ -268,30 +273,7 @@ const Subjects = () => {
   ]
 
   const handleViewSubject = (subject) => {
-    Swal.fire({
-      title: `${subject.code} - ${subject.name}`,
-      html: `
-        <div class="text-left space-y-2">
-          <p><strong>Code:</strong> ${subject.code}</p>
-          <p><strong>Category:</strong> ${subject.category?.replace('_', ' ')}</p>
-          <p><strong>Level:</strong> ${subject.level?.replace('_', '-')}</p>
-          <p><strong>Paper Count:</strong> ${subject.paperCount || 1}</p>
-          <p><strong>Max Marks per Paper:</strong> ${subject.maxMarksPerPaper || 100}</p>
-          <p><strong>Total Marks:</strong> ${(subject.maxMarksPerPaper || 100) * (subject.paperCount || 1)}</p>
-          <p><strong>Compulsory:</strong> ${subject.isCompulsory ? 'Yes' : 'No'}</p>
-          <p><strong>Science Subject:</strong> ${subject.isScience ? 'Yes' : 'No'}</p>
-          <p><strong>Arts Subject:</strong> ${subject.isArts ? 'Yes' : 'No'}</p>
-          <p><strong>Status:</strong> ${subject.isActive ? 'Active' : 'Inactive'}</p>
-          ${subject.description ? `<p><strong>Description:</strong> ${subject.description}</p>` : ''}
-          ${subject.syllabus ? `<p><strong>Syllabus:</strong> ${subject.syllabus}</p>` : ''}
-        </div>
-      `,
-      icon: 'info',
-      customClass: {
-        container: 'font-outfit',
-        popup: 'rounded-xl'
-      }
-    })
+    setViewSubject(subject)
   }
 
   const handleEditSubject = (subject) => {
@@ -562,6 +544,187 @@ const Subjects = () => {
         onSuccess={loadSubjects}
         editingSubject={editingSubject}
       />
+
+      {/* View Subject Modal */}
+      <AnimatePresence>
+        {viewSubject && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden"
+              style={{ maxHeight: 'calc(100vh - 3rem)' }}
+              initial={{ opacity: 0, y: 40, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            >
+              {/* Header */}
+              <div className="shrink-0 bg-primary-700 text-white px-6 py-5">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center">
+                      <BookOpenIcon className="w-7 h-7 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold">{viewSubject.name}</h2>
+                      <p className="text-primary-200 text-sm mt-0.5">{viewSubject.code}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          viewSubject.isActive !== false
+                            ? 'bg-green-400/20 text-green-100 ring-1 ring-green-300/40'
+                            : 'bg-red-400/20 text-red-100 ring-1 ring-red-300/40'
+                        }`}>
+                          {viewSubject.isActive !== false ? 'Active' : 'Inactive'}
+                        </span>
+                        {viewSubject.isCompulsory && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white">
+                            Compulsory
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setViewSubject(null)}
+                    className="text-white/70 hover:text-white transition-colors mt-1"
+                  >
+                    <XMarkIcon className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick-stat strip */}
+              <div className="shrink-0 bg-primary-600 text-white px-6 py-3">
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <div>
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Category</span>
+                    <p className="font-medium">{viewSubject.category?.replace(/_/g, ' ') || '—'}</p>
+                  </div>
+                  <div className="border-l border-primary-500 pl-4">
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Level</span>
+                    <p className="font-medium">{viewSubject.level?.replace(/_/g, '-') || '—'}</p>
+                  </div>
+                  <div className="border-l border-primary-500 pl-4">
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Papers</span>
+                    <p className="font-medium">{viewSubject.paperCount || 1}</p>
+                  </div>
+                  <div className="border-l border-primary-500 pl-4">
+                    <span className="text-primary-300 text-xs uppercase tracking-wider">Total Marks</span>
+                    <p className="font-medium">{(viewSubject.maxMarksPerPaper || 100) * (viewSubject.paperCount || 1)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scrollable body */}
+              <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+                {/* Subject Details */}
+                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border-b border-gray-200">
+                    <span className="w-5 h-5 rounded bg-blue-600 flex items-center justify-center">
+                      <BookOpenIcon className="w-3 h-3 text-white" />
+                    </span>
+                    <h3 className="text-sm font-semibold text-blue-800">Subject Details</h3>
+                  </div>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {[
+                        ['Code', viewSubject.code],
+                        ['Name', viewSubject.name],
+                        ['Category', viewSubject.category?.replace(/_/g, ' ')],
+                        ['Level', viewSubject.level?.replace(/_/g, '-')],
+                        ['Paper Count', viewSubject.paperCount ?? 1],
+                        ['Max Marks / Paper', viewSubject.maxMarksPerPaper ?? 100],
+                        ['Total Marks', (viewSubject.maxMarksPerPaper || 100) * (viewSubject.paperCount || 1)],
+                      ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                        <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                          <td className="px-4 py-2 text-gray-900">{val}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Classification */}
+                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-sky-50 border-b border-gray-200">
+                    <span className="w-5 h-5 rounded bg-sky-600 flex items-center justify-center">
+                      <AcademicCapIcon className="w-3 h-3 text-white" />
+                    </span>
+                    <h3 className="text-sm font-semibold text-sky-800">Classification</h3>
+                  </div>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {[
+                        ['Compulsory', viewSubject.isCompulsory ? 'Yes' : 'No'],
+                        ['Science Subject', viewSubject.isScience ? 'Yes' : 'No'],
+                        ['Arts Subject', viewSubject.isArts ? 'Yes' : 'No'],
+                        ['Status', viewSubject.isActive !== false ? 'Active' : 'Inactive'],
+                      ].map(([label, val], i) => (
+                        <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-4 py-2 text-gray-500 font-medium w-44">{label}</td>
+                          <td className="px-4 py-2 text-gray-900">{val}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Notes */}
+                {(viewSubject.description || viewSubject.syllabus) && (
+                  <div className="rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border-b border-gray-200">
+                      <span className="w-5 h-5 rounded bg-emerald-600 flex items-center justify-center">
+                        <CogIcon className="w-3 h-3 text-white" />
+                      </span>
+                      <h3 className="text-sm font-semibold text-emerald-800">Additional Info</h3>
+                    </div>
+                    <table className="w-full text-sm">
+                      <tbody>
+                        {[
+                          ['Description', viewSubject.description],
+                          ['Syllabus', viewSubject.syllabus],
+                        ].filter(([, v]) => v != null && v !== '').map(([label, val], i) => (
+                          <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td className="px-4 py-2 text-gray-500 font-medium w-44 align-top">{label}</td>
+                            <td className="px-4 py-2 text-gray-900">{val}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="shrink-0 border-t border-gray-200 px-6 py-4 flex items-center justify-between bg-gray-50">
+                <span className="text-xs text-gray-500">{viewSubject.code} — {viewSubject.level?.replace(/_/g, '-') || 'Subject'}</span>
+                <div className="flex gap-2">
+                  {hasAnyRole(['ADMIN']) && (
+                    <button
+                      onClick={() => { setViewSubject(null); handleEditSubject(viewSubject) }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-yellow-300 rounded-lg text-yellow-700 hover:bg-yellow-50 transition-colors"
+                    >
+                      <PencilIcon className="w-4 h-4" />
+                      Edit
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setViewSubject(null)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
