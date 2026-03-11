@@ -352,13 +352,24 @@ public class StudentController {
         summary.put("id", student.getId());
         summary.put("studentId", student.getStudentId());
         summary.put("linn", student.getLinn());
+        summary.put("firstName", student.getFirstName());
+        summary.put("lastName", student.getLastName());
+        summary.put("otherNames", student.getOtherNames());
         summary.put("email", student.getEmail());
         summary.put("fullName", student.getFullName());
+        summary.put("gender", student.getGender());
+        summary.put("phoneNumber", student.getPhoneNumber());
+        summary.put("dateOfBirth", student.getDateOfBirth());
+        summary.put("nationality", student.getNationality());
+        summary.put("nin", student.getNin());
+        summary.put("disabilityStatus", student.getDisabilityStatus());
         summary.put("currentClass", student.getCurrentClass());
         summary.put("stream", student.getStream());
         summary.put("residenceStatus", student.getResidenceStatus());
         summary.put("house", student.getHouse());
+        summary.put("combination", student.getCombination());
         summary.put("isActive", student.getIsActive());
+        summary.put("createdAt", student.getCreatedAt());
         return summary;
     }
 
