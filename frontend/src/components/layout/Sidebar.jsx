@@ -21,7 +21,8 @@ import {
   PencilSquareIcon,
   CalendarDaysIcon,
   RectangleStackIcon,
-  CubeIcon
+  CubeIcon,
+  BuildingStorefrontIcon
 } from '@heroicons/react/24/outline'
 import { useAuth } from '../../contexts/AuthContext'
 import Swal from 'sweetalert2'
@@ -39,6 +40,11 @@ const Sidebar = () => {
       icon: HomeIcon
     },
     {
+      name: 'Admissions',
+      href: '/admin/admissions',
+      icon: UserPlusIcon
+    },
+    {
       name: 'Students',
       href: '/admin/students',
       icon: AcademicCapIcon
@@ -54,9 +60,10 @@ const Sidebar = () => {
       icon: UsersIcon
     },
     {
-      name: 'Admissions',
-      href: '/admin/admissions',
-      icon: UserPlusIcon
+      name: 'Subjects',
+      href: '/admin/subjects',
+      icon: CubeIcon,
+      description: 'Manage academic subjects'
     },
     {
       name: 'Courses',
@@ -69,6 +76,17 @@ const Sidebar = () => {
       icon: RectangleStackIcon
     },
     {
+      name: 'Rooms',
+      href: '/admin/rooms',
+      icon: BuildingStorefrontIcon,
+      description: 'Manage classrooms and facilities'
+    },
+    {
+      name: 'Timetable',
+      href: '/admin/timetable',
+      icon: CalendarIcon
+    },
+    {
       name: 'Departments',
       href: '/admin/departments',
       icon: BuildingOffice2Icon
@@ -77,26 +95,6 @@ const Sidebar = () => {
       name: 'Assignments',
       href: '/admin/assignments',
       icon: PencilSquareIcon
-    },
-    {
-      name: 'Results',
-      href: '/admin/results',
-      icon: ChartBarIcon
-    },
-    {
-      name: 'Reports',
-      href: '/admin/reports',
-      icon: DocumentChartBarIcon
-    },
-    {
-      name: 'Timetable',
-      href: '/admin/timetable',
-      icon: CalendarIcon
-    },
-    {
-      name: 'Events',
-      href: '/admin/events',
-      icon: CalendarDaysIcon
     },
     {
       name: 'Attendance',
@@ -109,6 +107,23 @@ const Sidebar = () => {
       icon: DocumentTextIcon
     },
     {
+      name: 'Results',
+      href: '/admin/results',
+      icon: ChartBarIcon
+    },
+    {
+      name: 'Reports',
+      href: '/admin/reports',
+      icon: DocumentChartBarIcon
+    },
+    
+    {
+      name: 'Events',
+      href: '/admin/events',
+      icon: CalendarDaysIcon
+    },
+    
+    {
       name: 'Announcements',
       href: '/admin/announcements',
       icon: SpeakerWaveIcon
@@ -118,12 +133,7 @@ const Sidebar = () => {
       href: '/admin/profile',
       icon: UserCircleIcon
     },
-    {
-      name: 'Subjects',
-      href: '/admin/subjects',
-      icon: CubeIcon,
-      description: 'Manage academic subjects'
-    },
+    
     {
       name: 'Settings',
       href: '/admin/settings',

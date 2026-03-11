@@ -12,6 +12,7 @@ import { timetableService } from '../../services/timetableService'
 import { teacherService } from '../../services/teacherService'
 import { classService } from '../../services/classService'
 import { subjectService } from '../../services/subjectService'
+import { roomService } from '../../services/roomService'
 import toast from 'react-hot-toast'
 
 const TimetableRegistration = ({ 
@@ -70,20 +71,13 @@ const TimetableRegistration = ({
   const periods = Array.from({ length: 10 }, (_, i) => i + 1)
   const academicYears = ['2025/2026', '2024/2025', '2023/2024']
 
-  // Predefined rooms - can be made dynamic later
-  const commonRooms = [
-    'Room 101', 'Room 102', 'Room 103', 'Room 104', 'Room 105',
-    'Physics Lab', 'Chemistry Lab', 'Biology Lab', 'Computer Lab',
-    'Library', 'Assembly Hall', 'Sports Field', 'Gymnasium'
-  ]
-
   // Load dynamic data from API
   useEffect(() => {
     const loadInitialData = async () => {
       try {
         setInitialLoading(true)
         
-        const [classesResponse, teachersResponse, subjectsResponse] = await Promise.all([
+        const [classesResponse, teachersResponse, subjectsResponse, roomsResponse] = await Promise.all([
           classService.getClasses().catch(err => {
             console.warn('Failed to load classes:', err)
             return []
@@ -95,13 +89,17 @@ const TimetableRegistration = ({
           subjectService.getAllSubjects().catch(err => {
             console.warn('Failed to load subjects:', err)
             return []
+          }),
+          roomService.getAvailableRooms().catch(err => {
+            console.warn('Failed to load rooms:', err)
+            return []
           })
         ])
 
         setClasses(Array.isArray(classesResponse) ? classesResponse : [])
         setTeachers(teachersResponse.teachers || [])
         setSubjects(Array.isArray(subjectsResponse) ? subjectsResponse : [])
-        setRooms(commonRooms) // Using predefined rooms for now
+        setRooms(Array.isArray(roomsResponse) ? roomsResponse : [])
         
       } catch (error) {
         console.error('Error loading initial data:', error)
@@ -554,8 +552,9 @@ const TimetableRegistration = ({
                 >
                   <option value="">Select a room</option>
                   {rooms.map((room) => (
-                    <option key={room} value={room}>
-                      {room}
+                    <option key={room.id || room.roomNumber} value={room.roomNumber}>
+                      {room.roomNumber} - {room.roomName || room.roomType}
+                      {room.building && ` (${room.building})`}
                     </option>
                   ))}
                 </select>

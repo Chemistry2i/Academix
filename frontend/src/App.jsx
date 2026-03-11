@@ -48,6 +48,7 @@ import HealthRecords from './pages/HealthRecords'
 import Disciplinary from './pages/Disciplinary'
 import Classes from './pages/Classes'
 import Subjects from './pages/Subjects'
+import Rooms from './pages/Rooms'
 
 // Import layouts
 import Layout from './components/layout/Layout'
@@ -109,6 +110,7 @@ function App() {
           <Route path="courses" element={<Courses />} />
           <Route path="classes" element={<Classes />} />
           <Route path="subjects" element={<Subjects />} />
+          <Route path="rooms" element={<Rooms />} />
           <Route path="departments" element={<Departments />} />
           <Route path="assignments" element={<Assignments />} />
           <Route path="results" element={<Results />} />
