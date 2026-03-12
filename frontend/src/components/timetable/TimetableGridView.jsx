@@ -214,7 +214,7 @@ const TimetableGridView = ({
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6">
+      <div className="bg-primary-700 text-white p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {viewType === 'class' ? (
@@ -227,16 +227,16 @@ const TimetableGridView = ({
                 {viewInfo?.name || `${viewType.charAt(0).toUpperCase() + viewType.slice(1)} Timetable`}
               </h2>
               {viewInfo?.code && (
-                <p className="text-indigo-100">Code: {viewInfo.code}</p>
+                <p className="text-primary-200">Code: {viewInfo.code}</p>
               )}
-              <p className="text-indigo-100">
+              <p className="text-primary-200">
                 Academic Year {academicYear} - Term {term}
               </p>
             </div>
           </div>
           
           <div className="text-right">
-            <div className="text-sm text-indigo-100">Total Periods</div>
+            <div className="text-sm text-primary-200">Total Periods</div>
             <div className="text-2xl font-bold">
               {Object.values(timetableData).flat().filter(Boolean).length}
             </div>

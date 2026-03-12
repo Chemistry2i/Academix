@@ -132,4 +132,17 @@ public interface TimetableRepository extends JpaRepository<Timetable, Long> {
     long countByTeacherId(Long teacherId);
 
     long countByAcademicYearAndTerm(String academicYear, Integer term);
+
+    // Distinct counts for statistics
+    @Query("SELECT COUNT(DISTINCT t.className) FROM Timetable t WHERE t.isActive = true")
+    long countDistinctClasses();
+
+    @Query("SELECT COUNT(DISTINCT t.teacherId) FROM Timetable t WHERE t.isActive = true AND t.teacherId IS NOT NULL")
+    long countDistinctTeachers();
+
+    @Query("SELECT COUNT(DISTINCT t.subjectCode) FROM Timetable t WHERE t.isActive = true AND t.subjectCode IS NOT NULL")
+    long countDistinctSubjects();
+
+    @Query("SELECT COUNT(t) FROM Timetable t WHERE t.isActive = true AND t.periodType = 'LESSON'")
+    long countLessonEntries();
 }

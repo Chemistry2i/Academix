@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-
 import com.academix.server.dto.AuthDto.ApiResponse;
 import com.academix.server.dto.AuthDto.AuthResponse;
 import com.academix.server.dto.AuthDto.ChangePasswordRequest;
@@ -223,7 +222,7 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<AuthResponse> logout() {
         try {
-            // For now, just return success - implement token blacklisting in production
+            // For now, let me just return success - implement token blacklisting in production
             logger.info("User logout processed");
             return ResponseEntity.ok(new AuthResponse("Logout successful"));
         } catch (Exception e) {

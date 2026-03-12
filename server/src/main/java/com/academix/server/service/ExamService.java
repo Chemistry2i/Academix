@@ -1,7 +1,6 @@
 package com.academix.server.service;
 
 import java.time.LocalDate;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +51,13 @@ public class ExamService {
         }
         if (exam.getTotalMarks() == null) {
             exam.setTotalMarks(100);
+        }
+        if (exam.getGradingScale() == null) {
+            exam.setGradingScale(
+                exam.getLevel() == Exam.ExamLevel.A_LEVEL
+                    ? Exam.GradingScale.A_LEVEL
+                    : Exam.GradingScale.O_LEVEL
+            );
         }
 
         Exam saved = examRepository.save(exam);
