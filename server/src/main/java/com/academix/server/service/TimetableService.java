@@ -13,8 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.academix.server.model.Timetable;
 import com.academix.server.model.Teacher;
+import com.academix.server.model.Timetable;
 import com.academix.server.repository.TimetableRepository;
 
 @Service
@@ -368,7 +368,21 @@ public class TimetableService {
     @Transactional(readOnly = true)
     public Map<String, Object> getTimetableStatistics() {
         Map<String, Object> stats = new HashMap<>();
-        stats.put("totalEntries", timetableRepository.count());
+        long totalEntries = timetableRepository.count();
+        long totalClasses = timetableRepository.countDistinctClasses();
+        long totalTeachers = timetableRepository.countDistinctTeachers();
+        long totalSubjects = timetableRepository.countDistinctSubjects();
+        long lessonEntries = timetableRepository.countLessonEntries();
+
+        stats.put("totalEntries", totalEntries);
+        stats.put("totalClasses", totalClasses);
+        stats.put("totalTeachers", totalTeachers);
+        stats.put("totalSubjects", totalSubjects);
+
+        // Average lesson periods per class per day (Mon-Fri = 5 days)
+        double avgPeriodsPerDay = totalClasses > 0 ? (double) lessonEntries / (totalClasses * 5) : 0;
+        stats.put("averagePeriodsPerDay", Math.round(avgPeriodsPerDay * 10.0) / 10.0);
+
         return stats;
     }
 

@@ -9,6 +9,7 @@ import {
 import Button from '../common/Button'
 import LoadingSpinner from '../common/LoadingSpinner'
 import { examService } from '../../services/examService'
+import { classService } from '../../services/classService'
 import toast from 'react-hot-toast'
 
 const ExamRegistration = ({ 
@@ -19,6 +20,7 @@ const ExamRegistration = ({
 }) => {
   const [loading, setLoading] = useState(false)
   const [formErrors, setFormErrors] = useState({})
+  const [allClasses, setAllClasses] = useState([])
   const [formData, setFormData] = useState({
     code: '',
     name: '',
@@ -55,14 +57,28 @@ const ExamRegistration = ({
     '2023/2024'
   ]
 
-  const allClasses = [
-    'S1A', 'S1B', 'S1C',
-    'S2A', 'S2B', 'S2C', 
-    'S3A', 'S3B', 'S3C',
-    'S4A', 'S4B', 'S4C',
-    'S5 PCM', 'S5 PCB', 'S5 HEG', 'S5 BCM',
-    'S6 PCM', 'S6 PCB', 'S6 HEG', 'S6 BCM'
+  const FALLBACK_CLASSES = [
+    'S1A','S1B','S1C',
+    'S2A','S2B','S2C',
+    'S3A','S3B','S3C',
+    'S4A','S4B','S4C',
+    'S5 PCM','S5 PCB','S5 HEG','S5 BCM',
+    'S6 PCM','S6 PCB','S6 HEG','S6 BCM'
   ]
+
+  // Load classes from the database, fall back to defaults if empty or error
+  useEffect(() => {
+    classService.getClasses()
+      .then(data => {
+        const names = (Array.isArray(data) ? data : [])
+          .map(c => c.className || c.name || c)
+          .filter(Boolean)
+        setAllClasses(names.length > 0 ? names : FALLBACK_CLASSES)
+      })
+      .catch(() => {
+        setAllClasses(FALLBACK_CLASSES)
+      })
+  }, [])
 
   useEffect(() => {
     if (isOpen) {

@@ -386,7 +386,7 @@ const Exams = () => {
             </Button>
             <Button 
               onClick={handleAddExam}
-              className="bg-purple-600 hover:bg-purple-700 flex items-center"
+              className="bg-primary-600 hover:bg-primary-700 flex items-center"
             >
               <PlusIcon className="w-4 h-4 mr-2" />
               Schedule Exam
