@@ -41,7 +41,7 @@ import lombok.EqualsAndHashCode;
 /* Joined the separate tables for student, staff, and admin etc
 into one table called users to avoid redundancy and make it easier to manage user data. 
 The specific role of each user will be determined by the role field in the database,
-which can be used to differentiate between students, staff, and admins.
+which can be used to differentiate between students, staff, and admins and probably other roles we have.
 */
 @Inheritance(strategy=InheritanceType.JOINED)
 public abstract class User {
