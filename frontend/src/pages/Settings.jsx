@@ -17,7 +17,7 @@ const Settings = () => {
   const location = useLocation()
   const { user } = useAuth()
   const isTeacherPortal = location.pathname.startsWith('/teacher')
-  const portalBase = isTeacherPortal ? '/teacher' : location.pathname.startsWith('/admin') ? '/admin' : ''
+  const portalBase = isTeacherPortal ? '/teacher' : location.pathname.startsWith('/admin') ? '/admin' : location.pathname.startsWith('/student') ? '/student' : ''
 
   const settingsCategories = [
     {

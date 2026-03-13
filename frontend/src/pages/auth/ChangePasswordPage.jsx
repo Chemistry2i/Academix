@@ -18,7 +18,7 @@ const ChangePasswordPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
-  const portalBase = location.pathname.startsWith('/teacher') ? '/teacher' : location.pathname.startsWith('/admin') ? '/admin' : ''
+  const portalBase = location.pathname.startsWith('/teacher') ? '/teacher' : location.pathname.startsWith('/admin') ? '/admin' : location.pathname.startsWith('/student') ? '/student' : ''
   
   const {
     register,

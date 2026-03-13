@@ -17,6 +17,7 @@ import StudentDashboard from './pages/students/Dashboard'
 import TeacherDashboard from './pages/teachers/Dashboard'
 import StudentCourses from './pages/students/Courses'
 import StudentAssignments from './pages/students/Assignments'
+import StudentEnrollment from './pages/students/Enrollment'
 import TeacherClasses from './pages/teachers/Classes'
 import TeacherSubjects from './pages/teachers/Subjects'
 import TeacherNotes from './pages/teachers/Notes'
@@ -74,7 +75,8 @@ function App() {
           <Route index element={<Navigate to="/student/dashboard" replace />} />
           <Route path="dashboard" element={<StudentDashboard />} />
           <Route path="courses" element={<StudentCourses />} />
-          <Route path="grades" element={<Results />} />
+          <Route path="enrollment" element={<StudentEnrollment />} />
+          <Route path="grades" element={<Navigate to="/student/results" replace />} />
           <Route path="assignments" element={<StudentAssignments />} />
           <Route path="timetable" element={<Timetable />} />
           <Route path="attendance" element={<Attendance />} />

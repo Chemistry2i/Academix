@@ -8,10 +8,13 @@ import {
   ChartBarIcon,
   CalendarIcon,
   ClipboardDocumentCheckIcon,
+  DocumentTextIcon,
   UserCircleIcon,
   ArrowRightOnRectangleIcon,
   ClockIcon,
-  DocumentTextIcon
+  SpeakerWaveIcon,
+  BellIcon,
+  Cog6ToothIcon
 } from '@heroicons/react/24/outline'
 import { useAuth } from '../../contexts/AuthContext'
 import Swal from 'sweetalert2'
@@ -34,8 +37,13 @@ const StudentSidebar = () => {
       icon: AcademicCapIcon
     },
     {
-      name: 'My Grades',
-      href: '/student/grades',
+      name: 'Enrollment',
+      href: '/student/enrollment',
+      icon: DocumentTextIcon
+    },
+    {
+      name: 'Results',
+      href: '/student/results',
       icon: ChartBarIcon
     },
     {
@@ -54,11 +62,6 @@ const StudentSidebar = () => {
       icon: ClockIcon
     },
     {
-      name: 'Results',
-      href: '/student/results',
-      icon: DocumentTextIcon
-    },
-    {
       name: 'Library',
       href: '/student/library',
       icon: BookOpenIcon
@@ -67,6 +70,21 @@ const StudentSidebar = () => {
       name: 'Profile',
       href: '/student/profile',
       icon: UserCircleIcon
+    },
+    {
+      name: 'Announcements',
+      href: '/student/announcements',
+      icon: SpeakerWaveIcon
+    },
+    {
+      name: 'Notifications',
+      href: '/student/notifications',
+      icon: BellIcon
+    },
+    {
+      name: 'Settings',
+      href: '/student/settings',
+      icon: Cog6ToothIcon
     }
   ]
 
@@ -88,136 +106,98 @@ const StudentSidebar = () => {
     }
   }
 
-  const sidebarVariants = {
-    expanded: {
-      width: '16rem',
-      transition: {
-        duration: 0.3,
-        ease: 'easeInOut'
-      }
-    },
-    collapsed: {
-      width: '4.5rem',
-      transition: {
-        duration: 0.3,
-        ease: 'easeInOut'
-      }
-    }
-  }
-
-  const contentVariants = {
-    expanded: {
-      opacity: 1,
-      scale: 1,
-      transition: {
-        duration: 0.3,
-        delay: 0.1
-      }
-    },
-    collapsed: {
-      opacity: 0,
-      scale: 0.8,
-      transition: {
-        duration: 0.2
-      }
-    }
-  }
-
   return (
-    <motion.div
-      variants={sidebarVariants}
-      animate={isCollapsed ? 'collapsed' : 'expanded'}
-      className="bg-white border-r border-gray-200 flex flex-col h-full"
-    >
-      {/* Header */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center justify-between">
+    <div className={`bg-white border-r border-gray-200 transition-all duration-300 ${
+      isCollapsed ? 'w-16' : 'w-64'
+    }`}>
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <AnimatePresence>
             {!isCollapsed && (
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center space-x-3"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center"
               >
-                <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                  <AcademicCapIcon className="w-5 h-5 text-white" />
+                <div className="bg-primary-600 p-2 rounded-lg mr-3">
+                  <AcademicCapIcon className="w-6 h-6 text-white" />
                 </div>
-                <span className="text-xl font-bold text-gray-900">Academix</span>
+                <div>
+                  <h1 className="text-lg font-bold text-gray-900 font-outfit">Academix</h1>
+                  <p className="text-xs text-gray-500">Student Portal</p>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
+
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <motion.div
-              animate={{ rotate: isCollapsed ? 180 : 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <svg className="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            </motion.div>
+            <div className="w-5 h-5 flex flex-col justify-between">
+              <div className="w-full h-0.5 bg-gray-600"></div>
+              <div className="w-full h-0.5 bg-gray-600"></div>
+              <div className="w-full h-0.5 bg-gray-600"></div>
+            </div>
           </button>
         </div>
-      </div>
 
-      {/* User Profile */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-            <span className="text-primary-600 font-medium">
-              {user?.firstName?.[0] || 'S'}
-            </span>
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center">
+            <div className="w-8 h-8 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center font-medium text-sm">
+              {user?.firstName?.[0]?.toUpperCase() || 'S'}
+            </div>
+            <AnimatePresence>
+              {!isCollapsed && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="ml-3 flex-1 min-w-0"
+                >
+                  <h3 className="text-sm font-medium text-gray-900 truncate">
+                    {user?.firstName} {user?.lastName}
+                  </h3>
+                  <p className="text-xs text-gray-500 truncate">Student</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-          <AnimatePresence>
-            {!isCollapsed && (
-              <motion.div
-                variants={contentVariants}
-                initial="collapsed"
-                animate="expanded"
-                exit="collapsed"
-                className="flex-1 min-w-0"
-              >
-                <h3 className="text-sm font-medium text-gray-900 truncate">
-                  {user?.firstName} {user?.lastName}
-                </h3>
-                <p className="text-xs text-gray-500 truncate">Student</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
-      </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-6">
-        <div className="space-y-2">
+        <nav className="flex-1 px-4 py-4 space-y-1">
           {navigation.map((item) => {
             const isActive = location.pathname === item.href ||
               (item.href === '/student/dashboard' && location.pathname === '/dashboard')
-            
+
             return (
               <Link key={item.name} to={item.href}>
                 <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
                   className={`
-                    flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                    group flex items-center px-3 py-2 text-sm font-medium rounded transition-all duration-200
                     ${isActive
                       ? 'bg-primary-50 text-primary-700 border-r-2 border-primary-600'
                       : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                     }
                   `}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <item.icon className={`w-5 h-5 ${isCollapsed ? 'mx-auto' : 'mr-3'}`} />
+                  <item.icon className={`
+                    flex-shrink-0 w-5 h-5
+                    ${isActive ? 'text-primary-600' : 'text-gray-400 group-hover:text-gray-600'}
+                  `} />
                   <AnimatePresence>
                     {!isCollapsed && (
                       <motion.span
-                        variants={contentVariants}
-                        initial="collapsed"
-                        animate="expanded"
-                        exit="collapsed"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.2 }}
+                        className="ml-3"
                       >
                         {item.name}
                       </motion.span>
@@ -227,33 +207,33 @@ const StudentSidebar = () => {
               </Link>
             )
           })}
-        </div>
-      </nav>
+        </nav>
 
-      {/* Logout Button */}
-      <div className="p-6 border-t border-gray-200">
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={handleLogout}
-          className="w-full flex items-center px-3 py-2 text-sm font-medium text-red-700 rounded-lg hover:bg-red-50 transition-colors"
-        >
-          <ArrowRightOnRectangleIcon className={`w-5 h-5 ${isCollapsed ? 'mx-auto' : 'mr-3'}`} />
-          <AnimatePresence>
-            {!isCollapsed && (
-              <motion.span
-                variants={contentVariants}
-                initial="collapsed"
-                animate="expanded"
-                exit="collapsed"
-              >
-                Logout
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.button>
+        <div className="p-4 border-t border-gray-200">
+          <motion.button
+            onClick={handleLogout}
+            className="w-full flex items-center px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded transition-colors"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <ArrowRightOnRectangleIcon className="w-5 h-5" />
+            <AnimatePresence>
+              {!isCollapsed && (
+                <motion.span
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="ml-3"
+                >
+                  Logout
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
+        </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
 
