@@ -44,7 +44,7 @@ const Results = () => {
 
   const selectedStudent = useMemo(() => {
     if (!students.length) return null
-    return students.find((student) => String(student.email || '').toLowerCase() === String(user?.email || '').toLowerCase()) || students[0]
+    return students.find((student) => String(student.email || '').toLowerCase() === String(user?.email || '').toLowerCase()) || null
   }, [students, user?.email])
 
   useEffect(() => {

@@ -1,51 +1,103 @@
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import Card from '../../components/common/Card'
 import DataTable from '../../components/common/DataTable'
+import { useAuth } from '../../contexts/AuthContext'
+import { studentService } from '../../services/studentService'
+import { classService } from '../../services/classService'
+import { resultsService } from '../../services/resultsService'
+import { assignmentService } from '../../services/assignmentService'
+
+const toLetterGrade = (value) => {
+  const score = Number(value || 0)
+  if (score >= 90) return 'A+'
+  if (score >= 80) return 'A'
+  if (score >= 75) return 'B+'
+  if (score >= 70) return 'B'
+  if (score >= 65) return 'C+'
+  if (score >= 60) return 'C'
+  if (score >= 50) return 'D'
+  return 'F'
+}
 
 const StudentCourses = () => {
-  const myCourses = [
-    {
-      id: 1,
-      name: 'Mathematics',
-      code: 'MATH101',
-      teacher: 'Mr. Anderson',
-      schedule: 'Mon, Wed, Fri - 08:00 AM',
-      room: 'Room 101',
-      credits: 4,
-      currentGrade: 'A-'
-    },
-    {
-      id: 2,
-      name: 'English Literature',
-      code: 'ENG201',
-      teacher: 'Ms. Johnson',
-      schedule: 'Tue, Thu - 09:00 AM',
-      room: 'Room 205',
-      credits: 3,
-      currentGrade: 'B+'
-    },
-    {
-      id: 3,
-      name: 'Physics',
-      code: 'PHY301',
-      teacher: 'Dr. Smith',
-      schedule: 'Mon, Wed - 10:30 AM',
-      room: 'Lab 1',
-      credits: 4,
-      currentGrade: 'B'
-    },
-    {
-      id: 4,
-      name: 'History',
-      code: 'HIS101',
-      teacher: 'Mrs. Brown',
-      schedule: 'Tue, Thu - 13:00 PM',
-      room: 'Room 310',
-      credits: 3,
-      currentGrade: 'A'
+  const { user } = useAuth()
+  const [loading, setLoading] = useState(true)
+  const [myCourses, setMyCourses] = useState([])
+  const [studentLabel, setStudentLabel] = useState('')
+
+  useEffect(() => {
+    const loadCourses = async () => {
+      setLoading(true)
+      try {
+        const [studentsPayload, classesPayload] = await Promise.all([
+          studentService.getStudents(true).catch(() => ({ students: [] })),
+          classService.getClasses().catch(() => [])
+        ])
+
+        const students = studentsPayload.students || studentsPayload.data || studentsPayload || []
+        const classes = Array.isArray(classesPayload) ? classesPayload : []
+
+        const student = students.find((item) => {
+          return String(item.email || '').toLowerCase() === String(user?.email || '').toLowerCase()
+        }) || null
+
+        if (!student) {
+          setMyCourses([])
+          return
+        }
+
+        setStudentLabel([student.firstName, student.lastName].filter(Boolean).join(' ').trim())
+
+        const [transcript, assignments] = await Promise.all([
+          resultsService.getStudentTranscript({ studentId: student.id }).catch(() => ({ subjectSummaries: [] })),
+          assignmentService.getPublishedAssignments({
+            studentContext: {
+              studentId: student.id,
+              studentEmail: student.email,
+              classId: student.schoolClass?.id || student.classId || '',
+              className: student.schoolClass?.name || student.currentClass || ''
+            },
+            classId: student.schoolClass?.id || student.classId || undefined,
+            className: student.schoolClass?.name || student.currentClass || undefined
+          }).catch(() => [])
+        ])
+
+        const selectedClass = classes.find((item) => {
+          return String(item.id || item.classId || '') === String(student.schoolClass?.id || student.classId || '') ||
+            String(item.name || item.className || '').trim().toLowerCase() === String(student.currentClass || student.schoolClass?.name || '').trim().toLowerCase()
+        })
+
+        const assignmentBySubject = assignments.reduce((acc, item) => {
+          const key = String(item.subjectName || '').trim().toLowerCase()
+          if (!key) return acc
+          acc[key] = (acc[key] || 0) + 1
+          return acc
+        }, {})
+
+        const mappedCourses = (transcript.subjectSummaries || []).map((summary, index) => {
+          const key = String(summary.subjectName || '').trim().toLowerCase()
+          return {
+            id: `${summary.subjectName || 'subject'}-${index}`,
+            name: summary.subjectName || 'Subject',
+            code: String(summary.subjectName || 'SUB').slice(0, 3).toUpperCase(),
+            teacher: selectedClass?.classTeacher?.name || selectedClass?.teacherName || 'Assigned Teacher',
+            schedule: `${student.currentClass || student.schoolClass?.name || 'Class schedule'} timetable`,
+            room: selectedClass?.room?.name || selectedClass?.roomName || selectedClass?.venue || 'TBA',
+            credits: Math.max(1, Number(summary.assessmentCount || 1)),
+            currentGrade: summary.bestGrade || toLetterGrade(summary.averagePercentage),
+            assignmentCount: assignmentBySubject[key] || 0
+          }
+        })
+
+        setMyCourses(mappedCourses)
+      } finally {
+        setLoading(false)
+      }
     }
-  ]
+
+    loadCourses()
+  }, [user?.email])
 
   const columns = [
     { key: 'code', header: 'Course Code', sortable: true },
@@ -54,6 +106,7 @@ const StudentCourses = () => {
     { key: 'schedule', header: 'Schedule', sortable: false },
     { key: 'room', header: 'Room', sortable: false },
     { key: 'credits', header: 'Credits', sortable: true },
+    { key: 'assignmentCount', header: 'Assignments', sortable: true },
     { 
       key: 'currentGrade', 
       header: 'Current Grade', 
@@ -82,12 +135,14 @@ const StudentCourses = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">My Courses</h1>
             <p className="text-gray-600 mt-1">
-              View your enrolled courses and current performance
+              {studentLabel
+                ? `View ${studentLabel}'s enrolled subjects and current performance`
+                : 'View your enrolled subjects and current performance'}
             </p>
           </div>
           <div className="mt-4 md:mt-0">
             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-              {myCourses.length} Courses Enrolled
+              {loading ? '...' : myCourses.length} Courses Enrolled
             </span>
           </div>
         </div>
@@ -99,6 +154,9 @@ const StudentCourses = () => {
             searchable
             searchPlaceholder="Search courses..."
           />
+          {!loading && myCourses.length === 0 && (
+            <div className="mt-4 text-sm text-gray-500">No subjects were found yet. Your courses will appear after assessments or result entries are available.</div>
+          )}
         </Card>
       </motion.div>
     </div>

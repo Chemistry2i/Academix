@@ -27,6 +27,7 @@ import TimetableGridView from '../components/timetable/TimetableGridView'
 import { useAuth } from '../contexts/AuthContext'
 import { timetableService } from '../services/timetableService'
 import { teacherService } from '../services/teacherService'
+import { studentService } from '../services/studentService'
 import { classService } from '../services/classService'
 import TimetableRegistration from '../components/timetable/TimetableRegistration'
 import toast from 'react-hot-toast'
@@ -37,7 +38,8 @@ const Timetable = () => {
   const { hasAnyRole, user } = useAuth()
   const navigate = useNavigate()
   const isTeacherPortal = location.pathname.startsWith('/teacher')
-  const canManageTimetable = !isTeacherPortal && hasAnyRole(['ADMIN', 'HEAD_TEACHER', 'DIRECTOR_OF_STUDIES'])
+  const isStudentPortal = location.pathname.startsWith('/student')
+  const canManageTimetable = !isTeacherPortal && !isStudentPortal && hasAnyRole(['ADMIN', 'HEAD_TEACHER', 'DIRECTOR_OF_STUDIES'])
   const [timetables, setTimetables] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
@@ -50,6 +52,7 @@ const Timetable = () => {
   })
   const [availableClasses, setAvailableClasses] = useState([])
   const [availableTeachers, setAvailableTeachers] = useState([])
+  const [studentScopedClass, setStudentScopedClass] = useState('')
   const [filters, setFilters] = useState({
     className: '',
     dayOfWeek: '',
@@ -81,9 +84,27 @@ const Timetable = () => {
 
   useEffect(() => {
     loadTimetables()
-    loadStatistics()
-    loadSelectData()
+    if (!isStudentPortal) {
+      loadStatistics()
+    }
   }, [filters])
+
+  useEffect(() => {
+    if (!isStudentPortal) return
+
+    const scopedEntries = Array.isArray(timetables) ? timetables : []
+    setStats({
+      totalEntries: scopedEntries.length,
+      totalClasses: new Set(scopedEntries.map((item) => item.className)).size,
+      totalTeachers: new Set(scopedEntries.map((item) => item.teacherName)).size,
+      totalSubjects: new Set(scopedEntries.map((item) => item.subjectName)).size,
+      averagePeriodsPerDay: 0
+    })
+  }, [isStudentPortal, timetables])
+
+  useEffect(() => {
+    loadSelectData()
+  }, [isStudentPortal, user?.email])
 
   useEffect(() => {
     if (!isTeacherPortal || !availableTeachers.length) return
@@ -109,20 +130,54 @@ const Timetable = () => {
     }))
   }, [isTeacherPortal, availableTeachers, user?.email])
 
+  useEffect(() => {
+    if (!isStudentPortal) return
+    if (!studentScopedClass) return
+
+    setFilters((prev) => ({
+      ...prev,
+      className: studentScopedClass,
+      teacherId: ''
+    }))
+    setGridViewConfig((prev) => ({
+      ...prev,
+      type: 'class',
+      targetId: studentScopedClass
+    }))
+  }, [isStudentPortal, studentScopedClass])
+
   const loadSelectData = async () => {
     try {
-      const [classesResponse, teachersResponse] = await Promise.all([
-        classService.getClasses().catch(err => {
-          console.warn('Failed to load classes:', err)
-          return []
-        }),
-        teacherService.getTeachers(true).catch(err => {
-          console.warn('Failed to load teachers:', err)
-          return { teachers: [] }
-        })
-      ])
+      const classesResponse = await classService.getClasses().catch(err => {
+        console.warn('Failed to load classes:', err)
+        return []
+      })
 
-      setAvailableClasses(Array.isArray(classesResponse) ? classesResponse : [])
+      const normalizedClasses = Array.isArray(classesResponse) ? classesResponse : []
+
+      if (isStudentPortal) {
+        const studentPayload = await studentService.getStudents(true).catch(() => ({ students: [] }))
+        const students = studentPayload.students || studentPayload.data || studentPayload || []
+        const matchedStudent = students.find((student) => {
+          return String(student.email || '').toLowerCase() === String(user?.email || '').toLowerCase()
+        }) || null
+
+        const className = matchedStudent?.schoolClass?.name || matchedStudent?.currentClass || ''
+        setStudentScopedClass(className)
+        setAvailableClasses(normalizedClasses.filter((item) => {
+          const value = item.className || item.name || ''
+          return String(value).trim().toLowerCase() === String(className).trim().toLowerCase()
+        }))
+        setAvailableTeachers([])
+        return
+      }
+
+      const teachersResponse = await teacherService.getTeachers(true).catch(err => {
+        console.warn('Failed to load teachers:', err)
+        return { teachers: [] }
+      })
+
+      setAvailableClasses(normalizedClasses)
       setAvailableTeachers(teachersResponse.teachers || [])
     } catch (error) {
       console.error('Failed to load select data:', error)
@@ -133,7 +188,23 @@ const Timetable = () => {
     try {
       setLoading(true)
       let data
-      if (filters.className) {
+      if (isStudentPortal) {
+        if (!studentScopedClass) {
+          setTimetables([])
+          return
+        }
+
+        const classData = await timetableService.getClassTimetable(
+          studentScopedClass,
+          filters.term,
+          filters.academicYear
+        )
+
+        data = Array.isArray(classData) ? classData : []
+        if (filters.dayOfWeek) {
+          data = data.filter((item) => String(item.dayOfWeek || '') === String(filters.dayOfWeek))
+        }
+      } else if (filters.className) {
         data = await timetableService.getClassTimetable(
           filters.className,
           filters.term,
@@ -396,20 +467,26 @@ const Timetable = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{isTeacherPortal ? 'My Timetable' : 'Timetable Management'}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{isTeacherPortal || isStudentPortal ? 'My Timetable' : 'Timetable Management'}</h1>
           <p className="text-gray-600 mt-1">
-            {isTeacherPortal ? 'View your teaching schedule in read-only mode' : 'Manage class schedules and timetables'}
+            {isTeacherPortal
+              ? 'View your teaching schedule in read-only mode'
+              : isStudentPortal
+                ? 'View your class timetable in read-only mode'
+                : 'Manage class schedules and timetables'}
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button
-            onClick={handleExportTimetable}
-            variant="outline"
-            className="flex items-center"
-          >
-            <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
-            {isTeacherPortal ? 'Export My Schedule' : 'Export'}
-          </Button>
+          {!isStudentPortal && (
+            <Button
+              onClick={handleExportTimetable}
+              variant="outline"
+              className="flex items-center"
+            >
+              <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
+              {isTeacherPortal ? 'Export My Schedule' : 'Export'}
+            </Button>
+          )}
           {canManageTimetable && (
             <Button 
               onClick={handleAddEntry}
@@ -422,10 +499,10 @@ const Timetable = () => {
         </div>
       </div>
 
-      {isTeacherPortal && (
+      {(isTeacherPortal || isStudentPortal) && (
         <Card>
           <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
-            <h3 className="text-sm font-semibold text-amber-900">Teacher timetable access is view-only</h3>
+            <h3 className="text-sm font-semibold text-amber-900">{isStudentPortal ? 'Student timetable access is view-only' : 'Teacher timetable access is view-only'}</h3>
             <p className="text-sm text-amber-800 mt-1">
               Creating, editing, and deleting timetable entries is restricted to administrative scheduling roles.
             </p>
@@ -445,10 +522,11 @@ const Timetable = () => {
                 id="className"
                 value={filters.className}
                 onChange={(e) => setFilters(prev => ({ ...prev, className: e.target.value }))}
+                disabled={isStudentPortal}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Classes</option>
-                {classes.map((className) => (
+                {(isStudentPortal ? (studentScopedClass ? [studentScopedClass] : []) : classes).map((className) => (
                   <option key={className} value={className}>
                     {className}
                   </option>
@@ -506,7 +584,7 @@ const Timetable = () => {
             <div className="flex items-end">
               <Button
                 onClick={() => setFilters({
-                  className: '',
+                  className: isStudentPortal ? studentScopedClass : '',
                   dayOfWeek: '',
                   teacherId: isTeacherPortal && teacherScopedId ? String(teacherScopedId) : '',
                   academicYear: '2025/2026',
@@ -523,43 +601,45 @@ const Timetable = () => {
       </Card>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <StatCard
-          title="Total Entries"
-          value={stats.totalEntries}
-          icon={CalendarIcon}
-          color="blue"
-          subtitle="Scheduled periods"
-        />
-        <StatCard
-          title="Classes"
-          value={stats.totalClasses}
-          icon={AcademicCapIcon}
-          color="green"
-          subtitle="With timetables"
-        />
-        <StatCard
-          title="Teachers"
-          value={stats.totalTeachers}
-          icon={UserIcon}
-          color="purple"
-          subtitle="Assigned"
-        />
-        <StatCard
-          title="Subjects"
-          value={stats.totalSubjects}
-          icon={BuildingLibraryIcon}
-          color="orange"
-          subtitle="Being taught"
-        />
-        <StatCard
-          title="Avg Periods/Day"
-          value={Math.round(stats.averagePeriodsPerDay * 10) / 10}
-          icon={ClockIcon}
-          color="indigo"
-          subtitle="Per class"
-        />
-      </div>
+      {!isStudentPortal && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <StatCard
+            title="Total Entries"
+            value={stats.totalEntries}
+            icon={CalendarIcon}
+            color="blue"
+            subtitle="Scheduled periods"
+          />
+          <StatCard
+            title="Classes"
+            value={stats.totalClasses}
+            icon={AcademicCapIcon}
+            color="green"
+            subtitle="With timetables"
+          />
+          <StatCard
+            title="Teachers"
+            value={stats.totalTeachers}
+            icon={UserIcon}
+            color="purple"
+            subtitle="Assigned"
+          />
+          <StatCard
+            title="Subjects"
+            value={stats.totalSubjects}
+            icon={BuildingLibraryIcon}
+            color="orange"
+            subtitle="Being taught"
+          />
+          <StatCard
+            title="Avg Periods/Day"
+            value={Math.round(stats.averagePeriodsPerDay * 10) / 10}
+            icon={ClockIcon}
+            color="indigo"
+            subtitle="Per class"
+          />
+        </div>
+      )}
 
       {/* View Mode Controls */}
       <Card>
@@ -612,8 +692,8 @@ const Timetable = () => {
                   }))}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {!isTeacherPortal && <option value="class">Class Timetable</option>}
-                  <option value="teacher">Teacher Timetable</option>
+                  <option value="class">Class Timetable</option>
+                  {!isStudentPortal && <option value="teacher">Teacher Timetable</option>}
                 </select>
               </div>
               
@@ -621,21 +701,28 @@ const Timetable = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Select {gridViewConfig.type === 'class' ? 'Class' : 'Teacher'}
                 </label>
-                {gridViewConfig.type === 'class' && !isTeacherPortal ? (
+                {gridViewConfig.type === 'class' ? (
                   <select
                     value={gridViewConfig.targetId}
                     onChange={(e) => setGridViewConfig(prev => ({ 
                       ...prev, 
                       targetId: e.target.value 
                     }))}
+                    disabled={isStudentPortal}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">Select a class</option>
-                    {availableClasses.map((cls) => (
-                      <option key={cls.id || cls.className} value={cls.className || cls.name}>
-                        {cls.className || cls.name}
-                      </option>
-                    ))}
+                    {isStudentPortal ? (
+                      <option value={studentScopedClass}>{studentScopedClass || 'My class'}</option>
+                    ) : (
+                      <>
+                        <option value="">Select a class</option>
+                        {availableClasses.map((cls) => (
+                          <option key={cls.id || cls.className} value={cls.className || cls.name}>
+                            {cls.className || cls.name}
+                          </option>
+                        ))}
+                      </>
+                    )}
                   </select>
                 ) : (
                   <select

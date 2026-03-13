@@ -30,11 +30,36 @@ import Swal from 'sweetalert2'
 const normalizeString = (value) => String(value || '').trim().toLowerCase()
 const getClassName = (item) => item?.name || item?.className || item?.currentClass || item?.schoolClass?.name || ''
 const getStudentKey = (student) => String(student?.id || student?.studentId || '')
+const formatIsoDate = (date) => new Date(date).toISOString().split('T')[0]
+
+const getAttendanceReason = (record) => {
+  return (
+    record?.absenceReason ||
+    record?.absenceNote ||
+    record?.reason ||
+    record?.remarks ||
+    record?.comment ||
+    record?.note ||
+    ''
+  )
+}
+
+const getTermStartDate = (baseDate) => {
+  const date = new Date(baseDate)
+  const year = date.getFullYear()
+  const month = date.getMonth() + 1
+
+  if (month <= 4) return formatIsoDate(new Date(year, 0, 1))
+  if (month <= 8) return formatIsoDate(new Date(year, 4, 1))
+  return formatIsoDate(new Date(year, 8, 1))
+}
 
 const Attendance = () => {
   const location = useLocation()
   const { hasAnyRole, user } = useAuth()
   const isTeacherPortal = location.pathname.startsWith('/teacher')
+  const isStudentPortal = location.pathname.startsWith('/student')
+  const canManageAttendance = !isStudentPortal && hasAnyRole(['ADMIN', 'TEACHER', 'CLASS_TEACHER'])
   const [attendance, setAttendance] = useState([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
@@ -57,6 +82,21 @@ const Attendance = () => {
   const [quickMarkTerm, setQuickMarkTerm] = useState(1)
   const [quickMarkLoading, setQuickMarkLoading] = useState(false)
   const [quickMarkSaving, setQuickMarkSaving] = useState(false)
+  const [studentScopedId, setStudentScopedId] = useState('')
+  const [studentScopedClass, setStudentScopedClass] = useState('')
+  const [studentStartDate, setStudentStartDate] = useState(new Date().toISOString().split('T')[0])
+  const [studentEndDate, setStudentEndDate] = useState(new Date().toISOString().split('T')[0])
+  const [studentPreset, setStudentPreset] = useState('TODAY')
+  const [studentInsights, setStudentInsights] = useState({
+    present: 0,
+    absent: 0,
+    late: 0,
+    excused: 0,
+    total: 0,
+    rate: 0,
+    streak: 0,
+    risk: 'LOW'
+  })
 
   const quickSummary = Object.values(quickMarkStatuses).reduce((summary, status) => {
     const value = String(status || '').toUpperCase()
@@ -67,11 +107,16 @@ const Attendance = () => {
   useEffect(() => {
     loadAttendanceData()
     loadAttendanceStatistics()
-  }, [selectedDate, selectedClass])
+  }, [selectedDate, selectedClass, studentStartDate, studentEndDate])
+
+  useEffect(() => {
+    if (!isStudentPortal) return
+    loadStudentInsights()
+  }, [isStudentPortal, studentScopedId])
 
   useEffect(() => {
     loadClassScope()
-  }, [isTeacherPortal, user?.email])
+  }, [isTeacherPortal, isStudentPortal, user?.email])
 
   useEffect(() => {
     if (!isTeacherPortal) return
@@ -80,6 +125,21 @@ const Attendance = () => {
 
   const loadClassScope = async () => {
     try {
+      if (isStudentPortal) {
+        const studentPayload = await studentService.getStudents(true).catch(() => ({ students: [] }))
+        const students = teacherPortalService.normalizeArray(studentPayload, ['students', 'data'])
+        const matchedStudent = students.find((student) => {
+          return String(student.email || '').toLowerCase() === String(user?.email || '').toLowerCase()
+        }) || null
+
+        const className = getClassName(matchedStudent)
+        setStudentScopedClass(className)
+        setStudentScopedId(String(matchedStudent?.id || matchedStudent?.studentId || ''))
+        setClasses(className ? [className] : [])
+        setSelectedClass(className || '')
+        return
+      }
+
       const classPayload = await classService.getClasses().catch(() => [])
       const allClasses = teacherPortalService.normalizeArray(classPayload, ['classes', 'data'])
 
@@ -142,6 +202,21 @@ const Attendance = () => {
   const loadAttendanceData = async () => {
     try {
       setLoading(true)
+      if (isStudentPortal) {
+        if (!studentScopedId) {
+          setAttendance([])
+          return
+        }
+        const studentRecords = await attendanceService.getStudentAttendance(
+          studentScopedId,
+          studentStartDate,
+          studentEndDate
+        )
+        const records = teacherPortalService.normalizeArray(studentRecords, ['attendance', 'records', 'data'])
+        setAttendance(records || [])
+        return
+      }
+
       const data = await attendanceService.getAttendanceByDate(
         selectedDate, 
         selectedClass || null
@@ -158,6 +233,33 @@ const Attendance = () => {
 
   const loadAttendanceStatistics = async () => {
     try {
+      if (isStudentPortal) {
+        if (!studentScopedId) {
+          setStats({ present: 0, absent: 0, late: 0, excused: 0, attendanceRate: 0, totalStudents: 0 })
+          return
+        }
+        const studentRecords = await attendanceService.getStudentAttendance(
+          studentScopedId,
+          studentStartDate,
+          studentEndDate
+        )
+        const records = teacherPortalService.normalizeArray(studentRecords, ['attendance', 'records', 'data'])
+        const present = records.filter((item) => item.status === 'PRESENT').length
+        const absent = records.filter((item) => item.status === 'ABSENT').length
+        const late = records.filter((item) => item.status === 'LATE').length
+        const excused = records.filter((item) => item.status === 'EXCUSED').length
+        const total = records.length || 0
+        setStats({
+          present,
+          absent,
+          late,
+          excused,
+          attendanceRate: total ? Math.round((present / total) * 100) : 0,
+          totalStudents: total
+        })
+        return
+      }
+
       const statisticsData = await attendanceService.getAttendanceStatistics(
         selectedDate,
         selectedDate,
@@ -184,7 +286,91 @@ const Attendance = () => {
     }
   }
 
-  const columns = [
+  const loadStudentInsights = async () => {
+    if (!studentScopedId) {
+      setStudentInsights({ present: 0, absent: 0, late: 0, excused: 0, total: 0, rate: 0, streak: 0, risk: 'LOW' })
+      return
+    }
+
+    try {
+      const today = new Date()
+      const start = new Date(today)
+      start.setDate(today.getDate() - 29)
+
+      const payload = await attendanceService.getStudentAttendance(
+        studentScopedId,
+        formatIsoDate(start),
+        formatIsoDate(today)
+      )
+      const records = teacherPortalService.normalizeArray(payload, ['attendance', 'records', 'data'])
+
+      const present = records.filter((item) => item.status === 'PRESENT').length
+      const absent = records.filter((item) => item.status === 'ABSENT').length
+      const late = records.filter((item) => item.status === 'LATE').length
+      const excused = records.filter((item) => item.status === 'EXCUSED').length
+      const total = records.length || 0
+      const rate = total ? Math.round(((present + late + excused) / total) * 100) : 0
+
+      const sortedByDate = [...records].sort((left, right) => {
+        const leftDate = new Date(left?.date || left?.attendanceDate || 0).getTime()
+        const rightDate = new Date(right?.date || right?.attendanceDate || 0).getTime()
+        return rightDate - leftDate
+      })
+
+      let streak = 0
+      for (const record of sortedByDate) {
+        const status = String(record?.status || '').toUpperCase()
+        if (status === 'PRESENT') {
+          streak += 1
+        } else {
+          break
+        }
+      }
+
+      const risk = rate < 75 ? 'HIGH' : rate < 90 ? 'MEDIUM' : 'LOW'
+      setStudentInsights({ present, absent, late, excused, total, rate, streak, risk })
+    } catch (error) {
+      console.error('Failed to load student attendance insights:', error)
+      setStudentInsights({ present: 0, absent: 0, late: 0, excused: 0, total: 0, rate: 0, streak: 0, risk: 'LOW' })
+    }
+  }
+
+  const applyStudentDatePreset = (preset) => {
+    const today = new Date()
+    const todayIso = formatIsoDate(today)
+    let start = todayIso
+    let end = todayIso
+
+    if (preset === 'THIS_WEEK') {
+      const weekStart = new Date(today)
+      const day = weekStart.getDay()
+      const mondayOffset = day === 0 ? -6 : 1 - day
+      weekStart.setDate(weekStart.getDate() + mondayOffset)
+      start = formatIsoDate(weekStart)
+    }
+
+    if (preset === 'THIS_MONTH') {
+      start = formatIsoDate(new Date(today.getFullYear(), today.getMonth(), 1))
+    }
+
+    if (preset === 'TERM') {
+      start = getTermStartDate(today)
+    }
+
+    setStudentPreset(preset)
+    setStudentStartDate(start)
+    setStudentEndDate(end)
+    setSelectedDate(end)
+  }
+
+  const handleStudentDateChange = (value) => {
+    setSelectedDate(value)
+    setStudentStartDate(value)
+    setStudentEndDate(value)
+    setStudentPreset('CUSTOM')
+  }
+
+  const managementColumns = [
     {
       key: 'studentNumber',
       header: 'Student Number',
@@ -255,7 +441,7 @@ const Attendance = () => {
             <EyeIcon className="w-4 h-4" />
             View
           </button>
-          {hasAnyRole(['ADMIN', 'TEACHER', 'CLASS_TEACHER']) && (
+          {canManageAttendance && (
             <>
               <button
                 onClick={() => handleEditAttendance(record)}
@@ -265,7 +451,7 @@ const Attendance = () => {
                 <PencilIcon className="w-4 h-4" />
                 Edit
               </button>
-              {hasAnyRole(['ADMIN']) && !isTeacherPortal && (
+              {hasAnyRole(['ADMIN']) && !isTeacherPortal && !isStudentPortal && (
                 <button
                   onClick={() => handleDeleteAttendance(record)}
                   className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-red-200 rounded text-red-600 hover:bg-red-50 transition-colors"
@@ -281,6 +467,87 @@ const Attendance = () => {
       )
     }
   ]
+
+  const studentColumns = [
+    {
+      key: 'date',
+      header: 'Date',
+      render: (value) => value || selectedDate
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (value) => (
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          value === 'PRESENT'
+            ? 'bg-green-100 text-green-800'
+            : value === 'ABSENT'
+            ? 'bg-red-100 text-red-800'
+            : value === 'LATE'
+            ? 'bg-yellow-100 text-yellow-800'
+            : value === 'EXCUSED'
+            ? 'bg-blue-100 text-blue-800'
+            : 'bg-gray-100 text-gray-800'
+        }`}>
+          {value || 'Unknown'}
+        </span>
+      )
+    },
+    {
+      key: 'subject',
+      header: 'Subject',
+      render: (_, record) => (
+        <span className="text-sm text-gray-700">
+          {record?.subjectName || record?.subject || record?.courseName || 'General'}
+        </span>
+      )
+    },
+    {
+      key: 'period',
+      header: 'Period',
+      render: (_, record) => {
+        const periodLabel =
+          record?.periodName ||
+          record?.period ||
+          record?.lessonPeriod ||
+          (record?.sessionType ? record.sessionType.replace('_', ' ') : '')
+        return <span className="text-sm text-gray-600">{periodLabel || 'N/A'}</span>
+      }
+    },
+    {
+      key: 'sessionType',
+      header: 'Session',
+      render: (value) => (
+        <span className="text-sm text-gray-600">
+          {value?.replace('_', ' ') || 'Full Day'}
+        </span>
+      )
+    },
+    {
+      key: 'checkInTime',
+      header: 'Check In',
+      render: (value) => value || 'N/A'
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      sortable: false,
+      render: (_, record) => (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => handleViewAttendance(record)}
+            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-blue-200 rounded text-blue-600 hover:bg-blue-50 transition-colors"
+            title="View Details"
+          >
+            <EyeIcon className="w-4 h-4" />
+            View
+          </button>
+        </div>
+      )
+    }
+  ]
+
+  const columns = isStudentPortal ? studentColumns : managementColumns
 
   const handleViewAttendance = (record) => {
     setViewRecord(record)
@@ -427,12 +694,16 @@ const Attendance = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{isTeacherPortal ? 'My Attendance Desk' : 'Attendance Management'}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{isTeacherPortal ? 'My Attendance Desk' : isStudentPortal ? 'My Attendance' : 'Attendance Management'}</h1>
           <p className="text-gray-600 mt-1">
-            {isTeacherPortal ? 'Quick-mark your class attendance and review daily records.' : 'Track and manage student attendance'}
+            {isTeacherPortal
+              ? 'Quick-mark your class attendance and review daily records.'
+              : isStudentPortal
+                ? 'Track your attendance records and daily status.'
+                : 'Track and manage student attendance'}
           </p>
         </div>
-        {hasAnyRole(['ADMIN', 'TEACHER', 'CLASS_TEACHER']) && (
+        {canManageAttendance && (
           <div className="flex items-center space-x-3">
             <Button 
               onClick={handleExportAttendance}
@@ -455,6 +726,19 @@ const Attendance = () => {
         )}
       </div>
 
+      {(isTeacherPortal || isStudentPortal) && (
+        <Card>
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+            <h3 className="text-sm font-semibold text-amber-900">{isStudentPortal ? 'Student attendance access is view-only' : 'Teacher attendance access is role-scoped'}</h3>
+            <p className="text-sm text-amber-800 mt-1">
+              {isStudentPortal
+                ? 'You can only view your own attendance records.'
+                : 'You can only manage attendance for classes assigned to you.'}
+            </p>
+          </div>
+        </Card>
+      )}
+
       {/* Filters */}
       <Card>
         <div className="p-6">
@@ -467,28 +751,60 @@ const Attendance = () => {
                 type="date"
                 id="date"
                 value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                onChange={(e) => (isStudentPortal ? handleStudentDateChange(e.target.value) : setSelectedDate(e.target.value))}
                 className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              {isStudentPortal && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {[
+                    ['TODAY', 'Today'],
+                    ['THIS_WEEK', 'This Week'],
+                    ['THIS_MONTH', 'This Month'],
+                    ['TERM', 'Term'],
+                  ].map(([preset, label]) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => applyStudentDatePreset(preset)}
+                      className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${
+                        studentPreset === preset
+                          ? 'bg-primary-50 border-primary-200 text-primary-700'
+                          : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <div>
-              <label htmlFor="class" className="block text-sm font-medium text-gray-700 mb-2">
-                Class
-              </label>
-              <select
-                id="class"
-                value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Classes</option>
-                {classes.map((className) => (
-                  <option key={className} value={className}>
-                    {className}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {isStudentPortal ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">My Class</label>
+                <div className="border border-gray-300 rounded-md px-3 py-2 bg-gray-50 text-gray-700 min-w-36">
+                  {studentScopedClass || 'Not assigned'}
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label htmlFor="class" className="block text-sm font-medium text-gray-700 mb-2">
+                  Class
+                </label>
+                <select
+                  id="class"
+                  value={selectedClass}
+                  onChange={(e) => setSelectedClass(e.target.value)}
+                  className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">All Classes</option>
+                  {classes.map((className) => (
+                    <option key={className} value={className}>
+                      {className}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
       </Card>
@@ -647,6 +963,59 @@ const Attendance = () => {
         />
       </div>
 
+      {isStudentPortal && (
+        <Card>
+          <div className="p-6 space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">Last 30 Days Trend</h3>
+                <p className="text-xs text-gray-500 mt-1">Quick view of Present, Absent, and Late patterns.</p>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="px-2 py-1 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  Streak: {studentInsights.streak} day{studentInsights.streak === 1 ? '' : 's'}
+                </span>
+                <span className={`px-2 py-1 rounded border ${
+                  studentInsights.risk === 'HIGH'
+                    ? 'bg-red-50 text-red-700 border-red-200'
+                    : studentInsights.risk === 'MEDIUM'
+                    ? 'bg-amber-50 text-amber-700 border-amber-200'
+                    : 'bg-green-50 text-green-700 border-green-200'
+                }`}>
+                  {studentInsights.risk === 'HIGH' ? 'At Risk' : studentInsights.risk === 'MEDIUM' ? 'Watchlist' : 'On Track'}
+                </span>
+                <span className="px-2 py-1 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                  Rate: {studentInsights.rate}%
+                </span>
+              </div>
+            </div>
+
+            <div className="w-full h-3 rounded-full bg-gray-100 overflow-hidden flex">
+              {(() => {
+                const total = studentInsights.total || 1
+                const presentWidth = Math.max(0, (studentInsights.present / total) * 100)
+                const absentWidth = Math.max(0, (studentInsights.absent / total) * 100)
+                const lateWidth = Math.max(0, (studentInsights.late / total) * 100)
+
+                return (
+                  <>
+                    <div className="h-full bg-emerald-500" style={{ width: `${presentWidth}%` }} />
+                    <div className="h-full bg-red-500" style={{ width: `${absentWidth}%` }} />
+                    <div className="h-full bg-amber-500" style={{ width: `${lateWidth}%` }} />
+                  </>
+                )
+              })()}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600">
+              <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Present: {studentInsights.present}</span>
+              <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> Absent: {studentInsights.absent}</span>
+              <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500" /> Late: {studentInsights.late}</span>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Attendance Table */}
       {attendance.length > 0 ? (
         <DataTable
@@ -667,7 +1036,7 @@ const Attendance = () => {
                 ? "No attendance has been taken today."
                 : "No attendance records found for the selected date."}
             </p>
-            {hasAnyRole(['ADMIN', 'TEACHER', 'CLASS_TEACHER']) && !isTeacherPortal && (
+            {canManageAttendance && !isTeacherPortal && !isStudentPortal && (
               <div className="mt-6">
                 <Button 
                   onClick={handleMarkAttendance}
@@ -684,7 +1053,7 @@ const Attendance = () => {
 
       {/* Attendance Registration Modal */}
       <AttendanceRegistration
-        isOpen={showMarkAttendance}
+        isOpen={canManageAttendance && showMarkAttendance}
         onClose={() => setShowMarkAttendance(false)}
         onSuccess={loadAttendanceData}
         selectedClass={selectedClass}
@@ -772,6 +1141,7 @@ const Attendance = () => {
                       {[
                         ['Date', viewRecord.date],
                         ['Status', viewRecord.status],
+                        ['Reason', getAttendanceReason(viewRecord)],
                         ['Session', viewRecord.sessionType?.replace('_', ' ') || 'Full Day'],
                         ['Class', viewRecord.className],
                         ['Stream', viewRecord.stream],

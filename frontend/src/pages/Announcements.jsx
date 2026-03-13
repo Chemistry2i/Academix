@@ -17,6 +17,8 @@ const Announcements = () => {
   const [filter, setFilter] = useState('active')
   const location = useLocation()
   const isTeacherPortal = location.pathname.startsWith('/teacher')
+  const isStudentPortal = location.pathname.startsWith('/student')
+  const canManageAnnouncements = !isTeacherPortal && !isStudentPortal
 
   const mockAnnouncements = [
     {
@@ -132,7 +134,7 @@ const Announcements = () => {
       header: 'Actions',
       render: () => (
         <div className="flex gap-2">
-            {!isTeacherPortal && <Button size="sm" variant="outline">Edit</Button>}
+          {canManageAnnouncements && <Button size="sm" variant="outline">Edit</Button>}
           <Button size="sm" variant="ghost">View</Button>
         </div>
       )
@@ -144,9 +146,9 @@ const Announcements = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Announcements</h1>
-            <p className="text-gray-600">{isTeacherPortal ? 'School-wide announcements and notices' : 'Manage school-wide announcements and notices'}</p>
+          <p className="text-gray-600">{canManageAnnouncements ? 'Manage school-wide announcements and notices' : 'School-wide announcements and notices'}</p>
         </div>
-          {!isTeacherPortal && (
+        {canManageAnnouncements && (
             <Button className="flex items-center gap-2">
               <PlusIcon className="h-5 w-5" />
               Create Announcement
@@ -168,7 +170,7 @@ const Announcements = () => {
       </div>
 
       {/* Quick Actions */}
-      {!isTeacherPortal && (
+      {canManageAnnouncements && (
         <Card>
           <div className="p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>

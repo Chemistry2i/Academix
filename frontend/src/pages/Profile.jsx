@@ -6,6 +6,7 @@ import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import { useAuth } from '../contexts/AuthContext'
 import { teacherPortalService } from '../services/teacherPortalService'
+import { studentService } from '../services/studentService'
 import { classService } from '../services/classService'
 import subjectService from '../services/subjectService'
 
@@ -13,10 +14,12 @@ const Profile = () => {
   const { user } = useAuth()
   const location = useLocation()
   const isTeacherPortal = location.pathname.startsWith('/teacher')
+  const isStudentPortal = location.pathname.startsWith('/student')
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [teacherContext, setTeacherContext] = useState(null)
+  const [studentContext, setStudentContext] = useState(null)
 
   const storageKey = `academix.profile.${user?.email || 'anonymous'}`
 
@@ -30,16 +33,18 @@ const Profile = () => {
   const saved = loadSaved()
 
   const [profile, setProfile] = useState({
-    firstName: saved?.firstName || user?.firstName || (isTeacherPortal ? 'Teacher' : 'Admin'),
-    lastName: saved?.lastName || user?.lastName || (isTeacherPortal ? '' : 'User'),
-    email: saved?.email || user?.email || (isTeacherPortal ? '' : 'admin@academix.com'),
+    firstName: saved?.firstName || user?.firstName || (isTeacherPortal ? 'Teacher' : isStudentPortal ? 'Student' : 'Admin'),
+    lastName: saved?.lastName || user?.lastName || (isTeacherPortal || isStudentPortal ? '' : 'User'),
+    email: saved?.email || user?.email || (isTeacherPortal || isStudentPortal ? '' : 'admin@academix.com'),
     phone: saved?.phone || '+256 700 123 456',
-    role: saved?.role || user?.role || (isTeacherPortal ? 'TEACHER' : 'ADMIN'),
-    department: saved?.department || (isTeacherPortal ? '' : 'Administration'),
+    role: saved?.role || user?.role || (isTeacherPortal ? 'TEACHER' : isStudentPortal ? 'STUDENT' : 'ADMIN'),
+    department: saved?.department || (isTeacherPortal ? '' : isStudentPortal ? '' : 'Administration'),
     joinDate: saved?.joinDate || '2024-01-15',
     bio: saved?.bio || (isTeacherPortal
       ? 'Dedicated educator committed to student growth and academic excellence.'
-      : 'Experienced administrator dedicated to educational excellence and student success.')
+      : isStudentPortal
+        ? 'Learner focused on consistent growth, discipline, and academic excellence.'
+        : 'Experienced administrator dedicated to educational excellence and student success.')
   })
 
   useEffect(() => {
@@ -65,7 +70,38 @@ const Profile = () => {
       } catch { /* ignore */ }
     }
     loadTeacherContext()
-  }, [isTeacherPortal])
+  }, [isTeacherPortal, user])
+
+  useEffect(() => {
+    if (!isStudentPortal) return
+
+    const loadStudentContext = async () => {
+      try {
+        const payload = await studentService.getStudents(true).catch(() => ({ students: [] }))
+        const students = payload.students || payload.data || payload || []
+        const student = students.find((item) => {
+          return String(item.email || '').toLowerCase() === String(user?.email || '').toLowerCase()
+        }) || null
+
+        setStudentContext(student)
+
+        if (student && !loadSaved()) {
+          setProfile((prev) => ({
+            ...prev,
+            firstName: student.firstName || prev.firstName,
+            lastName: student.lastName || prev.lastName,
+            phone: student.phoneNumber || prev.phone,
+            department: student.currentClass || student.schoolClass?.name || prev.department,
+            role: 'STUDENT'
+          }))
+        }
+      } catch {
+        setStudentContext(null)
+      }
+    }
+
+    loadStudentContext()
+  }, [isStudentPortal, user])
 
   const handleSave = () => {
     setIsSaving(true)
@@ -115,7 +151,7 @@ const Profile = () => {
             </div>
             <h2 className="text-xl font-bold text-gray-900">{profile.firstName} {profile.lastName}</h2>
             <p className="text-gray-600">{profile.role}</p>
-            <p className="text-sm text-gray-500 mt-1">{profile.department}</p>
+            <p className="text-sm text-gray-500 mt-1">{isStudentPortal ? `Class: ${profile.department || 'Unassigned'}` : profile.department}</p>
           </div>
         </Card>
 
@@ -242,6 +278,35 @@ const Profile = () => {
           </div>
         </Card>
       </div>
+
+      {isStudentPortal && (
+        <Card>
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <AcademicCapIcon className="h-5 w-5 text-primary-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Academic Details</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Student ID</p>
+                <p className="mt-1 text-sm font-semibold text-gray-900">{studentContext?.studentId || 'Not assigned'}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Current Class</p>
+                <p className="mt-1 text-sm font-semibold text-gray-900">{studentContext?.currentClass || studentContext?.schoolClass?.name || 'Not assigned'}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Stream</p>
+                <p className="mt-1 text-sm font-semibold text-gray-900">{studentContext?.stream || 'Not set'}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Residence</p>
+                <p className="mt-1 text-sm font-semibold text-gray-900">{studentContext?.residenceStatus === 'BOARDING' ? 'Boarding' : studentContext?.residenceStatus ? 'Day Scholar' : 'Not set'}</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {isTeacherPortal && teacherContext && (
         <Card>
