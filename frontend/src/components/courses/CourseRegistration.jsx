@@ -109,6 +109,19 @@ const CourseRegistration = ({
     'A_LEVEL'
   ]
 
+  const courseNameOptions = [
+    'Physics, Chemistry, Mathematics',
+    'Physics, Chemistry, Biology',
+    'History, Economics, Geography',
+    'History, Economics, Literature',
+    'Mathematics, Economics, Geography',
+    'Biology, Chemistry, Agriculture',
+    'Literature, Divinity, History',
+    'Art, Literature, History',
+    'Computer Science, Mathematics, Physics',
+    'Entrepreneurship, Economics, Geography'
+  ]
+
   const availableSubjects = [
     'Mathematics',
     'Physics',
@@ -324,15 +337,21 @@ const CourseRegistration = ({
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Course Name *
           </label>
-          <input
-            type="text"
+          <select
             value={formData.name}
             onChange={(e) => handleInputChange('name', e.target.value)}
             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
               formErrors.name ? 'border-red-500' : 'border-gray-300'
             }`}
-            placeholder="e.g., Physics, Chemistry, Mathematics"
-          />
+          >
+            <option value="">Select course combination</option>
+            {courseNameOptions.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+            {formData.name && !courseNameOptions.includes(formData.name) && (
+              <option value={formData.name}>{formData.name}</option>
+            )}
+          </select>
           {formErrors.name && (
             <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>
           )}
