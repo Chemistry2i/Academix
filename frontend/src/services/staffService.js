@@ -1,4 +1,5 @@
 import { apiClient } from './apiClient'
+import departmentService from './departmentService'
 
 export const staffService = {
   // Get all staff members
@@ -93,8 +94,7 @@ export const staffService = {
   // Get departments
   async getDepartments() {
     try {
-      const response = await apiClient.get('/staff/departments')
-      return response.data.departments || []
+      return await departmentService.getDepartmentNames()
     } catch (error) {
       console.error('Error fetching departments:', error)
       throw error

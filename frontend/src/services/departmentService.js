@@ -8,6 +8,24 @@ const ENDPOINTS = {
   VALIDATION: '/departments/validation/name'
 };
 
+const extractDepartmentNames = (departments = []) => {
+  if (!Array.isArray(departments)) {
+    return [];
+  }
+
+  return [...new Set(
+    departments
+      .map((department) => {
+        if (typeof department === 'string') {
+          return department.trim();
+        }
+
+        return department?.name?.trim() || department?.departmentName?.trim() || '';
+      })
+      .filter(Boolean)
+  )].sort((firstName, secondName) => firstName.localeCompare(secondName));
+};
+
 export const departmentService = {
   /**
    * Get all departments with optional search and status filters
@@ -84,6 +102,17 @@ export const departmentService = {
       console.error('Error fetching active departments:', error);
       throw new Error(error.response?.data?.error || 'Failed to fetch active departments');
     }
+  },
+
+  /**
+   * Get department names for dropdowns and filters
+   */
+  getDepartmentNames: async ({ activeOnly = false, searchParams = {} } = {}) => {
+    const response = activeOnly
+      ? await departmentService.getActiveDepartments()
+      : await departmentService.getAllDepartments(searchParams);
+
+    return extractDepartmentNames(response?.data);
   },
 
   /**
@@ -313,7 +342,9 @@ export const departmentService = {
     return departments.map(department => ({
       id: department.id,
       name: department.name,
+      departmentCode: department.departmentCode || department.code || '',
       head: department.head || 'Not Assigned',
+      headTeacherId: department.headTeacherId || null,
       teachers: department.teachers || 0,
       subjects: department.subjects || 0,
       students: department.students || 0,
@@ -321,6 +352,12 @@ export const departmentService = {
       established: department.established || 'N/A',
       status: department.status || 'Active',
       description: department.description || '',
+      academicFocus: department.academicFocus || '',
+      visionStatement: department.visionStatement || '',
+      missionStatement: department.missionStatement || '',
+      targetEnrollment: department.targetEnrollment || null,
+      minimumStaff: department.minimumStaff || null,
+      isCoreDepartment: department.isCoreDepartment !== false,
       building: department.building || '',
       floor: department.floor || '',
       officeRoom: department.officeRoom || '',
@@ -331,6 +368,11 @@ export const departmentService = {
       updatedAt: department.updatedAt
     }));
   },
+
+  /**
+   * Extract normalized department names from mixed API payloads
+   */
+  extractDepartmentNames,
 
   /**
    * Calculate department statistics from data

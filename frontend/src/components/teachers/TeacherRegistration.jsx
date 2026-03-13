@@ -14,6 +14,7 @@ import {
 import Button from '../common/Button'
 import LoadingSpinner from '../common/LoadingSpinner'
 import { teacherService } from '../../services/teacherService'
+import departmentService from '../../services/departmentService'
 import toast from 'react-hot-toast'
 
 const TeacherRegistration = ({ 
@@ -25,6 +26,7 @@ const TeacherRegistration = ({
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [departments, setDepartments] = useState([])
   const [formErrors, setFormErrors] = useState({})
 
   const [formData, setFormData] = useState({
@@ -67,8 +69,16 @@ const TeacherRegistration = ({
       setCurrentStep(1)
       setFormErrors({})
       setSubmitting(false)
+      loadDepartments()
       if (editingTeacher) {
-        setFormData(editingTeacher)
+        setFormData({
+          ...editingTeacher,
+          department: editingTeacher.department?.name || editingTeacher.department || editingTeacher.departmentName || '',
+          dateOfBirth: editingTeacher.dateOfBirth ? editingTeacher.dateOfBirth.split('T')[0] : '',
+          hireDate: editingTeacher.hireDate ? editingTeacher.hireDate.split('T')[0] : '',
+          subjects: editingTeacher.subjects || [],
+          documents: editingTeacher.documents || []
+        })
         setCurrentStep(1)
       } else {
         setFormData({
@@ -84,6 +94,20 @@ const TeacherRegistration = ({
       }
     }
   }, [isOpen, editingTeacher])
+
+  const loadDepartments = async () => {
+    try {
+      setLoading(true)
+      const departmentNames = await departmentService.getDepartmentNames({ activeOnly: true })
+      setDepartments(departmentNames)
+    } catch (error) {
+      console.error('Failed to load departments:', error)
+      setDepartments([])
+      toast.error('Failed to load departments')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const generateTeacherId = async () => {
     try {
@@ -127,18 +151,6 @@ const TeacherRegistration = ({
       description: 'Emergency contacts and documents',
       icon: BriefcaseIcon
     }
-  ]
-
-  const departments = [
-    'Mathematics',
-    'English',
-    'Science',
-    'Social Studies',
-    'Languages',
-    'Arts',
-    'Physical Education',
-    'Special Needs',
-    'Administration'
   ]
 
   const subjects = [
@@ -476,12 +488,18 @@ const TeacherRegistration = ({
           <select
             value={formData.department}
             onChange={(e) => handleInputChange('department', e.target.value)}
+            disabled={loading}
             className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
               formErrors.department ? 'border-red-500' : 'border-gray-300'
             }`}
           >
-            <option value="">Select department</option>
-            {departments.map(dept => (
+            <option value="">
+              {loading ? 'Loading departments...' : departments.length ? 'Select department' : 'No departments available'}
+            </option>
+            {[...(formData.department && !departments.includes(formData.department)
+              ? [formData.department, ...departments]
+              : departments
+            )].map(dept => (
               <option key={dept} value={dept}>{dept}</option>
             ))}
           </select>

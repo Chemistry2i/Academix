@@ -44,6 +44,7 @@ public class Department {
     // Department head (proper JPA relationship)
     @OneToOne
     @JoinColumn(name = "head_teacher_id")
+    @JsonIgnore // Prevent circular reference: Department -> Teacher -> Department
     private Teacher departmentHead;
     
     @Column(name = "head_appointed_date")

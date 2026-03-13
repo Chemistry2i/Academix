@@ -68,10 +68,12 @@ public class Teacher extends User {
     // Department relationship (member of department)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id")
+    @JsonIgnore // Prevent circular reference: Teacher -> Department -> departmentHead -> Teacher
     private Department department;
     
     // Department headed by this teacher
     @OneToOne(mappedBy = "departmentHead", cascade = CascadeType.ALL)
+    @JsonIgnore // Prevent circular reference: Teacher -> Department -> Teacher
     private Department headedDepartment;
 
     // Primary subject taught

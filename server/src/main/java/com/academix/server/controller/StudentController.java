@@ -36,7 +36,7 @@ public class StudentController {
     @Autowired
     private StudentService studentService;
 
-    // ==================== CRUD ENDPOINTS ====================
+    // ==================== STUDENT CRUD ENDPOINTS ====================
 
     /**
      * POST /api/students - Create a new student

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.academix.server.model.Department;
 import com.academix.server.model.Teacher;
 import com.academix.server.service.TeacherService;
 
@@ -431,7 +432,16 @@ public class TeacherController {
         summary.put("firstName", teacher.getFirstName());
         summary.put("lastName", teacher.getLastName());
         summary.put("fullName", teacher.getFullName());
-        summary.put("department", teacher.getDepartment());
+        // Use flat summary to avoid circular reference: Teacher -> Department -> departmentHead -> Teacher
+        Department dept = teacher.getDepartment();
+        if (dept != null) {
+            Map<String, Object> deptSummary = new HashMap<>();
+            deptSummary.put("id", dept.getId());
+            deptSummary.put("name", dept.getName());
+            summary.put("department", deptSummary);
+        } else {
+            summary.put("department", null);
+        }
         summary.put("primarySubject", teacher.getPrimarySubject());
         summary.put("employmentType", teacher.getEmploymentType());
         summary.put("employmentStatus", teacher.getEmploymentStatus());

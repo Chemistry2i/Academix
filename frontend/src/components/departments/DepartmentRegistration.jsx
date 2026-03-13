@@ -95,12 +95,17 @@ const DepartmentRegistration = ({ onClose, onSuccess, editDepartment = null }) =
 
   const loadTeachers = async () => {
     try {
-      const response = await teacherService.getAllTeachers()
-      if (response.success) {
-        setTeachers(response.data.filter(teacher => teacher.employmentStatus === 'ACTIVE'))
-      }
+      const response = await teacherService.getTeachers(true)
+      const teacherList = Array.isArray(response)
+        ? response
+        : (response?.teachers || response?.data || [])
+
+      setTeachers(
+        teacherList.filter(teacher => teacher.employmentStatus === 'ACTIVE' || teacher.isActive !== false)
+      )
     } catch (error) {
       console.error('Error loading teachers:', error)
+      setTeachers([])
     }
   }
 
@@ -486,7 +491,7 @@ const DepartmentRegistration = ({ onClose, onSuccess, editDepartment = null }) =
                 <option value="">Select a teacher as department head (Optional)</option>
                 {teachers.map(teacher => (
                   <option key={teacher.id} value={teacher.id}>
-                    {teacher.fullName} - {teacher.specialization || 'General'}
+                    {teacher.fullName || `${teacher.firstName || ''} ${teacher.lastName || ''}`.trim() || 'Teacher'} - {teacher.specialization || teacher.primarySubject || 'General'}
                   </option>
                 ))}
               </select>
