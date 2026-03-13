@@ -8,12 +8,15 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.academix.server.model.Student;
+import com.academix.server.repository.StaffRepository;
 import com.academix.server.repository.StudentRepository;
+import com.academix.server.repository.TeacherRepository;
 
 @Service
 @Transactional
@@ -25,6 +28,12 @@ public class StudentService {
     private StudentRepository studentRepository;
 
     @Autowired
+    private TeacherRepository teacherRepository;
+
+    @Autowired
+    private StaffRepository staffRepository;
+
+    @Autowired
     private UserService userService;
 
     @Autowired
@@ -34,9 +43,14 @@ public class StudentService {
      * Create a new student
      */
     public Student createStudent(Student student) {
+        String normalizedEmail = student.getEmail() != null ? student.getEmail().trim() : null;
+        if (normalizedEmail != null) {
+            student.setEmail(normalizedEmail);
+        }
+
         // Validate unique constraints
-        if (studentRepository.existsByEmail(student.getEmail())) {
-            throw new RuntimeException("Email already exists: " + student.getEmail());
+        if (normalizedEmail != null && !normalizedEmail.isEmpty() && isEmailAlreadyInUse(normalizedEmail)) {
+            throw new RuntimeException("Email already exists: " + normalizedEmail);
         }
         
         if (student.getLinn() != null && !student.getLinn().trim().isEmpty() &&
@@ -75,7 +89,13 @@ public class StudentService {
         userService.generateEmailVerificationToken(student);
 
         // Save student
-        Student savedStudent = studentRepository.save(student);
+        Student savedStudent;
+        try {
+            savedStudent = studentRepository.save(student);
+        } catch (DataIntegrityViolationException e) {
+            String detailedMessage = resolveUniqueConstraintMessage(e, student);
+            throw new RuntimeException(detailedMessage, e);
+        }
 
         // Log registration details
         logger.info("Student registered - Email: {}, StudentId: {}, Class: {}", 
@@ -96,6 +116,39 @@ public class StudentService {
         }
 
         return savedStudent;
+    }
+
+    private boolean isEmailAlreadyInUse(String email) {
+        return studentRepository.existsByEmail(email)
+            || teacherRepository.existsByEmail(email)
+            || staffRepository.existsByEmail(email);
+    }
+
+    private String resolveUniqueConstraintMessage(DataIntegrityViolationException exception, Student student) {
+        Throwable mostSpecificCause = exception.getMostSpecificCause();
+        String message = mostSpecificCause != null
+            ? mostSpecificCause.getMessage()
+            : exception.getMessage();
+
+        if (message == null) {
+            return "Duplicate value violates a unique constraint.";
+        }
+
+        String lowerMessage = message.toLowerCase();
+        if (lowerMessage.contains("users(email") || lowerMessage.contains("email")) {
+            return "Email already exists: " + student.getEmail();
+        }
+        if (lowerMessage.contains("linn")) {
+            return "LINN already exists: " + student.getLinn();
+        }
+        if (lowerMessage.contains("student_id") || lowerMessage.contains("studentid")) {
+            return "Student ID already exists. Please retry registration.";
+        }
+        if (lowerMessage.contains("nin")) {
+            return "NIN already exists: " + student.getNin();
+        }
+
+        return "Duplicate value violates a unique constraint.";
     }
 
     /**

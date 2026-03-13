@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   PlusIcon,
@@ -29,25 +29,50 @@ const Courses = () => {
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingCourse, setEditingCourse] = useState(null)
   const [viewCourse, setViewCourse] = useState(null)
-  const [stats, setStats] = useState({
-    total: 0,
-    active: 0,
-    sciences: 0,
-    arts: 0,
-    technical: 0,
-    mixed: 0,
-    aLevel: 0,
-    oLevel: 0,
-    totalEnrollment: 0,
-    totalCapacity: 0,
-    averageEnrollment: 0
-  })
 
   // Load courses from backend
   useEffect(() => {
     loadCourses()
-    loadStatistics()
   }, [])
+
+  const stats = useMemo(() => {
+    const total = courses.length
+    const active = courses.filter((course) => course.isActive !== false).length
+    const sciences = courses.filter((course) => course.type === 'SCIENCES').length
+    const arts = courses.filter((course) => course.type === 'ARTS').length
+    const technical = courses.filter((course) => course.type === 'TECHNICAL').length
+    const mixed = courses.filter((course) => course.type === 'MIXED').length
+    const aLevel = courses.filter((course) => course.level === 'A_LEVEL').length
+    const oLevel = courses.filter((course) => course.level === 'O_LEVEL').length
+    const totalEnrollment = courses.reduce((sum, course) => sum + Number(course.currentEnrollment || 0), 0)
+    const totalCapacity = courses.reduce((sum, course) => sum + Number(course.maxStudents || 0), 0)
+    const averageEnrollment = active > 0 ? Math.round(totalEnrollment / active) : 0
+
+    return {
+      total,
+      active,
+      sciences,
+      arts,
+      technical,
+      mixed,
+      aLevel,
+      oLevel,
+      totalEnrollment,
+      totalCapacity,
+      averageEnrollment
+    }
+  }, [courses])
+
+  const getTypePreview = (type) => {
+    const preview = courses
+      .filter((course) => course.type === type)
+      .slice(0, 3)
+      .map((course) => course.code || course.name)
+      .filter(Boolean)
+      .join(', ')
+
+    return preview || 'No courses yet'
+  }
 
   const loadCourses = async () => {
     try {
@@ -60,31 +85,6 @@ const Courses = () => {
       setCourses([])
     } finally {
       setLoading(false)
-    }
-  }
-
-  const loadStatistics = async () => {
-    try {
-      const statisticsData = await courseService.getCourseStatistics()
-      setStats({
-        total: statisticsData.total || 0,
-        active: statisticsData.active || 0,
-        sciences: statisticsData.sciences || 0,
-        arts: statisticsData.arts || 0,
-        technical: statisticsData.technical || 0,
-        mixed: statisticsData.mixed || 0,
-        aLevel: statisticsData.aLevel || 0,
-        oLevel: statisticsData.oLevel || 0,
-        totalEnrollment: statisticsData.totalEnrollment || 0,
-        totalCapacity: statisticsData.totalCapacity || 0,
-        averageEnrollment: statisticsData.totalEnrollment && statisticsData.active 
-          ? Math.round(statisticsData.totalEnrollment / statisticsData.active) 
-          : 0
-      })
-    } catch (error) {
-      console.error('Failed to load course statistics:', error)
-      // Keep existing fallback stats calculation
-      setStats(prev => prev)
     }
   }
 
@@ -257,7 +257,6 @@ const Courses = () => {
         await courseService.deleteCourse(course.id)
         toast.success('Course deleted successfully')
         loadCourses() // Refresh the list
-        loadStatistics() // Refresh the statistics
       } catch (error) {
         console.error('Failed to delete course:', error)
         toast.error('Failed to delete course')
@@ -277,7 +276,6 @@ const Courses = () => {
 
   const handleCourseSuccess = () => {
     loadCourses() // Refresh the courses list
-    loadStatistics() // Refresh the statistics
     setShowAddModal(false)
     setEditingCourse(null)
   }
@@ -332,14 +330,14 @@ const Courses = () => {
           value={stats.sciences}
           icon={BeakerIcon}
           color="blue"
-          subtitle="PCM, PCB, BCM"
+          subtitle={getTypePreview('SCIENCES')}
         />
         <StatCard
           title="Arts"
           value={stats.arts}
           icon={PaintBrushIcon}
           color="orange"
-          subtitle="HEG, HEL, GEL"
+          subtitle={getTypePreview('ARTS')}
         />
         <StatCard
           title="Total Enrolled"

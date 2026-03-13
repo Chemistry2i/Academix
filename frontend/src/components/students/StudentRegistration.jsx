@@ -15,6 +15,7 @@ import Button from '../common/Button'
 import LoadingSpinner from '../common/LoadingSpinner'
 import { studentService } from '../../services/studentService'
 import { classService } from '../../services/classService'
+import { courseService } from '../../services/courseService'
 import toast from 'react-hot-toast'
 
 const StudentRegistration = ({ 
@@ -27,6 +28,7 @@ const StudentRegistration = ({
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [classes, setClasses] = useState([])
+  const [courses, setCourses] = useState([])
   const [formErrors, setFormErrors] = useState({})
 
   const [formData, setFormData] = useState({
@@ -67,6 +69,7 @@ const StudentRegistration = ({
       setFormErrors({})
       setSubmitting(false)
       loadClasses()
+      loadCourses()
       if (editingStudent) {
         setFormData(editingStudent)
         setCurrentStep(1)
@@ -90,6 +93,16 @@ const StudentRegistration = ({
     } catch (error) {
       console.error('Failed to load classes:', error)
       toast.error('Failed to load class options')
+    }
+  }
+
+  const loadCourses = async () => {
+    try {
+      const data = await courseService.getCourses()
+      setCourses(Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error('Failed to load courses:', error)
+      setCourses([])
     }
   }
 
@@ -742,14 +755,19 @@ const StudentRegistration = ({
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Subject Combination
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="combination"
-                    value={formData.combination}
+                    value={formData.combination || ''}
                     onChange={handleInputChange}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="e.g., Math, Physics, Chemistry"
-                  />
+                  >
+                    <option value="">Select subject combination</option>
+                    {courses.map((course) => (
+                      <option key={course.id} value={course.name}>
+                        {course.name}{course.code ? ` (${course.code})` : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* LINN */}
