@@ -8,6 +8,7 @@ import {
   ChartBarIcon,
   CalendarIcon,
   ClipboardDocumentCheckIcon,
+  DocumentTextIcon,
   UserCircleIcon,
   ArrowRightOnRectangleIcon,
   ClockIcon,
@@ -34,6 +35,11 @@ const StudentSidebar = () => {
       name: 'My Courses',
       href: '/student/courses',
       icon: AcademicCapIcon
+    },
+    {
+      name: 'Enrollment',
+      href: '/student/enrollment',
+      icon: DocumentTextIcon
     },
     {
       name: 'Results',
