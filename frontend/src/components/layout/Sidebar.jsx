@@ -188,7 +188,7 @@ const Sidebar = () => {
                 </div>
                 <div>
                   <h1 className="text-lg font-bold text-gray-900 font-outfit">Academix</h1>
-                  <p className="text-xs text-gray-500">School Management</p>
+                  <p className="text-xs text-gray-500">Administration Portal</p>
                 </div>
               </motion.div>
             )}
@@ -225,7 +225,7 @@ const Sidebar = () => {
                     {user?.firstName} {user?.lastName}
                   </p>
                   <p className="text-xs text-gray-500 capitalize">
-                    {user?.role?.toLowerCase() || 'User'}
+                    {user?.role === 'ADMIN' ? 'Administrator' : user?.role?.toLowerCase() || 'Administrator'}
                   </p>
                 </motion.div>
               )}

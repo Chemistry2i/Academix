@@ -352,10 +352,10 @@ const Dashboard = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {getGreeting()}, {user?.firstName || 'Admin'}! 👋
+                  {getGreeting()}, {user?.firstName ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}` : 'Administrator'}! 👋
                 </h1>
                 <p className="text-gray-600 mt-1">
-                  Welcome back to your dashboard
+                  Here's your school overview for today.
                 </p>
               </div>
             </div>
