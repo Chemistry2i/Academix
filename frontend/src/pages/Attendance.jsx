@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useLocation } from 'react-router-dom'
 import {
   ClipboardDocumentCheckIcon,
   UserGroupIcon,
@@ -8,7 +9,6 @@ import {
   EyeIcon,
   PencilIcon,
   TrashIcon,
-  FunnelIcon,
   ArrowDownTrayIcon,
   XMarkIcon,
   UserIcon
@@ -20,12 +20,21 @@ import DataTable from '../components/common/DataTable'
 import LoadingSpinner from '../components/common/LoadingSpinner'
 import { useAuth } from '../contexts/AuthContext'
 import { attendanceService } from '../services/attendanceService'
+import { classService } from '../services/classService'
+import { studentService } from '../services/studentService'
+import { teacherPortalService } from '../services/teacherPortalService'
 import AttendanceRegistration from '../components/attendance/AttendanceRegistration'
 import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
 
+const normalizeString = (value) => String(value || '').trim().toLowerCase()
+const getClassName = (item) => item?.name || item?.className || item?.currentClass || item?.schoolClass?.name || ''
+const getStudentKey = (student) => String(student?.id || student?.studentId || '')
+
 const Attendance = () => {
+  const location = useLocation()
   const { hasAnyRole, user } = useAuth()
+  const isTeacherPortal = location.pathname.startsWith('/teacher')
   const [attendance, setAttendance] = useState([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
@@ -38,14 +47,97 @@ const Attendance = () => {
   })
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [selectedClass, setSelectedClass] = useState('')
+  const [classes, setClasses] = useState([])
   const [showMarkAttendance, setShowMarkAttendance] = useState(false)
   const [viewRecord, setViewRecord] = useState(null)
-  const [classes] = useState(['S1A', 'S1B', 'S2A', 'S2B', 'S3A', 'S3B', 'S4A', 'S4B', 'S5 PCM', 'S5 PCB', 'S5 HEG', 'S6 PCM', 'S6 PCB', 'S6 HEG'])
+  const [quickMarkStudents, setQuickMarkStudents] = useState([])
+  const [quickMarkStatuses, setQuickMarkStatuses] = useState({})
+  const [quickMarkSessionType, setQuickMarkSessionType] = useState('FULL_DAY')
+  const [quickMarkAcademicYear, setQuickMarkAcademicYear] = useState('2025/2026')
+  const [quickMarkTerm, setQuickMarkTerm] = useState(1)
+  const [quickMarkLoading, setQuickMarkLoading] = useState(false)
+  const [quickMarkSaving, setQuickMarkSaving] = useState(false)
+
+  const quickSummary = Object.values(quickMarkStatuses).reduce((summary, status) => {
+    const value = String(status || '').toUpperCase()
+    summary[value] = (summary[value] || 0) + 1
+    return summary
+  }, { PRESENT: 0, ABSENT: 0, LATE: 0, SICK: 0 })
 
   useEffect(() => {
     loadAttendanceData()
     loadAttendanceStatistics()
   }, [selectedDate, selectedClass])
+
+  useEffect(() => {
+    loadClassScope()
+  }, [isTeacherPortal, user?.email])
+
+  useEffect(() => {
+    if (!isTeacherPortal) return
+    loadQuickMarkStudents()
+  }, [isTeacherPortal, selectedClass])
+
+  const loadClassScope = async () => {
+    try {
+      const classPayload = await classService.getClasses().catch(() => [])
+      const allClasses = teacherPortalService.normalizeArray(classPayload, ['classes', 'data'])
+
+      let visibleClasses = allClasses
+      if (isTeacherPortal) {
+        const scope = await teacherPortalService.getTeacherContext(user, { classes: allClasses })
+        visibleClasses = scope.assignedClasses || []
+      }
+
+      const classNames = [...new Set(visibleClasses.map((item) => getClassName(item)).filter(Boolean))]
+      setClasses(classNames)
+      setSelectedClass((current) => {
+        if (current && classNames.includes(current)) return current
+        return isTeacherPortal ? classNames[0] || '' : current
+      })
+    } catch (error) {
+      console.error('Failed to load class scope:', error)
+      setClasses([])
+    }
+  }
+
+  const loadQuickMarkStudents = async () => {
+    if (!selectedClass) {
+      setQuickMarkStudents([])
+      setQuickMarkStatuses({})
+      return
+    }
+
+    try {
+      setQuickMarkLoading(true)
+      const studentPayload = await studentService.getStudents(true).catch(() => ({ students: [] }))
+      const allStudents = teacherPortalService.normalizeArray(studentPayload, ['students', 'data'])
+      const filteredStudents = allStudents
+        .filter((student) => normalizeString(getClassName(student)) === normalizeString(selectedClass))
+        .sort((left, right) => {
+          const leftName = `${left?.firstName || ''} ${left?.lastName || ''}`.trim()
+          const rightName = `${right?.firstName || ''} ${right?.lastName || ''}`.trim()
+          return leftName.localeCompare(rightName)
+        })
+
+      setQuickMarkStudents(filteredStudents)
+      setQuickMarkStatuses((current) => {
+        const next = {}
+        filteredStudents.forEach((student) => {
+          const key = getStudentKey(student)
+          next[key] = current[key] || 'PRESENT'
+        })
+        return next
+      })
+    } catch (error) {
+      console.error('Failed to load quick-mark students:', error)
+      toast.error('Failed to load students for quick mark')
+      setQuickMarkStudents([])
+      setQuickMarkStatuses({})
+    } finally {
+      setQuickMarkLoading(false)
+    }
+  }
 
   const loadAttendanceData = async () => {
     try {
@@ -173,7 +265,7 @@ const Attendance = () => {
                 <PencilIcon className="w-4 h-4" />
                 Edit
               </button>
-              {hasAnyRole(['ADMIN']) && (
+              {hasAnyRole(['ADMIN']) && !isTeacherPortal && (
                 <button
                   onClick={() => handleDeleteAttendance(record)}
                   className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-red-200 rounded text-red-600 hover:bg-red-50 transition-colors"
@@ -246,6 +338,76 @@ const Attendance = () => {
     }
   }
 
+  const handleQuickStatusChange = (student, status) => {
+    const key = getStudentKey(student)
+    setQuickMarkStatuses((current) => ({
+      ...current,
+      [key]: status
+    }))
+  }
+
+  const applyQuickStatusToAll = (status) => {
+    setQuickMarkStatuses(() => {
+      const next = {}
+      quickMarkStudents.forEach((student) => {
+        next[getStudentKey(student)] = status
+      })
+      return next
+    })
+  }
+
+  const handleSaveQuickMark = async () => {
+    if (!selectedClass) {
+      toast.error('Select a class before saving attendance')
+      return
+    }
+
+    if (!quickMarkStudents.length) {
+      toast.error('No students found for the selected class')
+      return
+    }
+
+    const teacherName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || user?.email || 'Teacher'
+    const records = quickMarkStudents
+      .map((student) => {
+        const studentId = Number(student?.id || student?.studentId)
+        if (!Number.isFinite(studentId)) return null
+
+        const studentName = `${student?.firstName || ''} ${student?.lastName || ''}`.trim()
+        return {
+          studentId,
+          className: selectedClass,
+          date: selectedDate,
+          status: quickMarkStatuses[getStudentKey(student)] || 'PRESENT',
+          sessionType: quickMarkSessionType,
+          academicYear: quickMarkAcademicYear,
+          term: Number(quickMarkTerm),
+          studentNumber: student?.studentId || student?.studentNumber || '',
+          studentName,
+          markedBy: user?.id || null,
+          markedByName: teacherName,
+        }
+      })
+      .filter(Boolean)
+
+    if (!records.length) {
+      toast.error('Unable to save. Student IDs are missing for this class.')
+      return
+    }
+
+    try {
+      setQuickMarkSaving(true)
+      await attendanceService.markBulkAttendance(records)
+      toast.success('Attendance saved successfully')
+      await Promise.all([loadAttendanceData(), loadAttendanceStatistics()])
+    } catch (error) {
+      console.error('Failed to save quick mark attendance:', error)
+      toast.error(error?.error || error?.message || 'Failed to save attendance')
+    } finally {
+      setQuickMarkSaving(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -265,8 +427,10 @@ const Attendance = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Attendance Management</h1>
-          <p className="text-gray-600 mt-1">Track and manage student attendance</p>
+          <h1 className="text-2xl font-bold text-gray-900">{isTeacherPortal ? 'My Attendance Desk' : 'Attendance Management'}</h1>
+          <p className="text-gray-600 mt-1">
+            {isTeacherPortal ? 'Quick-mark your class attendance and review daily records.' : 'Track and manage student attendance'}
+          </p>
         </div>
         {hasAnyRole(['ADMIN', 'TEACHER', 'CLASS_TEACHER']) && (
           <div className="flex items-center space-x-3">
@@ -278,13 +442,15 @@ const Attendance = () => {
               <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
               Export
             </Button>
-            <Button 
-              onClick={handleMarkAttendance}
-              className="bg-green-600 hover:bg-green-700 flex items-center"
-            >
-              <ClipboardDocumentCheckIcon className="w-4 h-4 mr-2" />
-              Take Attendance
-            </Button>
+            {!isTeacherPortal && (
+              <Button 
+                onClick={handleMarkAttendance}
+                className="bg-green-600 hover:bg-green-700 flex items-center"
+              >
+                <ClipboardDocumentCheckIcon className="w-4 h-4 mr-2" />
+                Take Attendance
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -326,6 +492,121 @@ const Attendance = () => {
           </div>
         </div>
       </Card>
+
+      {isTeacherPortal && (
+        <Card>
+          <div className="p-6 space-y-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Attendance Quick Mark</h3>
+                <p className="text-sm text-gray-600">Set statuses for your selected class and save in one action.</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" onClick={() => applyQuickStatusToAll('PRESENT')}>All Present</Button>
+                <Button variant="outline" onClick={() => applyQuickStatusToAll('ABSENT')}>All Absent</Button>
+                <Button variant="outline" onClick={() => applyQuickStatusToAll('LATE')}>All Late</Button>
+                <Button onClick={handleSaveQuickMark} disabled={quickMarkSaving || quickMarkLoading || !quickMarkStudents.length}>
+                  {quickMarkSaving ? 'Saving...' : 'Save Quick Mark'}
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div className="lg:col-span-2">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Session</label>
+                <select
+                  value={quickMarkSessionType}
+                  onChange={(event) => setQuickMarkSessionType(event.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                  <option value="FULL_DAY">Full Day</option>
+                  <option value="MORNING">Morning</option>
+                  <option value="AFTERNOON">Afternoon</option>
+                  <option value="SPECIFIC_PERIOD">Specific Period</option>
+                  <option value="ASSEMBLY">Assembly</option>
+                  <option value="GAMES">Games</option>
+                  <option value="PREP">Prep</option>
+                </select>
+              </div>
+              <div className="lg:col-span-2">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Academic Year</label>
+                <input
+                  type="text"
+                  value={quickMarkAcademicYear}
+                  onChange={(event) => setQuickMarkAcademicYear(event.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Term</label>
+                <select
+                  value={quickMarkTerm}
+                  onChange={(event) => setQuickMarkTerm(Number(event.target.value))}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                  <option value={1}>Term 1</option>
+                  <option value={2}>Term 2</option>
+                  <option value={3}>Term 3</option>
+                </select>
+              </div>
+              <div className="rounded-md bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-600">
+                <div>Present: <span className="font-semibold text-green-700">{quickSummary.PRESENT || 0}</span></div>
+                <div>Absent: <span className="font-semibold text-red-700">{quickSummary.ABSENT || 0}</span></div>
+                <div>Late: <span className="font-semibold text-amber-700">{quickSummary.LATE || 0}</span></div>
+              </div>
+            </div>
+
+            {quickMarkLoading ? (
+              <div className="py-8 flex items-center justify-center text-sm text-gray-600">
+                <LoadingSpinner />
+                <span className="ml-2">Loading class roster...</span>
+              </div>
+            ) : quickMarkStudents.length ? (
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <div className="max-h-80 overflow-y-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-100">
+                      {quickMarkStudents.map((student) => {
+                        const key = getStudentKey(student)
+                        const name = `${student?.firstName || ''} ${student?.lastName || ''}`.trim() || student?.fullName || 'Student'
+                        return (
+                          <tr key={key}>
+                            <td className="px-3 py-2 text-sm text-gray-900">{name}</td>
+                            <td className="px-3 py-2 text-sm text-gray-500 font-mono">{student?.studentId || student?.studentNumber || '-'}</td>
+                            <td className="px-3 py-2">
+                              <select
+                                value={quickMarkStatuses[key] || 'PRESENT'}
+                                onChange={(event) => handleQuickStatusChange(student, event.target.value)}
+                                className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+                              >
+                                <option value="PRESENT">Present</option>
+                                <option value="ABSENT">Absent</option>
+                                <option value="LATE">Late</option>
+                                <option value="SICK">Sick</option>
+                              </select>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-gray-300 p-5 text-sm text-gray-500">
+                No students found in this class. Choose another class or verify class enrollment data.
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -386,7 +667,7 @@ const Attendance = () => {
                 ? "No attendance has been taken today."
                 : "No attendance records found for the selected date."}
             </p>
-            {hasAnyRole(['ADMIN', 'TEACHER', 'CLASS_TEACHER']) && (
+            {hasAnyRole(['ADMIN', 'TEACHER', 'CLASS_TEACHER']) && !isTeacherPortal && (
               <div className="mt-6">
                 <Button 
                   onClick={handleMarkAttendance}

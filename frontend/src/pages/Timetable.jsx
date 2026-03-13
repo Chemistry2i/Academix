@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   CalendarIcon,
   PlusIcon,
@@ -32,7 +33,11 @@ import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
 
 const Timetable = () => {
+  const location = useLocation()
   const { hasAnyRole, user } = useAuth()
+  const navigate = useNavigate()
+  const isTeacherPortal = location.pathname.startsWith('/teacher')
+  const canManageTimetable = !isTeacherPortal && hasAnyRole(['ADMIN', 'HEAD_TEACHER', 'DIRECTOR_OF_STUDIES'])
   const [timetables, setTimetables] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
@@ -70,12 +75,39 @@ const Timetable = () => {
     { value: 'SATURDAY', label: 'Saturday' },
     { value: 'SUNDAY', label: 'Sunday' }
   ])
+  const teacherScopedId = availableTeachers.find((teacher) =>
+    String(teacher.email || '').toLowerCase() === String(user?.email || '').toLowerCase()
+  )?.id || ''
 
   useEffect(() => {
     loadTimetables()
     loadStatistics()
     loadSelectData()
   }, [filters])
+
+  useEffect(() => {
+    if (!isTeacherPortal || !availableTeachers.length) return
+
+    const matchedTeacher = availableTeachers.find((teacher) =>
+      String(teacher.email || '').toLowerCase() === String(user?.email || '').toLowerCase()
+    )
+
+    if (!matchedTeacher) {
+      setGridViewConfig((prev) => ({ ...prev, type: 'teacher' }))
+      return
+    }
+
+    setFilters((prev) => ({
+      ...prev,
+      teacherId: String(matchedTeacher.id),
+      className: ''
+    }))
+    setGridViewConfig((prev) => ({
+      ...prev,
+      type: 'teacher',
+      targetId: String(matchedTeacher.id)
+    }))
+  }, [isTeacherPortal, availableTeachers, user?.email])
 
   const loadSelectData = async () => {
     try {
@@ -264,7 +296,7 @@ const Timetable = () => {
             <EyeIcon className="w-4 h-4" />
             View
           </button>
-          {hasAnyRole(['ADMIN', 'HEAD_TEACHER', 'DIRECTOR_OF_STUDIES']) && (
+          {canManageTimetable && (
             <>
               <button
                 onClick={() => handleEditEntry(entry)}
@@ -294,11 +326,13 @@ const Timetable = () => {
   }
 
   const handleEditEntry = (entry) => {
+    if (!canManageTimetable) return
     setEditingEntry(entry)
     setShowAddModal(true)
   }
 
   const handleDeleteEntry = async (entry) => {
+    if (!canManageTimetable) return
     const result = await Swal.fire({
       title: 'Are you sure?',
       text: `This will delete the timetable entry for ${entry.className} - ${entry.subjectName}.`,
@@ -328,6 +362,7 @@ const Timetable = () => {
   }
 
   const handleAddEntry = () => {
+    if (!canManageTimetable) return
     setEditingEntry(null)
     setShowAddModal(true)
   }
@@ -361,19 +396,21 @@ const Timetable = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Timetable Management</h1>
-          <p className="text-gray-600 mt-1">Manage class schedules and timetables</p>
+          <h1 className="text-2xl font-bold text-gray-900">{isTeacherPortal ? 'My Timetable' : 'Timetable Management'}</h1>
+          <p className="text-gray-600 mt-1">
+            {isTeacherPortal ? 'View your teaching schedule in read-only mode' : 'Manage class schedules and timetables'}
+          </p>
         </div>
-        {hasAnyRole(['ADMIN', 'HEAD_TEACHER', 'DIRECTOR_OF_STUDIES']) && (
-          <div className="flex items-center space-x-3">
-            <Button 
-              onClick={handleExportTimetable}
-              variant="outline"
-              className="flex items-center"
-            >
-              <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
-              Export
-            </Button>
+        <div className="flex items-center space-x-3">
+          <Button
+            onClick={handleExportTimetable}
+            variant="outline"
+            className="flex items-center"
+          >
+            <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
+            {isTeacherPortal ? 'Export My Schedule' : 'Export'}
+          </Button>
+          {canManageTimetable && (
             <Button 
               onClick={handleAddEntry}
               className="bg-primary-600 hover:bg-primary-700 flex items-center"
@@ -381,9 +418,20 @@ const Timetable = () => {
               <PlusIcon className="w-4 h-4 mr-2" />
               Add Schedule
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      {isTeacherPortal && (
+        <Card>
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+            <h3 className="text-sm font-semibold text-amber-900">Teacher timetable access is view-only</h3>
+            <p className="text-sm text-amber-800 mt-1">
+              Creating, editing, and deleting timetable entries is restricted to administrative scheduling roles.
+            </p>
+          </div>
+        </Card>
+      )}
 
       {/* Filters */}
       <Card>
@@ -460,7 +508,7 @@ const Timetable = () => {
                 onClick={() => setFilters({
                   className: '',
                   dayOfWeek: '',
-                  teacherId: '',
+                  teacherId: isTeacherPortal && teacherScopedId ? String(teacherScopedId) : '',
                   academicYear: '2025/2026',
                   term: 1
                 })}
@@ -564,7 +612,7 @@ const Timetable = () => {
                   }))}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="class">Class Timetable</option>
+                  {!isTeacherPortal && <option value="class">Class Timetable</option>}
                   <option value="teacher">Teacher Timetable</option>
                 </select>
               </div>
@@ -573,7 +621,7 @@ const Timetable = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Select {gridViewConfig.type === 'class' ? 'Class' : 'Teacher'}
                 </label>
-                {gridViewConfig.type === 'class' ? (
+                {gridViewConfig.type === 'class' && !isTeacherPortal ? (
                   <select
                     value={gridViewConfig.targetId}
                     onChange={(e) => setGridViewConfig(prev => ({ 
@@ -639,7 +687,7 @@ const Timetable = () => {
               <p className="mt-1 text-sm text-gray-500">
                 No timetable entries found for the current filters.
               </p>
-              {hasAnyRole(['ADMIN', 'HEAD_TEACHER', 'DIRECTOR_OF_STUDIES']) && (
+              {canManageTimetable && (
                 <div className="mt-6">
                   <Button 
                     onClick={handleAddEntry}
@@ -657,7 +705,7 @@ const Timetable = () => {
 
       {/* Timetable Registration Modal */}
       <TimetableRegistration
-        isOpen={showAddModal}
+        isOpen={canManageTimetable && showAddModal}
         onClose={() => {
           setShowAddModal(false)
           setEditingEntry(null)
@@ -821,7 +869,7 @@ const Timetable = () => {
               <div className="shrink-0 border-t border-gray-200 px-6 py-4 flex items-center justify-between bg-gray-50">
                 <span className="text-xs text-gray-500">{viewEntry.className} — {viewEntry.dayOfWeek}, Period {viewEntry.periodNumber}</span>
                 <div className="flex gap-2">
-                  {hasAnyRole(['ADMIN']) && (
+                  {canManageTimetable && (
                     <button
                       onClick={() => { setViewEntry(null); handleEditEntry(viewEntry) }}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-yellow-300 rounded-lg text-yellow-700 hover:bg-yellow-50 transition-colors"

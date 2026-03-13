@@ -1,11 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { BellIcon, MagnifyingGlassIcon, ChevronDownIcon, UserIcon, CogIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '../../contexts/AuthContext'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Swal from 'sweetalert2'
 
 const Header = () => {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const portalBase = location.pathname.startsWith('/teacher') ? '/teacher' : location.pathname.startsWith('/admin') ? '/admin' : location.pathname.startsWith('/student') ? '/student' : ''
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef(null)
 
@@ -98,7 +102,7 @@ const Header = () => {
             {getGreeting()}, {user?.firstName}!
           </h1>
           <p className="text-gray-600 mt-1">
-            Welcome to your dashboard. Here's what's happening today.
+            {portalBase === '/teacher' ? 'Welcome to your teacher portal. Here\'s your teaching overview.' : 'Welcome to your dashboard. Here\'s what\'s happening today.'}
           </p>
         </div>
 
@@ -116,7 +120,7 @@ const Header = () => {
           </div>
 
           {/* Notifications */}
-          <button className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+          <button onClick={() => navigate(`${portalBase}/notifications`)} className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
             <BellIcon className="h-6 w-6" />
             <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500"></span>
           </button>
@@ -178,7 +182,7 @@ const Header = () => {
                     <button
                       onClick={() => {
                         setDropdownOpen(false)
-                        // Navigate to profile page
+                          navigate(`${portalBase}/profile`)
                       }}
                       className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                     >
@@ -189,7 +193,7 @@ const Header = () => {
                     <button
                       onClick={() => {
                         setDropdownOpen(false)
-                        // Navigate to settings page
+                          navigate(`${portalBase}/settings`)
                       }}
                       className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                     >

@@ -18,6 +18,10 @@ import TeacherDashboard from './pages/teachers/Dashboard'
 import StudentCourses from './pages/students/Courses'
 import StudentAssignments from './pages/students/Assignments'
 import TeacherClasses from './pages/teachers/Classes'
+import TeacherSubjects from './pages/teachers/Subjects'
+import TeacherNotes from './pages/teachers/Notes'
+import TeacherResources from './pages/teachers/Resources'
+import TeacherInvigilation from './pages/teachers/Invigilation'
 import Students from './pages/students/Students'
 import Teachers from './pages/teachers/Teachers'
 import Courses from './pages/courses/Courses'
@@ -79,6 +83,8 @@ function App() {
           <Route path="profile" element={<Profile />} />
           <Route path="settings" element={<Settings />} />
           <Route path="change-password" element={<ChangePasswordPage />} />
+            <Route path="announcements" element={<Announcements />} />
+            <Route path="notifications" element={<Notifications />} />
         </Route>
 
         {/* Teacher routes - Open Access */}
@@ -86,10 +92,14 @@ function App() {
           <Route index element={<Navigate to="/teacher/dashboard" replace />} />
           <Route path="dashboard" element={<TeacherDashboard />} />
           <Route path="classes" element={<TeacherClasses />} />
+          <Route path="subjects" element={<TeacherSubjects />} />
           <Route path="students" element={<Students />} />
           <Route path="gradebook" element={<Gradebook />} />
           <Route path="assignments" element={<Assignments />} />
           <Route path="attendance" element={<Attendance />} />
+          <Route path="notes" element={<TeacherNotes />} />
+          <Route path="resources" element={<TeacherResources />} />
+          <Route path="invigilation" element={<TeacherInvigilation />} />
           <Route path="timetable" element={<Timetable />} />
           <Route path="exams" element={<Exams />} />
           <Route path="reports" element={<Reports />} />

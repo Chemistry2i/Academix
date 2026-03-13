@@ -7,14 +7,17 @@ import {
   ShieldCheckIcon,
   UserCircleIcon
 } from '@heroicons/react/24/outline'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 
 const Settings = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuth()
+  const isTeacherPortal = location.pathname.startsWith('/teacher')
+  const portalBase = isTeacherPortal ? '/teacher' : location.pathname.startsWith('/admin') ? '/admin' : ''
 
   const settingsCategories = [
     {
@@ -24,13 +27,13 @@ const Settings = () => {
         {
           name: 'Profile Information',
           description: 'Update your personal information, email, and contact details',
-          action: () => console.log('Profile settings'),
+          action: () => navigate(`${portalBase}/profile`),
           available: true
         },
         {
           name: 'Change Password',
           description: 'Update your password to keep your account secure',
-          action: () => navigate('/change-password'),
+          action: () => navigate(`${portalBase}/change-password`),
           available: true
         }
       ]

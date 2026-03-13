@@ -22,12 +22,18 @@ import DataTable from '../../components/common/DataTable'
 import StatCard from '../../components/common/StatCard'
 import StudentRegistration from '../../components/students/StudentRegistration'
 import { useAuth } from '../../contexts/AuthContext'
+import { classService } from '../../services/classService'
 import { studentService } from '../../services/studentService'
+import { teacherPortalService } from '../../services/teacherPortalService'
 import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
+import { useLocation } from 'react-router-dom'
 
 const Students = () => {
-  const { hasAnyRole } = useAuth()
+  const { hasAnyRole, user } = useAuth()
+  const location = useLocation()
+  const isTeacherPortal = location.pathname.startsWith('/teacher')
+  const canManageStudents = !isTeacherPortal && hasAnyRole(['ADMIN'])
   const [students, setStudents] = useState([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
@@ -47,22 +53,35 @@ const Students = () => {
   // Load students from backend
   useEffect(() => {
     loadStudents()
-  }, [])
+  }, [isTeacherPortal, user])
 
   const loadStudents = async () => {
     try {
       setLoading(true)
-      const data = await studentService.getStudents()
+      const [data, classData] = await Promise.all([
+        studentService.getStudents(),
+        isTeacherPortal ? classService.getClasses().catch(() => []) : Promise.resolve([])
+      ])
       
       // Handle different response formats from backend
       const studentsList = data.students || data || []
-      const totalCount = data.totalStudents || studentsList.length
+      let scopedStudents = studentsList
+
+      if (isTeacherPortal) {
+        const normalizedClasses = Array.isArray(classData)
+          ? classData
+          : Object.values(classData || {}).find(Array.isArray) || []
+        const scope = await teacherPortalService.getTeacherContext(user, { classes: normalizedClasses })
+        scopedStudents = teacherPortalService.filterStudentsByScope(studentsList, scope)
+      }
+
+      const totalCount = scopedStudents.length
       
-      setStudents(studentsList)
+      setStudents(scopedStudents)
       setStats({
         total: totalCount,
-        active: studentsList.filter(s => s.isActive !== false).length,
-        newThisMonth: studentsList.filter(s => {
+        active: scopedStudents.filter(s => s.isActive !== false).length,
+        newThisMonth: scopedStudents.filter(s => {
           if (!s.createdAt) return false
           const createdDate = new Date(s.createdAt)
           const now = new Date()
@@ -183,7 +202,7 @@ const Students = () => {
             <EyeIcon className="w-4 h-4" />
             View
           </button>
-          {hasAnyRole(['ADMIN', 'TEACHER']) && (
+          {canManageStudents && (
             <button
               onClick={() => handleEditStudent(student)}
               className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-yellow-200 rounded text-yellow-600 hover:bg-yellow-50 transition-colors"
@@ -193,7 +212,7 @@ const Students = () => {
               Edit
             </button>
           )}
-          {hasAnyRole(['ADMIN']) && (
+          {canManageStudents && (
             <button
               onClick={() => handleDeleteStudent(student)}
               className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-red-200 rounded text-red-600 hover:bg-red-50 transition-colors"
@@ -222,11 +241,13 @@ const Students = () => {
   }
 
   const handleEditStudent = (student) => {
+    if (!canManageStudents) return
     setEditingStudent(student)
     setIsRegistrationOpen(true)
   }
 
   const handleDeleteStudent = async (student) => {
+    if (!canManageStudents) return
     const result = await Swal.fire({
       title: 'Are you sure?',
       text: `This will permanently delete ${student.firstName} ${student.lastName} from the system.`,
@@ -255,6 +276,7 @@ const Students = () => {
   }
 
   const handleAddStudent = () => {
+    if (!canManageStudents) return
     setEditingStudent(null)
     setIsRegistrationOpen(true)
   }
@@ -296,9 +318,11 @@ const Students = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Students</h1>
-          <p className="text-gray-600 mt-1">Manage student records and information</p>
+          <p className="text-gray-600 mt-1">
+            {isTeacherPortal ? 'Students currently enrolled in your assigned classes.' : 'Manage student records and information'}
+          </p>
         </div>
-        {hasAnyRole(['ADMIN']) && (
+        {canManageStudents && (
           <Button onClick={handleAddStudent} className="flex items-center">
             <PlusIcon className="w-5 h-5 mr-2" />
             Add Student
@@ -343,9 +367,9 @@ const Students = () => {
           <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No students found</h3>
           <p className="mt-1 text-sm text-gray-500">
-            Get started by adding your first student.
+            {isTeacherPortal ? 'No students are linked to your assigned classes yet.' : 'Get started by adding your first student.'}
           </p>
-          {hasAnyRole(['ADMIN']) && (
+          {canManageStudents && (
             <div className="mt-6">
               <Button onClick={handleAddStudent} className="flex items-center mx-auto">
                 <PlusIcon className="w-5 h-5 mr-2" />
@@ -549,7 +573,7 @@ const Students = () => {
                     : ''}
                 </span>
                 <div className="flex gap-2">
-                  {hasAnyRole(['ADMIN', 'TEACHER']) && (
+                  {canManageStudents && (
                     <button
                       onClick={() => { setViewStudent(null); handleEditStudent(viewStudent) }}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-yellow-300 rounded-lg text-yellow-700 hover:bg-yellow-50 transition-colors"

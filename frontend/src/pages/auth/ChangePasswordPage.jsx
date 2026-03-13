@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { EyeIcon, EyeSlashIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { GraduationCap } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Button from '../../components/common/Button'
@@ -16,7 +16,9 @@ const ChangePasswordPage = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuth()
+  const portalBase = location.pathname.startsWith('/teacher') ? '/teacher' : location.pathname.startsWith('/admin') ? '/admin' : ''
   
   const {
     register,
@@ -68,7 +70,7 @@ const ChangePasswordPage = () => {
             <>
               {/* Back button */}
               <button
-                onClick={() => navigate('/settings')}
+                  onClick={() => navigate(`${portalBase}/settings`)}
                 className="flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors"
               >
                 <ArrowLeftIcon className="w-5 h-5 mr-2" />
@@ -245,13 +247,13 @@ const ChangePasswordPage = () => {
               </p>
               <div className="space-y-3">
                 <Button
-                  onClick={() => navigate('/dashboard')}
+                    onClick={() => navigate(`${portalBase}/dashboard`)}
                   className="w-full"
                 >
                   Go to Dashboard
                 </Button>
                 <Button
-                  onClick={() => navigate('/settings')}
+                    onClick={() => navigate(`${portalBase}/settings`)}
                   variant="outline"
                   className="w-full"
                 >

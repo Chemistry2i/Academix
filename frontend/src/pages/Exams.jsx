@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   DocumentTextIcon,
   PlusIcon,
@@ -28,7 +29,11 @@ import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
 
 const Exams = () => {
+  const location = useLocation()
+  const navigate = useNavigate()
   const { hasAnyRole, user } = useAuth()
+  const isTeacherPortal = location.pathname.startsWith('/teacher')
+  const canManageExams = !isTeacherPortal && hasAnyRole(['ADMIN', 'HEAD_TEACHER', 'DIRECTOR_OF_STUDIES'])
   const [exams, setExams] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
@@ -243,7 +248,7 @@ const Exams = () => {
             <EyeIcon className="w-4 h-4" />
             View
           </button>
-          {hasAnyRole(['ADMIN', 'HEAD_TEACHER', 'DIRECTOR_OF_STUDIES']) && (
+          {canManageExams && (
             <>
               <button
                 onClick={() => handleEditExam(exam)}
@@ -265,7 +270,7 @@ const Exams = () => {
                 {exam.isLocked ? <LockOpenIcon className="w-4 h-4" /> : <LockClosedIcon className="w-4 h-4" />}
                 {exam.isLocked ? 'Unlock' : 'Lock'}
               </button>
-              {hasAnyRole(['ADMIN']) && (
+              {canManageExams && hasAnyRole(['ADMIN']) && (
                 <button
                   onClick={() => handleDeleteExam(exam)}
                   className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-red-200 rounded text-red-600 hover:bg-red-50 transition-colors"
@@ -287,11 +292,13 @@ const Exams = () => {
   }
 
   const handleEditExam = (exam) => {
+    if (!canManageExams) return
     setEditingExam(exam)
     setShowAddModal(true)
   }
 
   const handleDeleteExam = async (exam) => {
+    if (!canManageExams) return
     const result = await Swal.fire({
       title: 'Are you sure?',
       text: `This will permanently delete the ${exam.code} examination.`,
@@ -321,6 +328,7 @@ const Exams = () => {
   }
 
   const handleToggleLock = async (exam) => {
+    if (!canManageExams) return
     try {
       if (exam.isLocked) {
         await examService.unlockExam(exam.id)
@@ -338,6 +346,7 @@ const Exams = () => {
   }
 
   const handleAddExam = () => {
+    if (!canManageExams) return
     setEditingExam(null)
     setShowAddModal(true)
   }
@@ -374,7 +383,7 @@ const Exams = () => {
           <h1 className="text-2xl font-bold text-gray-900">Examination Management</h1>
           <p className="text-gray-600 mt-1">Schedule and manage examinations</p>
         </div>
-        {hasAnyRole(['ADMIN', 'HEAD_TEACHER', 'DIRECTOR_OF_STUDIES']) && (
+        {canManageExams && (
           <div className="flex items-center space-x-3">
             <Button 
               onClick={handleExportExams}
@@ -397,6 +406,24 @@ const Exams = () => {
 
       {/* Filters */}
       <Card>
+        {isTeacherPortal && (
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl m-6 mb-0">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-semibold text-amber-900">Teacher exam access is view-only</h3>
+                <p className="text-sm text-amber-800 mt-1">
+                  Scheduling and exam-state changes are reserved for examination administration roles.
+                </p>
+              </div>
+              <button
+                onClick={() => navigate('/teacher/invigilation')}
+                className="shrink-0 text-xs font-medium text-amber-900 bg-amber-200 hover:bg-amber-300 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+              >
+                View My Duties →
+              </button>
+            </div>
+          </div>
+        )}
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
@@ -551,7 +578,7 @@ const Exams = () => {
             <p className="mt-1 text-sm text-gray-500">
               No examinations found for the current filters.
             </p>
-            {hasAnyRole(['ADMIN', 'HEAD_TEACHER', 'DIRECTOR_OF_STUDIES']) && (
+            {canManageExams && (
               <div className="mt-6">
                 <Button 
                   onClick={handleAddExam}
@@ -762,7 +789,7 @@ const Exams = () => {
               <div className="shrink-0 border-t border-gray-200 px-6 py-4 flex items-center justify-between bg-gray-50">
                 <span className="text-xs text-gray-500">{viewExam.code} — Term {viewExam.term}, {viewExam.academicYear}</span>
                 <div className="flex gap-2">
-                  {hasAnyRole(['ADMIN']) && (
+                  {canManageExams && hasAnyRole(['ADMIN']) && (
                     <button
                       onClick={() => { setViewExam(null); handleEditExam(viewExam) }}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-yellow-300 rounded-lg text-yellow-700 hover:bg-yellow-50 transition-colors"

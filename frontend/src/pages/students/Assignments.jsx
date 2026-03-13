@@ -1,65 +1,71 @@
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import Card from '../../components/common/Card'
 import DataTable from '../../components/common/DataTable'
+import Button from '../../components/common/Button'
 import {
   ClockIcon,
   CheckCircleIcon,
-  ExclamationCircleIcon
+  ExclamationCircleIcon,
+  ArrowUpTrayIcon,
+  ChatBubbleLeftEllipsisIcon
 } from '@heroicons/react/24/outline'
+import { assignmentService } from '../../services/assignmentService'
+import { studentService } from '../../services/studentService'
+import { useAuth } from '../../contexts/AuthContext'
+import toast from 'react-hot-toast'
 
 const StudentAssignments = () => {
-  const assignments = [
-    {
-      id: 1,
-      title: 'Math Quiz Chapter 5',
-      course: 'Mathematics',
-      teacher: 'Mr. Anderson',
-      dueDate: '2026-03-10',
-      dueTime: '11:59 PM',
-      status: 'pending',
-      priority: 'high',
-      type: 'Quiz',
-      points: 50
-    },
-    {
-      id: 2,
-      title: 'History Essay: World War II',
-      course: 'History',
-      teacher: 'Mrs. Brown',
-      dueDate: '2026-03-18',
-      dueTime: '11:59 PM',
-      status: 'pending',
-      priority: 'medium',
-      type: 'Essay',
-      points: 100
-    },
-    {
-      id: 3,
-      title: 'Physics Lab Report',
-      course: 'Physics',
-      teacher: 'Dr. Smith',
-      dueDate: '2026-03-20',
-      dueTime: '11:59 PM',
-      status: 'pending',
-      priority: 'low',
-      type: 'Lab Report',
-      points: 75
-    },
-    {
-      id: 4,
-      title: 'English Literature Analysis',
-      course: 'English Literature',
-      teacher: 'Ms. Johnson',
-      dueDate: '2026-03-05',
-      dueTime: '11:59 PM',
-      status: 'submitted',
-      priority: 'medium',
-      type: 'Analysis',
-      points: 80,
-      grade: 'B+'
+  const { user } = useAuth()
+  const [assignments, setAssignments] = useState([])
+  const [studentContext, setStudentContext] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  const resolveStudentContext = async () => {
+    const studentsPayload = await studentService.getStudents(true).catch(() => ({ students: [] }))
+    const students = studentsPayload.students || studentsPayload || []
+    const matched = students.find((student) => {
+      return String(student.email || '').toLowerCase() === String(user?.email || '').toLowerCase()
+    })
+
+    return {
+      studentId: matched?.id || '',
+      studentEmail: user?.email || matched?.email || '',
+      studentName: matched
+        ? [matched.firstName, matched.otherNames, matched.lastName].filter(Boolean).join(' ')
+        : `${user?.firstName || 'Student'} ${user?.lastName || ''}`.trim(),
+      classId: matched?.schoolClass?.id || matched?.classId || '',
+      className: matched?.schoolClass?.name || matched?.currentClass || ''
     }
-  ]
+  }
+
+  const loadAssignments = async (context = studentContext) => {
+    setLoading(true)
+    try {
+      const data = await assignmentService.getPublishedAssignments({
+        studentContext: context || undefined,
+        classId: context?.classId || undefined,
+        className: context?.className || undefined
+      })
+      setAssignments(data)
+    } catch (error) {
+      console.error('Failed to load student assignments:', error)
+      toast.error('Failed to load assignments')
+      setAssignments([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    const initialize = async () => {
+      const context = await resolveStudentContext()
+      setStudentContext(context)
+      await loadAssignments(context)
+    }
+
+    initialize()
+  }, [user?.email])
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -68,6 +74,13 @@ const StudentAssignments = () => {
           <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
             <CheckCircleIcon className="w-3 h-3 mr-1" />
             Submitted
+          </span>
+        )
+      case 'reviewed':
+        return (
+          <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+            <ChatBubbleLeftEllipsisIcon className="w-3 h-3 mr-1" />
+            Reviewed
           </span>
         )
       case 'pending':
@@ -104,8 +117,18 @@ const StudentAssignments = () => {
       header: 'Priority', 
       render: (value) => getPriorityBadge(value)
     },
-    { key: 'title', header: 'Assignment', sortable: true },
-    { key: 'course', header: 'Course', sortable: true },
+    {
+      key: 'title',
+      header: 'Assignment',
+      sortable: true,
+      render: (_, row) => (
+        <div>
+          <div className="font-medium text-gray-900">{row.title}</div>
+          <div className="text-xs text-gray-500">{row.description}</div>
+        </div>
+      )
+    },
+    { key: 'subjectName', header: 'Course', sortable: true },
     { key: 'type', header: 'Type', sortable: true },
     { 
       key: 'dueDate', 
@@ -120,23 +143,71 @@ const StudentAssignments = () => {
         </div>
       )
     },
-    { key: 'points', header: 'Points', sortable: true },
+    { key: 'totalPoints', header: 'Points', sortable: true },
     { 
-      key: 'status', 
+      key: 'submissionStatus', 
       header: 'Status', 
       render: (value) => getStatusBadge(value)
     },
+    {
+      key: 'feedback',
+      header: 'Teacher Feedback',
+      render: (_, row) => (
+        <div className="max-w-xs">
+          {row.feedback ? (
+            <>
+              <div className="text-sm text-gray-700 line-clamp-2">{row.feedback}</div>
+              {row.score !== null && row.score !== undefined && (
+                <div className="text-xs text-blue-700 mt-1">Score: {row.score}/{row.totalPoints}</div>
+              )}
+            </>
+          ) : (
+            <span className="text-xs text-gray-400">Awaiting review</span>
+          )}
+        </div>
+      )
+    },
     { 
-      key: 'grade', 
-      header: 'Grade', 
-      render: (value) => value ? (
-        <span className="text-sm font-medium text-green-600">{value}</span>
-      ) : '-'
+      key: 'actions',
+      header: 'Action',
+      sortable: false,
+      render: (_, row) => (
+        row.submissionStatus === 'submitted' || row.submissionStatus === 'reviewed' ? (
+          <Button size="sm" variant="outline" onClick={() => handleUndoSubmission(row.id)}>
+            Undo Submission
+          </Button>
+        ) : (
+          <Button size="sm" onClick={() => handleSubmit(row.id)}>
+            <ArrowUpTrayIcon className="w-4 h-4 mr-1" />
+            Mark Submitted
+          </Button>
+        )
+      )
     }
   ]
 
-  const pendingCount = assignments.filter(a => a.status === 'pending').length
-  const submittedCount = assignments.filter(a => a.status === 'submitted').length
+  const sortedAssignments = useMemo(() => {
+    return [...assignments].sort((left, right) => {
+      const leftDate = new Date(`${left.dueDate}T${left.dueTime || '23:59'}`).getTime()
+      const rightDate = new Date(`${right.dueDate}T${right.dueTime || '23:59'}`).getTime()
+      return leftDate - rightDate
+    })
+  }, [assignments])
+
+  const pendingCount = assignments.filter((assignment) => assignment.submissionStatus === 'pending').length
+  const submittedCount = assignments.filter((assignment) => assignment.submissionStatus === 'submitted').length
+
+  const handleSubmit = async (assignmentId) => {
+    await assignmentService.submitAssignment(assignmentId, { studentContext })
+    await loadAssignments(studentContext)
+    toast.success('Assignment marked as submitted.')
+  }
+
+  const handleUndoSubmission = async (assignmentId) => {
+    await assignmentService.undoSubmission(assignmentId, studentContext)
+    await loadAssignments(studentContext)
+    toast.success('Submission removed.')
+  }
 
   return (
     <div className="space-y-6">
@@ -166,11 +237,15 @@ const StudentAssignments = () => {
 
         <Card>
           <DataTable
-            data={assignments}
+            data={sortedAssignments}
             columns={columns}
             searchable
-            searchPlaceholder="Search assignments..."
+            pagination
+            pageSize={8}
           />
+          {!loading && assignments.length === 0 && (
+            <div className="mt-4 text-sm text-gray-500">No published assignments yet. Once a teacher publishes one, it will appear here.</div>
+          )}
         </Card>
       </motion.div>
     </div>

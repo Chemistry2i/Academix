@@ -1,24 +1,82 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { UserCircleIcon, PencilIcon, CameraIcon } from '@heroicons/react/24/outline'
+import { UserCircleIcon, PencilIcon, CameraIcon, CheckCircleIcon, AcademicCapIcon } from '@heroicons/react/24/outline'
+import { useLocation } from 'react-router-dom'
 import Card from '../components/common/Card'
 import Button from '../components/common/Button'
 import { useAuth } from '../contexts/AuthContext'
+import { teacherPortalService } from '../services/teacherPortalService'
+import { classService } from '../services/classService'
+import subjectService from '../services/subjectService'
 
 const Profile = () => {
   const { user } = useAuth()
+  const location = useLocation()
+  const isTeacherPortal = location.pathname.startsWith('/teacher')
   const [isEditing, setIsEditing] = useState(false)
-  
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [teacherContext, setTeacherContext] = useState(null)
+
+  const storageKey = `academix.profile.${user?.email || 'anonymous'}`
+
+  const loadSaved = () => {
+    try {
+      const raw = localStorage.getItem(storageKey)
+      return raw ? JSON.parse(raw) : null
+    } catch { return null }
+  }
+
+  const saved = loadSaved()
+
   const [profile, setProfile] = useState({
-    firstName: user?.firstName || 'Admin',
-    lastName: user?.lastName || 'User',
-    email: user?.email || 'admin@academix.com',
-    phone: '+256 700 123 456',
-    role: user?.role || 'ADMIN',
-    department: 'Administration',
-    joinDate: '2024-01-15',
-    bio: 'Experienced administrator dedicated to educational excellence and student success.'
+    firstName: saved?.firstName || user?.firstName || (isTeacherPortal ? 'Teacher' : 'Admin'),
+    lastName: saved?.lastName || user?.lastName || (isTeacherPortal ? '' : 'User'),
+    email: saved?.email || user?.email || (isTeacherPortal ? '' : 'admin@academix.com'),
+    phone: saved?.phone || '+256 700 123 456',
+    role: saved?.role || user?.role || (isTeacherPortal ? 'TEACHER' : 'ADMIN'),
+    department: saved?.department || (isTeacherPortal ? '' : 'Administration'),
+    joinDate: saved?.joinDate || '2024-01-15',
+    bio: saved?.bio || (isTeacherPortal
+      ? 'Dedicated educator committed to student growth and academic excellence.'
+      : 'Experienced administrator dedicated to educational excellence and student success.')
   })
+
+  useEffect(() => {
+    if (!isTeacherPortal) return
+    const loadTeacherContext = async () => {
+      try {
+        const [classPayload, subjectPayload] = await Promise.all([
+          classService.getClasses().catch(() => []),
+          subjectService.getAllSubjects().catch(() => [])
+        ])
+        const classList = teacherPortalService.normalizeArray(classPayload, ['classes', 'data'])
+        const subjectList = teacherPortalService.normalizeArray(subjectPayload, ['subjects', 'data'])
+        const scope = await teacherPortalService.getTeacherContext(user, { classes: classList, subjects: subjectList })
+        setTeacherContext(scope)
+        if (scope?.teacher && !loadSaved()) {
+          setProfile(prev => ({
+            ...prev,
+            firstName: scope.teacher.firstName || prev.firstName,
+            lastName: scope.teacher.lastName || prev.lastName,
+            department: scope.teacher.department || scope.teacher.departmentName || prev.department
+          }))
+        }
+      } catch { /* ignore */ }
+    }
+    loadTeacherContext()
+  }, [isTeacherPortal])
+
+  const handleSave = () => {
+    setIsSaving(true)
+    try { localStorage.setItem(storageKey, JSON.stringify(profile)) } catch { /* ignore */ }
+    setTimeout(() => {
+      setIsSaving(false)
+      setIsEditing(false)
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000)
+    }, 300)
+  }
 
   return (
     <motion.div
@@ -162,10 +220,16 @@ const Profile = () => {
               )}
             </div>
             
+            {saveSuccess && (
+              <div className="flex items-center gap-2 bg-green-50 text-green-800 text-sm border border-green-200 rounded-lg px-4 py-2 mt-4">
+                <CheckCircleIcon className="w-4 h-4 flex-shrink-0" />
+                Profile saved successfully.
+              </div>
+            )}
             {isEditing && (
               <div className="flex space-x-3 mt-6">
-                <Button className="bg-primary-600 hover:bg-primary-700">
-                  Save Changes
+                <Button className="bg-primary-600 hover:bg-primary-700" onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? 'Saving…' : 'Save Changes'}
                 </Button>
                 <Button 
                   variant="outline" 
@@ -178,6 +242,47 @@ const Profile = () => {
           </div>
         </Card>
       </div>
+
+      {isTeacherPortal && teacherContext && (
+        <Card>
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <AcademicCapIcon className="h-5 w-5 text-primary-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Teaching Assignment</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Assigned Classes</label>
+                <div className="flex flex-wrap gap-2">
+                  {teacherContext.assignedClassNames.length ? (
+                    teacherContext.assignedClassNames.map(name => (
+                      <span key={name} className="rounded-full bg-blue-50 border border-blue-200 px-3 py-1 text-xs font-medium text-blue-700">
+                        {name}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-400">No classes assigned yet</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Teaching Subjects</label>
+                <div className="flex flex-wrap gap-2">
+                  {teacherContext.subjectNames.length ? (
+                    teacherContext.subjectNames.map(name => (
+                      <span key={name} className="rounded-full bg-purple-50 border border-purple-200 px-3 py-1 text-xs font-medium text-purple-700">
+                        {name}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-400">No subjects linked yet</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
     </motion.div>
   )
 }

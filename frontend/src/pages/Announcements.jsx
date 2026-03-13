@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
+import { useLocation } from 'react-router-dom'
 import { 
   SpeakerWaveIcon, 
   PlusIcon,
@@ -14,6 +15,8 @@ import StatCard from '../components/common/StatCard'
 
 const Announcements = () => {
   const [filter, setFilter] = useState('active')
+  const location = useLocation()
+  const isTeacherPortal = location.pathname.startsWith('/teacher')
 
   const mockAnnouncements = [
     {
@@ -129,7 +132,7 @@ const Announcements = () => {
       header: 'Actions',
       render: () => (
         <div className="flex gap-2">
-          <Button size="sm" variant="outline">Edit</Button>
+            {!isTeacherPortal && <Button size="sm" variant="outline">Edit</Button>}
           <Button size="sm" variant="ghost">View</Button>
         </div>
       )
@@ -141,12 +144,14 @@ const Announcements = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Announcements</h1>
-          <p className="text-gray-600">Manage school-wide announcements and notices</p>
+            <p className="text-gray-600">{isTeacherPortal ? 'School-wide announcements and notices' : 'Manage school-wide announcements and notices'}</p>
         </div>
-        <Button className="flex items-center gap-2">
-          <PlusIcon className="h-5 w-5" />
-          Create Announcement
-        </Button>
+          {!isTeacherPortal && (
+            <Button className="flex items-center gap-2">
+              <PlusIcon className="h-5 w-5" />
+              Create Announcement
+            </Button>
+          )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -163,49 +168,51 @@ const Announcements = () => {
       </div>
 
       {/* Quick Actions */}
-      <Card>
-        <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 transition-colors"
-            >
-              <MegaphoneIcon className="h-8 w-8 text-red-600 mb-2 mx-auto" />
-              <p className="font-medium text-gray-900">Urgent Notice</p>
-              <p className="text-sm text-gray-600">High priority announcement</p>
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 transition-colors"
-            >
-              <SpeakerWaveIcon className="h-8 w-8 text-primary-600 mb-2 mx-auto" />
-              <p className="font-medium text-gray-900">General Notice</p>
-              <p className="text-sm text-gray-600">Standard announcement</p>
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 transition-colors"
-            >
-              <ClockIcon className="h-8 w-8 text-primary-600 mb-2 mx-auto" />
-              <p className="font-medium text-gray-900">Event Notice</p>
-              <p className="text-sm text-gray-600">Event-related announcement</p>
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 transition-colors"
-            >
-              <EyeIcon className="h-8 w-8 text-primary-600 mb-2 mx-auto" />
-              <p className="font-medium text-gray-900">View Analytics</p>
-              <p className="text-sm text-gray-600">Announcement performance</p>
-            </motion.button>
+      {!isTeacherPortal && (
+        <Card>
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 transition-colors"
+              >
+                <MegaphoneIcon className="h-8 w-8 text-red-600 mb-2 mx-auto" />
+                <p className="font-medium text-gray-900">Urgent Notice</p>
+                <p className="text-sm text-gray-600">High priority announcement</p>
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 transition-colors"
+              >
+                <SpeakerWaveIcon className="h-8 w-8 text-primary-600 mb-2 mx-auto" />
+                <p className="font-medium text-gray-900">General Notice</p>
+                <p className="text-sm text-gray-600">Standard announcement</p>
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 transition-colors"
+              >
+                <ClockIcon className="h-8 w-8 text-primary-600 mb-2 mx-auto" />
+                <p className="font-medium text-gray-900">Event Notice</p>
+                <p className="text-sm text-gray-600">Event-related announcement</p>
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 transition-colors"
+              >
+                <EyeIcon className="h-8 w-8 text-primary-600 mb-2 mx-auto" />
+                <p className="font-medium text-gray-900">View Analytics</p>
+                <p className="text-sm text-gray-600">Announcement performance</p>
+              </motion.button>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      )}
 
       <Card>
         <div className="p-6">

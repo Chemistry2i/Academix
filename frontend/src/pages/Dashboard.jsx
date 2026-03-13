@@ -28,6 +28,10 @@ import StatCard from '../components/common/StatCard'
 import Button from '../components/common/Button'
 import { useAuth } from '../contexts/AuthContext'
 import { dashboardService } from '../services/dashboardService'
+import { studentService } from '../services/studentService'
+import { examService } from '../services/examService'
+import { attendanceService } from '../services/attendanceService'
+import { useNavigate } from 'react-router-dom'
 
 // Register Chart.js components
 ChartJS.register(
@@ -45,6 +49,7 @@ ChartJS.register(
 
 const Dashboard = () => {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [currentTime, setCurrentTime] = useState(new Date())
   const [stats, setStats] = useState({
     totalStudents: 0,
@@ -54,8 +59,14 @@ const Dashboard = () => {
     activeStudents: 0,
     activeTeachers: 0,
     averageAttendance: 0,
-    todayAttendance: 0
+    todayAttendance: 0,
+    maleStudents: 0,
+    femaleStudents: 0
   })
+  const [recentEnrollments, setRecentEnrollments] = useState([])
+  const [upcomingEvents, setUpcomingEvents] = useState([])
+  const [enrollmentTrend, setEnrollmentTrend] = useState({ labels: [], values: [] })
+  const [attendanceTrend, setAttendanceTrend] = useState({ labels: [], values: [] })
   const [loading, setLoading] = useState(true)
 
   // Update time every minute
@@ -68,30 +79,39 @@ const Dashboard = () => {
   }, [])
 
   useEffect(() => {
-    // Fetch dashboard data
     const fetchDashboardData = async () => {
       setLoading(true)
       try {
-        const response = await dashboardService.getStats()
-        if (response.success) {
+        const [statsResponse, studentsResponse, eventsResponse, attendanceResponse] = await Promise.all([
+          dashboardService.getStats(),
+          studentService.getStudents(true).catch(() => ({ students: [] })),
+          examService.getUpcomingExams().catch(() => []),
+          attendanceService.getAttendanceStatistics().catch(() => null)
+        ])
+
+        const students = extractArray(studentsResponse, ['students'])
+        const upcoming = extractArray(eventsResponse, ['exams', 'upcomingExams'])
+
+        setRecentEnrollments(buildRecentEnrollments(students))
+        setEnrollmentTrend(buildEnrollmentTrend(students))
+        setUpcomingEvents(buildUpcomingEvents(upcoming))
+        setAttendanceTrend(buildAttendanceTrend(attendanceResponse))
+
+        if (statsResponse.success) {
           setStats({
-            totalStudents: response.data.totalStudents || 0,
-            totalTeachers: response.data.totalTeachers || 0,
-            totalSubjects: response.data.totalSubjects || 0,
-            totalClasses: response.data.totalClasses || 0,
-            activeStudents: response.data.activeStudents || 0,
-            activeTeachers: response.data.activeTeachers || 0,
-            averageAttendance: response.data.averageAttendance || 0,
-            todayAttendance: response.data.todayAttendance || 0,
-            maleStudents: response.data.maleStudents || 0,
-            femaleStudents: response.data.femaleStudents || 0,
-            permanentTeachers: response.data.permanentTeachers || 0,
-            contractTeachers: response.data.contractTeachers || 0,
-            ongoingExams: response.data.ongoingExams || 0,
-            upcomingExams: response.data.upcomingExams || 0
+            totalStudents: statsResponse.data.totalStudents || 0,
+            totalTeachers: statsResponse.data.totalTeachers || 0,
+            totalSubjects: statsResponse.data.totalSubjects || 0,
+            totalClasses: statsResponse.data.totalClasses || 0,
+            activeStudents: statsResponse.data.activeStudents || 0,
+            activeTeachers: statsResponse.data.activeTeachers || 0,
+            averageAttendance: statsResponse.data.averageAttendance || 0,
+            todayAttendance: statsResponse.data.todayAttendance || 0,
+            maleStudents: statsResponse.data.maleStudents || 0,
+            femaleStudents: statsResponse.data.femaleStudents || 0
           })
         } else {
-          console.error('Failed to fetch dashboard stats:', response.message)
+          console.error('Failed to fetch dashboard stats:', statsResponse.message)
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error)
@@ -103,13 +123,115 @@ const Dashboard = () => {
     fetchDashboardData()
   }, [])
 
+  const extractArray = (payload, keys = []) => {
+    if (Array.isArray(payload)) return payload
+    if (!payload || typeof payload !== 'object') return []
+
+    for (const key of keys) {
+      if (Array.isArray(payload[key])) return payload[key]
+    }
+
+    if (Array.isArray(payload.data)) return payload.data
+
+    const firstArray = Object.values(payload).find((v) => Array.isArray(v))
+    return firstArray || []
+  }
+
+  const formatDateLabel = (dateValue) => {
+    const date = new Date(dateValue)
+    if (Number.isNaN(date.getTime())) return 'Unknown date'
+
+    const diffMs = Date.now() - date.getTime()
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    if (diffHours < 24) {
+      return `${Math.max(diffHours, 1)} hour${diffHours === 1 ? '' : 's'} ago`
+    }
+
+    const diffDays = Math.floor(diffHours / 24)
+    if (diffDays < 7) {
+      return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`
+    }
+
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  }
+
+  const buildRecentEnrollments = (students) => {
+    return [...students]
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+      .slice(0, 4)
+      .map((student) => ({
+        name: `${student.firstName || ''} ${student.lastName || ''}`.trim() || 'Unnamed Student',
+        class: student.currentClass || student.schoolClass?.name || 'Class not set',
+        date: formatDateLabel(student.createdAt)
+      }))
+  }
+
+  const buildEnrollmentTrend = (students) => {
+    const months = []
+    for (let i = 5; i >= 0; i -= 1) {
+      const dt = new Date()
+      dt.setMonth(dt.getMonth() - i)
+      const label = dt.toLocaleDateString('en-US', { month: 'short' })
+      const key = `${dt.getFullYear()}-${dt.getMonth()}`
+      months.push({ key, label, value: 0 })
+    }
+
+    for (const student of students) {
+      const created = new Date(student.createdAt)
+      if (Number.isNaN(created.getTime())) continue
+
+      const key = `${created.getFullYear()}-${created.getMonth()}`
+      const month = months.find((m) => m.key === key)
+      if (month) month.value += 1
+    }
+
+    return {
+      labels: months.map((m) => m.label),
+      values: months.map((m) => m.value)
+    }
+  }
+
+  const buildUpcomingEvents = (events) => {
+    return events.slice(0, 4).map((event) => ({
+      title: event.name || event.title || event.examName || 'Upcoming Event',
+      date: new Date(event.startDate || event.examDate || event.date || Date.now()).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      }),
+      type: (event.examType || event.type || 'event').toLowerCase()
+    }))
+  }
+
+  const buildAttendanceTrend = (payload) => {
+    if (!payload) return { labels: [], values: [] }
+
+    const asArray = Array.isArray(payload)
+      ? payload
+      : payload.dailyAttendance || payload.weeklyAttendance || payload.attendanceByDay || []
+
+    if (!Array.isArray(asArray) || asArray.length === 0) {
+      return { labels: [], values: [] }
+    }
+
+    const normalized = asArray.slice(0, 7).map((item) => ({
+      label: item.day || item.label || item.date || item.dayOfWeek || 'N/A',
+      value: Number(item.percentage || item.attendanceRate || item.rate || item.value || 0)
+    }))
+
+    return {
+      labels: normalized.map((i) => i.label),
+      values: normalized.map((i) => i.value)
+    }
+  }
+
   // Chart data
   const studentEnrollmentData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    labels: enrollmentTrend.labels,
     datasets: [
       {
         label: 'Student Enrollments',
-        data: [45, 52, 38, 67, 73, 89],
+        data: enrollmentTrend.values,
         backgroundColor: 'rgba(59, 130, 246, 0.8)',
         borderColor: 'rgba(59, 130, 246, 1)',
         borderWidth: 1,
@@ -119,10 +241,14 @@ const Dashboard = () => {
   }
 
   const gradeDistributionData = {
-    labels: ['A', 'B', 'C', 'D', 'F'],
+    labels: ['Male', 'Female', 'Unspecified'],
     datasets: [
       {
-        data: [25, 35, 30, 8, 2],
+        data: [
+          stats.maleStudents || 0,
+          stats.femaleStudents || 0,
+          Math.max((stats.totalStudents || 0) - (stats.maleStudents || 0) - (stats.femaleStudents || 0), 0)
+        ],
         backgroundColor: [
           '#10B981',
           '#3B82F6',
@@ -136,11 +262,11 @@ const Dashboard = () => {
   }
 
   const attendanceData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    labels: attendanceTrend.labels,
     datasets: [
       {
         label: 'Attendance Rate (%)',
-        data: [95, 87, 92, 89, 94, 85],
+        data: attendanceTrend.values,
         borderColor: 'rgba(16, 185, 129, 1)',
         backgroundColor: 'rgba(16, 185, 129, 0.1)',
         tension: 0.4,
@@ -261,11 +387,15 @@ const Dashboard = () => {
           {/* Quick Actions */}
           <div className="mt-4 lg:mt-0 lg:ml-6">
             <div className="flex space-x-3">
-              <Button size="sm" className="bg-primary-600 hover:bg-primary-700">
+              <Button
+                size="sm"
+                className="bg-primary-600 hover:bg-primary-700"
+                onClick={() => navigate('/admin/students')}
+              >
                 <AcademicCapIcon className="w-4 h-4 mr-2" />
                 Add Student
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => navigate('/admin/reports')}>
                 <ChartBarIcon className="w-4 h-4 mr-2" />
                 View Reports
               </Button>
@@ -330,7 +460,7 @@ const Dashboard = () => {
         <Card>
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Grade Distribution</h3>
-            <p className="text-gray-600 text-sm">Current semester grades</p>
+            <p className="text-gray-600 text-sm">Student composition from live records</p>
           </div>
           <div className="h-64">
             <Doughnut data={gradeDistributionData} options={doughnutOptions} />
@@ -341,7 +471,7 @@ const Dashboard = () => {
         <Card className="col-span-1 lg:col-span-2 xl:col-span-3">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-gray-900">Weekly Attendance Rate</h3>
-            <p className="text-gray-600 text-sm">Average daily attendance percentage</p>
+            <p className="text-gray-600 text-sm">Average attendance trend from attendance records</p>
           </div>
           <div className="h-64">
             <Line data={attendanceData} options={chartOptions} />
@@ -358,14 +488,9 @@ const Dashboard = () => {
             <p className="text-gray-600 text-sm">Latest student registrations</p>
           </div>
           <div className="space-y-3">
-            {[
-              { name: 'Alice Johnson', class: 'S.6 Science', date: '2 hours ago' },
-              { name: 'Bob Smith', class: 'S.5 Arts', date: '4 hours ago' },
-              { name: 'Carol Williams', class: 'S.4 General', date: '1 day ago' },
-              { name: 'David Brown', class: 'S.6 Commerce', date: '2 days ago' }
-            ].map((student, index) => (
+            {recentEnrollments.map((student, index) => (
               <motion.div
-                key={index}
+                key={`${student.name}-${index}`}
                 className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -386,6 +511,9 @@ const Dashboard = () => {
                 </div>
               </motion.div>
             ))}
+            {!recentEnrollments.length && (
+              <div className="text-sm text-gray-500">No recent enrollment data available.</div>
+            )}
           </div>
         </Card>
 
@@ -396,14 +524,9 @@ const Dashboard = () => {
             <p className="text-gray-600 text-sm">Important dates and deadlines</p>
           </div>
           <div className="space-y-3">
-            {[
-              { title: 'Mid-term Exams', date: 'March 15-20', type: 'exam' },
-              { title: 'Parent-Teacher Meeting', date: 'March 25', type: 'meeting' },
-              { title: 'Sports Day', date: 'April 2', type: 'event' },
-              { title: 'End of Term', date: 'April 15', type: 'deadline' }
-            ].map((event, index) => (
+            {upcomingEvents.map((event, index) => (
               <motion.div
-                key={index}
+                key={`${event.title}-${index}`}
                 className="flex items-center p-3 border border-gray-200 rounded-lg"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -424,6 +547,9 @@ const Dashboard = () => {
                 </div>
               </motion.div>
             ))}
+            {!upcomingEvents.length && (
+              <div className="text-sm text-gray-500">No upcoming events available.</div>
+            )}
           </div>
         </Card>
       </div>

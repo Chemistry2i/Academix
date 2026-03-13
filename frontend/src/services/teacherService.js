@@ -30,17 +30,6 @@ export const teacherService = {
     }
   },
 
-  // Search teachers
-  async searchTeachers(searchTerm) {
-    try {
-      const response = await apiClient.get(`/teachers/search?q=${encodeURIComponent(searchTerm)}`)
-      return response.data
-    } catch (error) {
-      console.error('Error searching teachers:', error)
-      throw error
-    }
-  },
-
   // Create new teacher
   async createTeacher(teacherData) {
     try {

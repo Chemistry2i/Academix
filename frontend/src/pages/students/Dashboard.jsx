@@ -26,6 +26,9 @@ import Card from '../../components/common/Card'
 import StatCard from '../../components/common/StatCard'
 import Button from '../../components/common/Button'
 import { useAuth } from '../../contexts/AuthContext'
+import { assignmentService } from '../../services/assignmentService'
+import { studentService } from '../../services/studentService'
+import { useNavigate } from 'react-router-dom'
 
 // Register Chart.js components
 ChartJS.register(
@@ -43,7 +46,12 @@ ChartJS.register(
 
 const StudentDashboard = () => {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [assignmentSummary, setAssignmentSummary] = useState({
+    assignmentsDue: 0,
+    upcomingAssignments: []
+  })
 
   // Update time every minute
   useEffect(() => {
@@ -54,13 +62,59 @@ const StudentDashboard = () => {
     return () => clearInterval(timer)
   }, [])
 
-  // Student-specific stats
   const stats = {
     currentGrade: 85.5,
-    assignmentsDue: 3,
+    assignmentsDue: assignmentSummary.assignmentsDue,
     attendanceRate: 92,
     coursesEnrolled: 8
   }
+
+  useEffect(() => {
+    const loadAssignments = async () => {
+      try {
+        const studentsPayload = await studentService.getStudents(true).catch(() => ({ students: [] }))
+        const students = studentsPayload.students || studentsPayload || []
+        const currentStudent = students.find((student) => {
+          return String(student.email || '').toLowerCase() === String(user?.email || '').toLowerCase()
+        })
+
+        const studentContext = {
+          studentId: currentStudent?.id || '',
+          studentEmail: user?.email || currentStudent?.email || '',
+          studentName: currentStudent
+            ? [currentStudent.firstName, currentStudent.otherNames, currentStudent.lastName].filter(Boolean).join(' ')
+            : `${user?.firstName || 'Student'} ${user?.lastName || ''}`.trim(),
+          classId: currentStudent?.schoolClass?.id || currentStudent?.classId || '',
+          className: currentStudent?.schoolClass?.name || currentStudent?.currentClass || ''
+        }
+
+        const publishedAssignments = await assignmentService.getPublishedAssignments({
+          studentContext,
+          classId: studentContext.classId || undefined,
+          className: studentContext.className || undefined
+        })
+        const actionableAssignments = publishedAssignments.filter(
+          (assignment) => !['submitted', 'reviewed'].includes(assignment.submissionStatus) && assignment.state !== 'closed'
+        )
+
+        const sortedAssignments = actionableAssignments.sort((left, right) => {
+          const leftDate = new Date(`${left.dueDate || ''}T${left.dueTime || '23:59'}`).getTime()
+          const rightDate = new Date(`${right.dueDate || ''}T${right.dueTime || '23:59'}`).getTime()
+          return leftDate - rightDate
+        })
+
+        setAssignmentSummary({
+          assignmentsDue: actionableAssignments.length,
+          upcomingAssignments: sortedAssignments.slice(0, 4)
+        })
+      } catch (error) {
+        console.error('Failed to load student dashboard assignments:', error)
+        setAssignmentSummary({ assignmentsDue: 0, upcomingAssignments: [] })
+      }
+    }
+
+    loadAssignments()
+  }, [user?.email, user?.firstName, user?.lastName])
 
   // Student chart data
   const myGradesData = {
@@ -211,7 +265,11 @@ const StudentDashboard = () => {
           {/* Quick Actions */}
           <div className="mt-4 lg:mt-0 lg:ml-6">
             <div className="flex space-x-3">
-              <Button size="sm" className="bg-primary-600 hover:bg-primary-700">
+              <Button
+                size="sm"
+                className="bg-primary-600 hover:bg-primary-700"
+                onClick={() => navigate('/student/assignments')}
+              >
                 <BookOpenIcon className="w-4 h-4 mr-2" />
                 View Assignments
               </Button>
@@ -305,14 +363,9 @@ const StudentDashboard = () => {
             <p className="text-gray-600 text-sm">Tasks due soon</p>
           </div>
           <div className="space-y-3">
-            {[
-              { title: 'Math Quiz Ch.5', subject: 'Mathematics', due: 'Tomorrow', priority: 'high' },
-              { title: 'History Essay', subject: 'History', due: 'March 18', priority: 'medium' },
-              { title: 'Science Lab Report', subject: 'Physics', due: 'March 20', priority: 'low' },
-              { title: 'English Presentation', subject: 'English', due: 'March 25', priority: 'medium' }
-            ].map((assignment, index) => (
+            {assignmentSummary.upcomingAssignments.map((assignment, index) => (
               <motion.div
-                key={index}
+                key={assignment.id}
                 className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -320,21 +373,24 @@ const StudentDashboard = () => {
               >
                 <div className="flex items-center">
                   <div className={`w-3 h-3 rounded-full mr-3 ${
-                    assignment.priority === 'high' ? 'bg-red-500' :
-                    assignment.priority === 'medium' ? 'bg-yellow-500' :
+                    assignment.state === 'overdue' ? 'bg-red-500' :
+                    assignment.type === 'PROJECT' ? 'bg-yellow-500' :
                     'bg-green-500'
                   }`}></div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">{assignment.title}</p>
-                    <p className="text-xs text-gray-500">{assignment.subject}</p>
+                    <p className="text-xs text-gray-500">{assignment.subjectName}</p>
                   </div>
                 </div>
                 <div className="flex items-center text-xs text-gray-400">
                   <ClockIcon className="w-3 h-3 mr-1" />
-                  {assignment.due}
+                  {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'TBA'}
                 </div>
               </motion.div>
             ))}
+            {!assignmentSummary.upcomingAssignments.length && (
+              <div className="text-sm text-gray-500">No upcoming assignments yet.</div>
+            )}
           </div>
         </Card>
 
