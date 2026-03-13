@@ -13,8 +13,16 @@ import {
   ArrowRightOnRectangleIcon,
   DocumentChartBarIcon,
   ClockIcon,
-  PencilSquareIcon
+  PencilSquareIcon,
+  DocumentTextIcon,
+  LinkIcon,
+  ClipboardDocumentListIcon
 } from '@heroicons/react/24/outline'
+  import {
+    Cog6ToothIcon,
+    SpeakerWaveIcon,
+    BellIcon
+  } from '@heroicons/react/24/outline'
 import { useAuth } from '../../contexts/AuthContext'
 import Swal from 'sweetalert2'
 
@@ -36,6 +44,11 @@ const TeacherSidebar = () => {
       icon: UserGroupIcon
     },
     {
+      name: 'My Subjects',
+      href: '/teacher/subjects',
+      icon: BookOpenIcon
+    },
+    {
       name: 'Students',
       href: '/teacher/students',
       icon: AcademicCapIcon
@@ -54,6 +67,21 @@ const TeacherSidebar = () => {
       name: 'Attendance',
       href: '/teacher/attendance',
       icon: ClockIcon
+    },
+    {
+      name: 'Notes',
+      href: '/teacher/notes',
+      icon: DocumentTextIcon
+    },
+    {
+      name: 'Resources',
+      href: '/teacher/resources',
+      icon: LinkIcon
+    },
+    {
+      name: 'Invigilation',
+      href: '/teacher/invigilation',
+      icon: ClipboardDocumentListIcon
     },
     {
       name: 'Timetable',
@@ -80,6 +108,22 @@ const TeacherSidebar = () => {
       href: '/teacher/profile',
       icon: UserCircleIcon
     }
+      ,
+      {
+        name: 'Announcements',
+        href: '/teacher/announcements',
+        icon: SpeakerWaveIcon
+      },
+      {
+        name: 'Notifications',
+        href: '/teacher/notifications',
+        icon: BellIcon
+      },
+      {
+        name: 'Settings',
+        href: '/teacher/settings',
+        icon: Cog6ToothIcon
+      }
   ]
 
   const handleLogout = async () => {
