@@ -1,0 +1,7 @@
+Requirements
+-telling subjects students are doing 
+-capture marks for subjects for given students
+-Grading of the student  for subjects
+-persistence of data.
+
+(o level) only for next week. 
