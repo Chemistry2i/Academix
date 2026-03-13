@@ -21,6 +21,7 @@ import LoadingSpinner from '../components/common/LoadingSpinner'
 import StaffRegistration from '../components/staff/StaffRegistration'
 import toast from 'react-hot-toast'
 import { staffService } from '../services/staffService'
+import departmentService from '../services/departmentService'
 
 const Staff = () => {
   const [staff, setStaff] = useState([])
@@ -35,9 +36,12 @@ const Staff = () => {
 
   useEffect(() => {
     loadStaff()
+  }, [filters])
+
+  useEffect(() => {
     loadStatistics()
     loadDepartments()
-  }, [filters])
+  }, [])
 
   const loadStaff = async () => {
     try {
@@ -63,10 +67,11 @@ const Staff = () => {
 
   const loadDepartments = async () => {
     try {
-      const depts = await staffService.getDepartments()
-      setDepartments(depts)
+      const departmentNames = await departmentService.getDepartmentNames()
+      setDepartments(departmentNames)
     } catch (error) {
       console.error('Error loading departments:', error)
+      setDepartments([])
     }
   }
 

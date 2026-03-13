@@ -12,6 +12,7 @@ import {
 import Button from '../common/Button'
 import LoadingSpinner from '../common/LoadingSpinner'
 import { staffService } from '../../services/staffService'
+import departmentService from '../../services/departmentService'
 import toast from 'react-hot-toast'
 
 const StaffRegistration = ({ 
@@ -63,6 +64,7 @@ const StaffRegistration = ({
       if (editingStaff) {
         setFormData({
           ...editingStaff,
+          department: editingStaff.department?.name || editingStaff.department || editingStaff.departmentName || '',
           dateOfBirth: editingStaff.dateOfBirth ? editingStaff.dateOfBirth.split('T')[0] : '',
           salary: editingStaff.salary?.toString() || '',
           experience: editingStaff.experience?.toString() || ''
@@ -81,11 +83,15 @@ const StaffRegistration = ({
 
   const loadDepartments = async () => {
     try {
-      const depts = await staffService.getDepartments()
-      setDepartments(depts)
+      setLoading(true)
+      const departmentNames = await departmentService.getDepartmentNames({ activeOnly: true })
+      setDepartments(departmentNames)
     } catch (error) {
       console.error('Failed to load departments:', error)
+      setDepartments([])
       toast.error('Failed to load department options')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -408,22 +414,25 @@ const StaffRegistration = ({
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Department *
           </label>
-          <input
-            type="text"
+          <select
             name="department"
             value={formData.department}
             onChange={handleInputChange}
-            list="departments"
+            disabled={loading}
             className={`w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
               formErrors.department ? 'border-red-500' : 'border-gray-300'
             }`}
-            placeholder="Enter department"
-          />
-          <datalist id="departments">
-            {departments.map(dept => (
-              <option key={dept} value={dept} />
+          >
+            <option value="">
+              {loading ? 'Loading departments...' : departments.length ? 'Select department' : 'No departments available'}
+            </option>
+            {(formData.department && !departments.includes(formData.department)
+              ? [formData.department, ...departments]
+              : departments
+            ).map(dept => (
+              <option key={dept} value={dept}>{dept}</option>
             ))}
-          </datalist>
+          </select>
           {formErrors.department && (
             <p className="text-red-500 text-sm mt-1">{formErrors.department}</p>
           )}

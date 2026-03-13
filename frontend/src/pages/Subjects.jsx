@@ -101,15 +101,18 @@ const Subjects = () => {
   const loadStatistics = async () => {
     try {
       const statisticsData = await subjectService.getSubjectStatistics()
+
+      const total = statisticsData.totalSubjects ?? statisticsData.total ?? 0
+      const compulsory = statisticsData.compulsorySubjects ?? statisticsData.compulsory ?? 0
       setStats({
-        total: statisticsData.total || 0,
-        oLevel: statisticsData.oLevel || 0,
-        aLevel: statisticsData.aLevel || 0,
-        compulsory: statisticsData.compulsory || 0,
-        elective: statisticsData.elective || 0,
-        active: statisticsData.active || 0,
-        science: statisticsData.science || 0,
-        arts: statisticsData.arts || 0
+        total,
+        oLevel: statisticsData.oLevelSubjects ?? statisticsData.oLevel ?? 0,
+        aLevel: statisticsData.aLevelSubjects ?? statisticsData.aLevel ?? 0,
+        compulsory,
+        elective: statisticsData.electiveSubjects ?? statisticsData.elective ?? Math.max(total - compulsory, 0),
+        active: statisticsData.activeSubjects ?? statisticsData.active ?? 0,
+        science: statisticsData.scienceSubjects ?? statisticsData.science ?? 0,
+        arts: statisticsData.artsSubjects ?? statisticsData.arts ?? 0
       })
     } catch (error) {
       console.error('Failed to load subject statistics:', error)
