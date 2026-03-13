@@ -230,7 +230,7 @@ const StudentDashboard = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {getGreeting()}, {user?.firstName || 'Student'}! 👋
+                  {getGreeting()}, {user?.firstName ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}` : 'Student'}! 👋
                 </h1>
                 <p className="text-gray-600 mt-1">
                   Ready to continue your learning journey?

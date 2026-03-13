@@ -10,6 +10,7 @@ const Header = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const portalBase = location.pathname.startsWith('/teacher') ? '/teacher' : location.pathname.startsWith('/admin') ? '/admin' : location.pathname.startsWith('/student') ? '/student' : ''
+  const activePortal = portalBase === '/teacher' ? 'teacher' : portalBase === '/student' ? 'student' : portalBase === '/admin' ? 'admin' : 'default'
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef(null)
 
@@ -31,6 +32,22 @@ const Header = () => {
       default: return role
     }
   }
+
+  const portalRoleDisplay = activePortal === 'teacher'
+    ? 'Teacher'
+    : activePortal === 'student'
+    ? 'Student'
+    : activePortal === 'admin'
+    ? 'Administrator'
+    : getRoleDisplay(user?.roles?.[0] || user?.role || 'ADMIN')
+
+  const portalWelcomeMessage = activePortal === 'teacher'
+    ? 'Welcome to your teacher workspace. Here is your class and teaching overview.'
+    : activePortal === 'student'
+    ? 'Welcome to your student workspace. Here is your learning overview for today.'
+    : activePortal === 'admin'
+    ? 'Welcome to your administration workspace. Here is the latest school overview.'
+    : 'Welcome to your dashboard. Here is what is happening today.'
 
   const handleLogout = async () => {
     const result = await Swal.fire({
@@ -99,11 +116,9 @@ const Header = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
-            {getGreeting()}, {user?.firstName}!
+            {getGreeting()}, {user?.firstName ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}` : portalRoleDisplay}!
           </h1>
-          <p className="text-gray-600 mt-1">
-            {portalBase === '/teacher' ? 'Welcome to your teacher portal. Here\'s your teaching overview.' : 'Welcome to your dashboard. Here\'s what\'s happening today.'}
-          </p>
+          <p className="text-gray-600 mt-1">{portalWelcomeMessage}</p>
         </div>
 
         <div className="flex items-center space-x-4">
@@ -138,9 +153,7 @@ const Header = () => {
                 <p className="text-sm font-medium text-gray-900">
                   {user?.firstName} {user?.lastName}
                 </p>
-                <p className="text-xs text-gray-500">
-                  {getRoleDisplay(user?.roles?.[0])}
-                </p>
+                <p className="text-xs text-gray-500">{portalRoleDisplay}</p>
               </div>
               <ChevronDownIcon 
                 className={`w-4 h-4 text-gray-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} 
@@ -170,9 +183,7 @@ const Header = () => {
                         <p className="text-sm text-gray-500">
                           {user?.email}
                         </p>
-                        <p className="text-xs text-primary-600 font-medium">
-                          {getRoleDisplay(user?.roles?.[0])}
-                        </p>
+                        <p className="text-xs text-primary-600 font-medium">{portalRoleDisplay}</p>
                       </div>
                     </div>
                   </div>

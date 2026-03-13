@@ -438,10 +438,10 @@ const TeacherDashboard = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {getGreeting()}, {user?.firstName || 'Teacher'}! 👋
+                  {getGreeting()}, {user?.firstName ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}` : 'Teacher'}! 👋
                 </h1>
                 <p className="text-gray-600 mt-1">
-                  Your students are ready to learn today
+                  Here's your teaching overview for today.
                 </p>
               </div>
             </div>
