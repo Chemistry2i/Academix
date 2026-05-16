@@ -153,7 +153,7 @@ const Attendance = () => {
       setClasses(classNames)
       setSelectedClass((current) => {
         if (current && classNames.includes(current)) return current
-        return isTeacherPortal ? classNames[0] || '' : current
+        return classNames[0] || current
       })
     } catch (error) {
       console.error('Failed to load class scope:', error)

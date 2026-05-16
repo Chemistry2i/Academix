@@ -127,7 +127,7 @@ export const examService = {
   // Lock exam
   lockExam: async (examId) => {
     try {
-      const response = await apiClient.patch(`${BASE_URL}/${examId}/lock`)
+      const response = await apiClient.post(`${BASE_URL}/${examId}/lock`)
       return response.data
     } catch (error) {
       console.error('Error locking exam:', error)
@@ -138,7 +138,7 @@ export const examService = {
   // Unlock exam
   unlockExam: async (examId) => {
     try {
-      const response = await apiClient.patch(`${BASE_URL}/${examId}/unlock`)
+      const response = await apiClient.post(`${BASE_URL}/${examId}/unlock`)
       return response.data
     } catch (error) {
       console.error('Error unlocking exam:', error)
@@ -149,7 +149,7 @@ export const examService = {
   // Publish exam results
   publishResults: async (examId) => {
     try {
-      const response = await apiClient.patch(`${BASE_URL}/${examId}/publish`)
+      const response = await apiClient.post(`${BASE_URL}/${examId}/publish`)
       return response.data
     } catch (error) {
       console.error('Error publishing exam results:', error)
@@ -160,7 +160,7 @@ export const examService = {
   // Unpublish exam results
   unpublishResults: async (examId) => {
     try {
-      const response = await apiClient.patch(`${BASE_URL}/${examId}/unpublish`)
+      const response = await apiClient.post(`${BASE_URL}/${examId}/unpublish`)
       return response.data
     } catch (error) {
       console.error('Error unpublishing exam results:', error)

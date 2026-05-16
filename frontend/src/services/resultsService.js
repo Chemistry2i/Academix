@@ -1,8 +1,88 @@
+import apiClient from './apiClient'
+import { classService } from './classService'
+import subjectService from './subjectService'
 import { calculateGrade, getDefaultGradingScheme, summarizeGrades } from '../utils/grading'
 
+const RESULTS_BASE_URL = '/results'
 const ASSESSMENTS_STORAGE_KEY = 'academix.assessments.v1'
 const RESULTS_STORAGE_KEY = 'academix.results.v1'
 const GRADING_SCHEMES_STORAGE_KEY = 'academix.gradingSchemes.v1'
+
+let classCache = null
+let subjectCache = null
+
+const normalizeArray = (payload, keys = []) => {
+  if (Array.isArray(payload)) return payload
+  if (!payload || typeof payload !== 'object') return []
+
+  for (const key of keys) {
+    if (Array.isArray(payload[key])) return payload[key]
+  }
+
+  const firstArray = Object.values(payload).find((value) => Array.isArray(value))
+  return firstArray || []
+}
+
+const getClasses = async () => {
+  if (!classCache) {
+    classCache = classService.getClasses().catch(() => [])
+  }
+
+  return classCache
+}
+
+const getSubjects = async () => {
+  if (!subjectCache) {
+    subjectCache = subjectService.getAllSubjects().catch(() => [])
+  }
+
+  return subjectCache
+}
+
+const resolveClassName = async (classId) => {
+  if (!classId) return ''
+
+  const classList = normalizeArray(await getClasses(), ['classes', 'data'])
+  const matchedClass = classList.find((item) => String(item.id) === String(classId))
+  return matchedClass?.name || matchedClass?.className || String(classId)
+}
+
+const resolveSubjectFilter = async (subjectId) => {
+  if (!subjectId) return { subjectId: '', subjectCode: '', subjectName: '' }
+
+  const subjectList = normalizeArray(await getSubjects(), ['subjects', 'data'])
+  const matchedSubject = subjectList.find((item) => String(item.id) === String(subjectId))
+
+  return {
+    subjectId: String(matchedSubject?.id || subjectId),
+    subjectCode: matchedSubject?.code || matchedSubject?.subjectCode || '',
+    subjectName: matchedSubject?.name || matchedSubject?.subjectName || matchedSubject?.code || ''
+  }
+}
+
+const matchesClass = (result, classFilter, classId) => {
+  if (!classFilter) return true
+
+  return String(result.className || '').trim().toLowerCase() === String(classFilter || '').trim().toLowerCase() ||
+    String(result.className || '').trim().toLowerCase() === String(classId || '').trim().toLowerCase() ||
+    String(result.classId || '').trim().toLowerCase() === String(classId || '').trim().toLowerCase()
+}
+
+const matchesSubject = (result, subjectFilter, subjectId) => {
+  if (!subjectFilter) return true
+
+  const subjectName = String(subjectFilter.subjectName || '').trim().toLowerCase()
+  const subjectCode = String(subjectFilter.subjectCode || '').trim().toLowerCase()
+  const subjectIdString = String(subjectId || '').trim().toLowerCase()
+  const resultSubjectCode = String(result.subjectCode || '').trim().toLowerCase()
+  const resultSubjectName = String(result.subjectName || '').trim().toLowerCase()
+  const resultSubjectId = String(result.subjectId || '').trim().toLowerCase()
+
+  return resultSubjectCode === subjectCode ||
+    resultSubjectName === subjectName ||
+    resultSubjectId === subjectIdString ||
+    resultSubjectCode === subjectIdString
+}
 
 const readJson = (key, fallback) => {
   try {
@@ -157,16 +237,40 @@ class ResultsService {
   }
 
   async getResults(filters = {}) {
-    const results = this.getStoredResults()
-    return results.filter((result) => {
-      if (filters.assessmentId && result.assessmentId !== filters.assessmentId) return false
-      if (filters.classId && String(result.classId) !== String(filters.classId)) return false
-      if (filters.subjectId && String(result.subjectId) !== String(filters.subjectId)) return false
-      if (filters.studentId && String(result.studentId) !== String(filters.studentId)) return false
-      if (filters.term && result.term !== filters.term) return false
-      if (filters.academicYear && result.academicYear !== filters.academicYear) return false
-      return true
-    })
+    try {
+      let response
+
+      if (filters.studentId && !filters.classId && !filters.subjectId && !filters.examId && !filters.className) {
+        response = await apiClient.get(`${RESULTS_BASE_URL}/student/${filters.studentId}`)
+      } else if (filters.examId && !filters.classId && !filters.subjectId && !filters.studentId && !filters.className) {
+        response = await apiClient.get(`${RESULTS_BASE_URL}/exam/${filters.examId}`)
+      } else if (filters.className && !filters.subjectId && !filters.studentId && !filters.examId) {
+        response = await apiClient.get(`${RESULTS_BASE_URL}/class/${encodeURIComponent(filters.className)}`)
+      } else {
+        response = await apiClient.get(RESULTS_BASE_URL)
+      }
+
+      const results = normalizeArray(response.data, ['results', 'data'])
+      const classFilter = filters.className || (filters.classId ? await resolveClassName(filters.classId) : '')
+      const subjectFilter = filters.subjectId || filters.subjectCode || filters.subjectName
+        ? await resolveSubjectFilter(filters.subjectId || filters.subjectCode || filters.subjectName)
+        : null
+
+      return results.filter((result) => {
+        if (filters.assessmentId && String(result.assessmentId) !== String(filters.assessmentId)) return false
+        if (filters.studentId && String(result.studentId) !== String(filters.studentId)) return false
+        if (filters.examId && String(result.examId) !== String(filters.examId)) return false
+        if (filters.classId && !matchesClass(result, classFilter, filters.classId)) return false
+        if (filters.className && String(result.className || '').trim().toLowerCase() !== String(filters.className || '').trim().toLowerCase()) return false
+        if (subjectFilter && !matchesSubject(result, subjectFilter, filters.subjectId || filters.subjectCode || filters.subjectName)) return false
+        if (filters.term && String(result.term) !== String(filters.term)) return false
+        if (filters.academicYear && String(result.academicYear) !== String(filters.academicYear)) return false
+        return true
+      })
+    } catch (error) {
+      console.error('Error fetching results from API:', error)
+      throw error?.response?.data || error
+    }
   }
 
   async getAssessmentResults(assessmentId) {
@@ -333,6 +437,16 @@ class ResultsService {
       summary,
       subjectSummaries,
       courseSummary
+    }
+  }
+
+  async getResultStatistics() {
+    try {
+      const response = await apiClient.get(`${RESULTS_BASE_URL}/statistics`)
+      return response.data
+    } catch (error) {
+      console.error('Error fetching result statistics:', error)
+      throw error?.response?.data || error
     }
   }
 }
