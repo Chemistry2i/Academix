@@ -55,21 +55,30 @@
                 <p class="endpoint-desc">Create a new exam</p>
                 <div class="input-group">
                     <label>Request Body (JSON)</label>
-                    <textarea id="createExamBody">{
-  "code": "PHY-S3-T1-2024",
-  "name": "Physics Mid-Term Exam",
-  "examType": "MID_TERM",
-  "term": "Term 1",
+                    <textarea id="createExamBody">
+                        {
+  "code": "EOT3-2024-OLEVEL",
+  "name": "End of Term 3 Examinations 2024 (O-Level)",
+  "type": "EOT",
   "academicYear": "2024",
-  "formLevel": 3,
-  "subjectId": 1,
-  "examDate": "2024-04-15",
-  "startTime": "09:00:00",
-  "endTime": "12:00:00",
-  "duration": 180,
+  "term": 3,
+  "targetClasses": [
+    "S1",
+    "S2",
+    "S3"
+  ],
+  "level": "O_LEVEL",
+  "startDate": "2024-11-15",
+  "endDate": "2024-12-05",
+  "marksEntryDeadline": "2024-12-10T17:00:00",
+  "description": "Promotional examinations for Ordinary Level students covering all taught subjects.",
+  "gradingScale": "O_LEVEL",
+  "passMark": 40,
   "totalMarks": 100,
-  "passMark": 40
-}</textarea>
+  "status": "SCHEDULED"
+}
+
+                    </textarea>
                 </div>
                 <button class="btn btn-primary" onclick="createExam()">Send Request</button>
                 <div class="response-area" id="createExamResponse">Response will appear here...</div>

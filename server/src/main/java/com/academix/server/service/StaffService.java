@@ -1,7 +1,6 @@
 package com.academix.server.service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,9 +62,8 @@ public class StaffService {
         if (staff.getStatus() == null) {
             staff.setStatus(Staff.StaffStatus.ACTIVE);
         }
-
-        // Generate verification token
-        userService.generateEmailVerificationToken(staff);
+        // Staff members are automatically verified during registration
+        staff.setEmailVerified(true);
 
         // Save staff
         Staff savedStaff = staffRepository.save(staff);

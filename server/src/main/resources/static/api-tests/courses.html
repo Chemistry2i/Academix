@@ -54,16 +54,28 @@
                 <p class="endpoint-desc">Create a new A-Level course combination</p>
                 <div class="input-group">
                     <label>Request Body (JSON)</label>
-                    <textarea id="createCourseBody">{
-  "code": "PCM",
-  "name": "Physics, Chemistry, Mathematics",
-  "description": "Science combination for engineering",
-  "category": "SCIENCES",
-  "principal1Id": 1,
-  "principal2Id": 2,
-  "principal3Id": 3,
-  "subsidiary1Id": 4
-}</textarea>
+                    <textarea id="createCourseBody">
+                        {
+  "code": "HEG",
+  "name": "History, Economics, Geography",
+  "type": "ARTS",
+  "level": "A_LEVEL",
+  "principalSubjects": [
+    "HIS",
+    "ECO",
+    "GEO"
+  ],
+  "subsidiarySubjects": [
+    "GP",
+    "SUB_MTH"
+  ],
+  "description": "A popular arts combination focusing on humanities and social sciences.",
+  "careerPaths": "Law, Journalism, Public Administration, Teaching, Social Work",
+  "requirements": "Credit in English and History at O-Level",
+  "maxStudents": 120,
+  "isActive": true
+}
+                    </textarea>
                 </div>
                 <button class="btn btn-primary" onclick="createCourse()">Send Request</button>
                 <div class="response-area" id="createCourseResponse">Response will appear here...</div>

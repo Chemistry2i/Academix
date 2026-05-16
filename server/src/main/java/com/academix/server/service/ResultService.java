@@ -61,6 +61,8 @@ public class ResultService {
 
         // Set additional fields from student
         result.setStudentNumber(student.getStudentId());
+        result.setStudentName(student.getFullName());
+        result.setStudent(student);
         result.setClassName(student.getCurrentClass());
         result.setStream(student.getStream());
 
@@ -203,7 +205,14 @@ public class ResultService {
      */
     @Transactional(readOnly = true)
     public List<Result> getAllResults() {
-        return resultRepository.findAll();
+        List<Result> results = resultRepository.findAll();
+        // Populate student names from student entity
+        for (Result result : results) {
+            if (result.getStudent() != null && result.getStudentName() == null) {
+                result.setStudentName(result.getStudent().getFullName());
+            }
+        }
+        return results;
     }
 
     /**

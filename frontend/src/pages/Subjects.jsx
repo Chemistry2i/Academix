@@ -371,6 +371,67 @@ const Subjects = () => {
         )}
       </div>
 
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4">
+        <StatCard
+          title="Total Subjects"
+          value={stats.total}
+          icon={BookOpenIcon}
+          color="blue"
+          subtitle="All subjects"
+        />
+        <StatCard
+          title="O-Level"
+          value={stats.oLevel}
+          icon={AcademicCapIcon}
+          color="green"
+          subtitle="S1-S4 subjects"
+        />
+        <StatCard
+          title="A-Level"
+          value={stats.aLevel}
+          icon={AcademicCapIcon}
+          color="purple"
+          subtitle="S5-S6 subjects"
+        />
+        <StatCard
+          title="Active"
+          value={stats.active}
+          icon={CogIcon}
+          color="indigo"
+          subtitle="Currently offered"
+        />
+        <StatCard
+          title="Compulsory"
+          value={stats.compulsory}
+          icon={BookOpenIcon}
+          color="red"
+          subtitle="Required subjects"
+        />
+        <StatCard
+          title="Elective"
+          value={stats.elective}
+          icon={BookOpenIcon}
+          color="yellow"
+          subtitle="Optional subjects"
+        />
+        <StatCard
+          title="Science"
+          value={stats.science}
+          icon={BeakerIcon}
+          color="teal"
+          subtitle="Science subjects"
+        />
+        <StatCard
+          title="Arts"
+          value={stats.arts}
+          icon={PaintBrushIcon}
+          color="orange"
+          subtitle="Arts subjects"
+        />
+      </div>
+
       {/* Filters */}
       <Card>
         <div className="p-6">
@@ -444,65 +505,7 @@ const Subjects = () => {
         </div>
       </Card>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4">
-        <StatCard
-          title="Total Subjects"
-          value={stats.total}
-          icon={BookOpenIcon}
-          color="blue"
-          subtitle="All subjects"
-        />
-        <StatCard
-          title="O-Level"
-          value={stats.oLevel}
-          icon={AcademicCapIcon}
-          color="green"
-          subtitle="S1-S4 subjects"
-        />
-        <StatCard
-          title="A-Level"
-          value={stats.aLevel}
-          icon={AcademicCapIcon}
-          color="purple"
-          subtitle="S5-S6 subjects"
-        />
-        <StatCard
-          title="Active"
-          value={stats.active}
-          icon={CogIcon}
-          color="indigo"
-          subtitle="Currently offered"
-        />
-        <StatCard
-          title="Compulsory"
-          value={stats.compulsory}
-          icon={BookOpenIcon}
-          color="red"
-          subtitle="Required subjects"
-        />
-        <StatCard
-          title="Elective"
-          value={stats.elective}
-          icon={BookOpenIcon}
-          color="yellow"
-          subtitle="Optional subjects"
-        />
-        <StatCard
-          title="Science"
-          value={stats.science}
-          icon={BeakerIcon}
-          color="teal"
-          subtitle="Science subjects"
-        />
-        <StatCard
-          title="Arts"
-          value={stats.arts}
-          icon={PaintBrushIcon}
-          color="orange"
-          subtitle="Arts subjects"
-        />
-      </div>
+      
 
       {/* Subjects Table */}
       {subjects.length > 0 ? (

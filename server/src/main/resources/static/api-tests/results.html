@@ -56,15 +56,16 @@
                 <div class="input-group">
                     <label>Request Body (JSON)</label>
                     <textarea id="createResultBody">{
-  "studentId": 1,
+  "studentId": 2,
   "examId": 1,
-  "subjectId": 1,
-  "marksObtained": 75,
-  "term": "Term 1",
+  "subjectCode": "MTH",
+  "className": "S3",
   "academicYear": "2024",
-  "formLevel": 3,
-  "levelType": "O_LEVEL",
-  "remarks": "Good performance"
+  "term": 1,
+  "marksObtained": 85,
+  "maxMarks": 100,
+  "gradingScale": "O_LEVEL",
+  "remarks": "Excellent performance"
 }</textarea>
                 </div>
                 <button class="btn btn-primary" onclick="createResult()">Send Request</button>
@@ -81,8 +82,8 @@
                 <div class="input-group">
                     <label>Request Body (JSON Array)</label>
                     <textarea id="bulkResultsBody">[
-  {"studentId": 1, "examId": 1, "subjectId": 1, "marksObtained": 85, "term": "Term 1", "academicYear": "2024", "formLevel": 3, "levelType": "O_LEVEL"},
-  {"studentId": 2, "examId": 1, "subjectId": 1, "marksObtained": 72, "term": "Term 1", "academicYear": "2024", "formLevel": 3, "levelType": "O_LEVEL"}
+  {"studentId": 1, "examId": 1, "subjectCode": "MTH", "className": "S3", "academicYear": "2024", "term": 1, "marksObtained": 85, "maxMarks": 100, "gradingScale": "O_LEVEL"},
+  {"studentId": 2, "examId": 1, "subjectCode": "ENG", "className": "S3", "academicYear": "2024", "term": 1, "marksObtained": 72, "maxMarks": 100, "gradingScale": "O_LEVEL"}
 ]</textarea>
                 </div>
                 <button class="btn btn-primary" onclick="bulkRecordResults()">Send Request</button>

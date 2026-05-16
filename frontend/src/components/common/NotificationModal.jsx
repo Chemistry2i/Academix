@@ -58,7 +58,7 @@ const NotificationModal = ({
   const Icon = config.icon
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-0 z-50">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}

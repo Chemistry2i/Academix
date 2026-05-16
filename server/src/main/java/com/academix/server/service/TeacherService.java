@@ -2,6 +2,7 @@ package com.academix.server.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,9 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
-import com.academix.server.model.Department;
 import com.academix.server.model.Teacher;
 import com.academix.server.repository.DepartmentRepository;
 import com.academix.server.repository.TeacherRepository;
@@ -82,9 +80,8 @@ public class TeacherService {
         if (teacher.getIsDeleted() == null) {
             teacher.setIsDeleted(false);
         }
-        if (teacher.getEmailVerified() == null) {
-            teacher.setEmailVerified(false);
-        }
+        // Teachers are automatically verified during registration
+        teacher.setEmailVerified(true);
         if (teacher.getEmploymentStatus() == null) {
             teacher.setEmploymentStatus(Teacher.EmploymentStatus.ACTIVE);
         }
@@ -97,9 +94,6 @@ public class TeacherService {
         if (teacher.getIsDepartmentHead() == null) {
             teacher.setIsDepartmentHead(false);
         }
-
-        // Generate verification token
-        userService.generateEmailVerificationToken(teacher);
 
         // Save teacher
         Teacher savedTeacher = teacherRepository.save(teacher);
@@ -502,6 +496,85 @@ public class TeacherService {
         teacher.removeClass(className);
         logger.info("Class {} removed from teacher {}", className, teacher.getTeacherId());
         return teacherRepository.save(teacher);
+    }
+
+    /**
+     * Get only the classes assigned to a specific teacher (for data filtering)
+     * This ensures teachers can only see their assigned classes
+     */
+    @Transactional(readOnly = true)
+    public List<String> getTeacherAssignedClasses(Long teacherId) {
+        Teacher teacher = teacherRepository.findById(teacherId)
+            .orElseThrow(() -> new RuntimeException("Teacher not found with id: " + teacherId));
+        
+        List<String> assignedClasses = teacher.getAssignedClasses();
+        logger.info("Retrieved {} assigned classes for teacher {}", 
+            assignedClasses != null ? assignedClasses.size() : 0, teacherId);
+        
+        return assignedClasses != null ? assignedClasses : new ArrayList<>();
+    }
+
+    /**
+     * Get class attendance records for only this teacher's assigned classes
+     * Data access control: Teacher can only see attendance for their classes
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getTeacherAssignedClassesAttendance(Long teacherId) {
+        Teacher teacher = teacherRepository.findById(teacherId)
+            .orElseThrow(() -> new RuntimeException("Teacher not found with id: " + teacherId));
+
+        Map<String, Object> attendanceData = new HashMap<>();
+        attendanceData.put("teacherId", teacher.getTeacherId());
+        attendanceData.put("teacherName", teacher.getFullName());
+        
+        List<String> assignedClasses = teacher.getAssignedClasses();
+        if (assignedClasses == null || assignedClasses.isEmpty()) {
+            attendanceData.put("message", "Teacher has no assigned classes");
+            attendanceData.put("classes", List.of());
+            return attendanceData;
+        }
+        
+        attendanceData.put("assignedClasses", assignedClasses);
+        attendanceData.put("totalClasses", assignedClasses.size());
+        attendanceData.put("message", "Attendance data for assigned classes");
+        // TODO: Add actual attendance records when Attendance entity is implemented
+        attendanceData.put("attendanceRecords", List.of());
+        
+        logger.info("Retrieved attendance for {} assigned classes of teacher {}", 
+            assignedClasses.size(), teacherId);
+        return attendanceData;
+    }
+
+    /**
+     * Get grade records for only this teacher's assigned classes
+     * Data access control: Teacher can only see grades for their classes
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getTeacherAssignedClassesGrades(Long teacherId) {
+        Teacher teacher = teacherRepository.findById(teacherId)
+            .orElseThrow(() -> new RuntimeException("Teacher not found with id: " + teacherId));
+
+        Map<String, Object> gradesData = new HashMap<>();
+        gradesData.put("teacherId", teacher.getTeacherId());
+        gradesData.put("teacherName", teacher.getFullName());
+        gradesData.put("subjects", teacher.getSubjects());
+        
+        List<String> assignedClasses = teacher.getAssignedClasses();
+        if (assignedClasses == null || assignedClasses.isEmpty()) {
+            gradesData.put("message", "Teacher has no assigned classes");
+            gradesData.put("classes", List.of());
+            return gradesData;
+        }
+        
+        gradesData.put("assignedClasses", assignedClasses);
+        gradesData.put("totalClasses", assignedClasses.size());
+        gradesData.put("message", "Grade data for assigned classes");
+        // TODO: Add actual grade records when Grades entity is implemented
+        gradesData.put("gradeRecords", List.of());
+        
+        logger.info("Retrieved grades for {} assigned classes of teacher {}", 
+            assignedClasses.size(), teacherId);
+        return gradesData;
     }
 
     /**

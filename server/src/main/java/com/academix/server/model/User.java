@@ -73,7 +73,7 @@ public abstract class User {
     @Column(nullable = false)
     private String password;
 
-    @Pattern(regexp = "^[A-Z0-9]{14}$", message = "NIN must be 14 alphanumeric characters")
+    @Pattern(regexp = "^[A-Za-z0-9]{14}$|^$", message = "NIN must be 14 alphanumeric characters or empty")
     @Column(nullable = true, unique = true, length = 14)
     private String nin;
 

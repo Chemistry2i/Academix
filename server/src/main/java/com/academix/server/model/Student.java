@@ -12,7 +12,10 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -49,7 +52,7 @@ public class Student extends User {
     // ============ RELATIONSHIPS ============
 
     // Current class relationship
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "school_class_id")
     private SchoolClass schoolClass;
 
@@ -74,5 +77,57 @@ public class Student extends User {
     // Enum for residence status
     public enum ResidenceStatus {
         DAY, BOARDING
+    }
+
+    // ============ LIFECYCLE METHODS - SYNC currentClass WITH schoolClass ============
+    
+    /**
+     * Pre-persist: Sync currentClass with schoolClass.name before saving
+     * This ensures the string field always matches the relationship field
+     */
+    @PrePersist
+    @PreUpdate
+    private void syncClassFields() {
+        // If schoolClass is set, sync currentClass to its name
+        if (this.schoolClass != null && this.schoolClass.getName() != null) {
+            this.currentClass = this.schoolClass.getName();
+        }
+        // If only currentClass is set (string), keep it as is for backward compatibility
+        // But ideally, we should only use schoolClass going forward
+    }
+
+    /**
+     * Get the class name from schoolClass relationship or currentClass field
+     * This provides a fallback mechanism for backward compatibility
+     */
+    @Transient
+    public String getClassName() {
+        if (this.schoolClass != null && this.schoolClass.getName() != null) {
+            return this.schoolClass.getName();
+        }
+        return this.currentClass; // Fallback to string field
+    }
+
+    /**
+     * Set class using SchoolClass relationship
+     * This is the preferred way to set a student's class
+     * It automatically syncs the currentClass string field
+     */
+    public void setSchoolClassByEntity(SchoolClass schoolClass) {
+        this.schoolClass = schoolClass;
+        if (schoolClass != null) {
+            this.currentClass = schoolClass.getName();
+        } else {
+            this.currentClass = null;
+        }
+    }
+
+    /**
+     * Check if student is in a given class
+     */
+    @Transient
+    public boolean isInClass(String className) {
+        return (this.schoolClass != null && this.schoolClass.getName().equals(className)) ||
+               (this.schoolClass == null && this.currentClass != null && this.currentClass.equals(className));
     }
 }

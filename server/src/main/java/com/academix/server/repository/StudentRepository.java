@@ -27,23 +27,41 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     boolean existsByStudentId(String studentId);
     boolean existsByLinn(String linn);
     
+    // ============ CLASS QUERIES (currentClass - kept for backward compatibility) ============
     // Find students by class
     List<Student> findByCurrentClass(String currentClass);
     
     // Find students by class and stream
     List<Student> findByCurrentClassAndStream(String currentClass, String stream);
     
-    // Find students by residence status
-    List<Student> findByResidenceStatus(Student.ResidenceStatus residenceStatus);
-    
-    // Find students by house
-    List<Student> findByHouse(String house);
-    
-    // Find active students
-    List<Student> findByIsActiveTrue();
-    
     // Find active students by class
     List<Student> findByCurrentClassAndIsActiveTrue(String currentClass);
+    
+    // Count students by class
+    long countByCurrentClass(String currentClass);
+    
+    // ============ CLASS QUERIES (schoolClass relationship - PREFERRED APPROACH) ============
+    // Find students by schoolClass relationship (source of truth)
+    @Query("SELECT s FROM Student s WHERE s.schoolClass.id = :schoolClassId AND s.isActive = true")
+    List<Student> findActiveBySchoolClassId(@Param("schoolClassId") Long schoolClassId);
+    
+    @Query("SELECT s FROM Student s WHERE s.schoolClass.id = :schoolClassId")
+    List<Student> findBySchoolClassId(@Param("schoolClassId") Long schoolClassId);
+    
+    // Find students by schoolClass name
+    @Query("SELECT s FROM Student s WHERE s.schoolClass.name = :className AND s.isActive = true")
+    List<Student> findActiveBySchoolClassName(@Param("className") String className);
+    
+    @Query("SELECT s FROM Student s WHERE s.schoolClass.name = :className")
+    List<Student> findBySchoolClassName(@Param("className") String className);
+    
+    // Count students in a class (via schoolClass relationship)
+    @Query("SELECT COUNT(s) FROM Student s WHERE s.schoolClass.id = :schoolClassId")
+    long countBySchoolClassId(@Param("schoolClassId") Long schoolClassId);
+    
+    @Query("SELECT COUNT(s) FROM Student s WHERE s.schoolClass.name = :className")
+    long countBySchoolClassName(@Param("className") String className);
+
     
     // Search students by name (first name, last name, or other names)
     @Query("SELECT s FROM Student s WHERE " +
@@ -69,8 +87,15 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
         @Param("isActive") Boolean isActive
     );
     
-    // Count students by class
-    long countByCurrentClass(String currentClass);
+    // ============ OTHER FILTERS ============
+    // Find students by residence status
+    List<Student> findByResidenceStatus(Student.ResidenceStatus residenceStatus);
+    
+    // Find students by house
+    List<Student> findByHouse(String house);
+    
+    // Find active students
+    List<Student> findByIsActiveTrue();
     
     // Count active students
     long countByIsActiveTrue();

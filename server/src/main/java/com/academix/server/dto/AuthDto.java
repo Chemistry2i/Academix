@@ -9,12 +9,18 @@ public class AuthDto {
 
     @Data
     public static class LoginRequest {
-        @NotBlank(message = "Email is required")
-        @Email(message = "Invalid email format")
-        private String email;
+        // Support both email and ID-based login
+        // For email login: email, password
+        // For ID login: identifier (student/teacher ID), password
+        @NotBlank(message = "Email or ID is required")
+        private String identifier; // Can be email or student/teacher ID
 
         @NotBlank(message = "Password is required")
         private String password;
+
+        // Legacy email field for backward compatibility
+        @Email(message = "Invalid email format")
+        private String email;
     }
 
     @Data

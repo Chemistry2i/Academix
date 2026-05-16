@@ -8,12 +8,18 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.academix.server.model.SchoolClass;
 import com.academix.server.model.Student;
+import com.academix.server.model.Result;
+import com.academix.server.repository.ResultRepository;
+import com.academix.server.repository.SchoolClassRepository;
 import com.academix.server.repository.StaffRepository;
 import com.academix.server.repository.StudentRepository;
 import com.academix.server.repository.TeacherRepository;
@@ -34,10 +40,16 @@ public class StudentService {
     private StaffRepository staffRepository;
 
     @Autowired
+    private SchoolClassRepository schoolClassRepository;
+
+    @Autowired
     private UserService userService;
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private ResultRepository resultRepository;
 
     /**
      * Create a new student
@@ -56,6 +68,23 @@ public class StudentService {
         if (student.getLinn() != null && !student.getLinn().trim().isEmpty() &&
             studentRepository.existsByLinn(student.getLinn())) {
             throw new RuntimeException("LINN already exists: " + student.getLinn());
+        }
+
+        // Sync schoolClass with currentClass BEFORE any validation
+        // If schoolClass is provided, use it to set currentClass
+        if (student.getSchoolClass() != null && student.getSchoolClass().getId() != null) {
+            SchoolClass schoolClass = schoolClassRepository.findById(student.getSchoolClass().getId())
+                .orElseThrow(() -> new RuntimeException("School class not found with id: " + student.getSchoolClass().getId()));
+            student.setSchoolClassByEntity(schoolClass);
+        }
+        // If only currentClass string is provided, try to find and link the SchoolClass
+        else if (student.getCurrentClass() != null && student.getSchoolClass() == null) {
+            SchoolClass schoolClass = schoolClassRepository.findByName(student.getCurrentClass()).orElse(null);
+            if (schoolClass != null) {
+                student.setSchoolClassByEntity(schoolClass);
+                logger.info("Linked student to SchoolClass entity for class: {}", student.getCurrentClass());
+            }
+            // If class doesn't exist, leave schoolClass as null but keep currentClass string for flexibility
         }
 
         // Generate student ID
@@ -81,12 +110,8 @@ public class StudentService {
         if (student.getIsDeleted() == null) {
             student.setIsDeleted(false);
         }
-        if (student.getEmailVerified() == null) {
-            student.setEmailVerified(false);
-        }
-
-        // Generate verification token
-        userService.generateEmailVerificationToken(student);
+        // Students are automatically verified during registration
+        student.setEmailVerified(true);
 
         // Save student
         Student savedStudent;
@@ -98,8 +123,9 @@ public class StudentService {
         }
 
         // Log registration details
-        logger.info("Student registered - Email: {}, StudentId: {}, Class: {}", 
-            student.getEmail(), student.getStudentId(), student.getCurrentClass());
+        logger.info("Student registered - Email: {}, StudentId: {}, Class: {}, SchoolClass: {}", 
+            student.getEmail(), student.getStudentId(), student.getCurrentClass(),
+            student.getSchoolClass() != null ? student.getSchoolClass().getName() : "null");
 
         // Send registration email
         try {
@@ -218,10 +244,28 @@ public class StudentService {
             student.setDateOfBirth(studentDetails.getDateOfBirth());
         }
 
-        // Update academic info
-        if (studentDetails.getCurrentClass() != null) {
-            student.setCurrentClass(studentDetails.getCurrentClass());
+        // Update academic info - PROPERLY SYNC CLASS FIELDS
+        // Preference: If schoolClass is provided in request, use that
+        if (studentDetails.getSchoolClass() != null && studentDetails.getSchoolClass().getId() != null) {
+            SchoolClass schoolClass = schoolClassRepository.findById(studentDetails.getSchoolClass().getId())
+                .orElseThrow(() -> new RuntimeException("School class not found with id: " + studentDetails.getSchoolClass().getId()));
+            student.setSchoolClassByEntity(schoolClass);
+            logger.info("Student {} moved to class {} (via schoolClass relationship)", id, schoolClass.getName());
         }
+        // Fallback: If only currentClass string is provided, try to find and sync
+        else if (studentDetails.getCurrentClass() != null) {
+            String className = studentDetails.getCurrentClass();
+            SchoolClass schoolClass = schoolClassRepository.findByName(className).orElse(null);
+            if (schoolClass != null) {
+                student.setSchoolClassByEntity(schoolClass);
+                logger.info("Student {} moved to class {} (via class name lookup)", id, className);
+            } else {
+                // If class doesn't exist, just update the string field for backward compatibility
+                student.setCurrentClass(className);
+                logger.warn("Class {} not found in SchoolClass entities, updated currentClass string only", className);
+            }
+        }
+
         if (studentDetails.getStream() != null) {
             student.setStream(studentDetails.getStream());
         }
@@ -340,8 +384,41 @@ public class StudentService {
         results.put("studentId", student.getStudentId());
         results.put("studentName", student.getFullName());
         results.put("currentClass", student.getCurrentClass());
-        results.put("message", "Results module not yet implemented");
-        results.put("results", List.of()); // Placeholder for actual results
+        
+        try {
+            // Fetch all results for this student from the Result entity
+            List<Result> studentResults = resultRepository.findByStudentId(studentId);
+            
+            // Transform Result entities to maps for JSON response
+            List<Map<String, Object>> formattedResults = studentResults.stream()
+                .map(r -> {
+                    Map<String, Object> resultMap = new HashMap<>();
+                    resultMap.put("id", r.getId());
+                    resultMap.put("subjectCode", r.getSubjectCode());
+                    resultMap.put("subjectName", r.getSubjectName());
+                    resultMap.put("marksObtained", r.getMarksObtained());
+                    resultMap.put("maxMarks", r.getMaxMarks());
+                    resultMap.put("percentage", r.getPercentage());
+                    resultMap.put("grade", r.getGrade());
+                    resultMap.put("gradePoints", r.getGradePoints());
+                    resultMap.put("gradingScale", r.getGradingScale());
+                    resultMap.put("term", r.getTerm());
+                    resultMap.put("academicYear", r.getAcademicYear());
+                    resultMap.put("className", r.getClassName());
+                    resultMap.put("remarks", r.getRemarks());
+                    resultMap.put("createdAt", r.getCreatedAt());
+                    return resultMap;
+                })
+                .toList();
+            
+            results.put("results", formattedResults);
+            results.put("totalResults", formattedResults.size());
+            results.put("message", "Student results retrieved successfully");
+        } catch (Exception e) {
+            logger.warn("Error fetching student results: {}", e.getMessage());
+            results.put("results", List.of());
+            results.put("message", "Could not fetch results: " + e.getMessage());
+        }
         
         return results;
     }
@@ -426,6 +503,178 @@ public class StudentService {
         stats.put("boardingStudents", studentRepository.findByResidenceStatus(Student.ResidenceStatus.BOARDING).size());
         stats.put("dayStudents", studentRepository.findByResidenceStatus(Student.ResidenceStatus.DAY).size());
         return stats;
+    }
+
+    // ============ DATA MIGRATION - Link UnlinkedStudents to Classes ============
+
+    @EventListener(ApplicationReadyEvent.class)
+    @Transactional
+    public void autoLinkStudentsOnStartup() {
+        logger.info("Running automatic student-class linkage check...");
+        List<Student> unlinkedStudents = studentRepository.findAll().stream()
+                .filter(s -> s.getSchoolClass() == null && s.getCurrentClass() != null && !s.getCurrentClass().isBlank())
+                .toList();
+
+        if (unlinkedStudents.isEmpty()) {
+            logger.info("All students are already properly linked to classes.");
+            return;
+        }
+
+        int linked = 0;
+        for (Student student : unlinkedStudents) {
+            String originalName = student.getCurrentClass();
+            // Map "Senior X" -> "SX" automatically (e.g., "Senior 1" -> "S1")
+            String mappedName = originalName.replaceAll("(?i)^Senior\\s+", "S").trim();
+            
+            // Map "S3A" -> Try finding "S3A" directly, or finding "S3"
+            
+            Optional<SchoolClass> matchingClass = schoolClassRepository.findByName(mappedName);
+            
+            // If they created it as purely "S1", "S3", etc.
+            if (matchingClass.isEmpty() && mappedName.length() >= 2) {
+                // Try stripping trailing letters like in "S3A" -> "S3" if "S3A" doesn't exist
+                String baseClass = mappedName.replaceAll("[A-Za-z]+$", "");
+                if (!baseClass.equals(mappedName)) {
+                    matchingClass = schoolClassRepository.findByName(baseClass);
+                }
+            }
+
+            if (matchingClass.isPresent()) {
+                student.setSchoolClassByEntity(matchingClass.get());
+                studentRepository.save(student);
+                linked++;
+                logger.info("Auto-linked student {} from '{}' to class {} (ID: {})", 
+                    student.getStudentId(), originalName, matchingClass.get().getName(), matchingClass.get().getId());
+            } else {
+                logger.warn("Could not find matching class for student {} (Class string: '{}')", 
+                    student.getStudentId(), originalName);
+            }
+        }
+        
+        logger.info("Automatic linkage complete. Linked {}/{} students.", linked, unlinkedStudents.size());
+    }
+
+    /**
+     * Migrate students: Link unlinked students to their SchoolClass entities
+     * This handles cases where school_class_id is NULL but current_class has a value
+     */
+    @Transactional
+    public Map<String, Object> migrateStudentsToLinks() {
+        Map<String, Object> report = new HashMap<>();
+        int totalStudents = 0;
+        int linked = 0;
+        int unmatched = 0;
+        int nullClass = 0;
+        List<Map<String, String>> unmatchedStudents = new java.util.ArrayList<>();
+
+        // Get all students
+        List<Student> allStudents = studentRepository.findAll();
+        totalStudents = allStudents.size();
+
+        for (Student student : allStudents) {
+            // Case 1: Already linked - skip
+            if (student.getSchoolClass() != null) {
+                continue;
+            }
+
+            // Case 2: No class at all - null
+            if (student.getCurrentClass() == null || student.getCurrentClass().isBlank()) {
+                nullClass++;
+                continue;
+            }
+
+            // Case 3: Try to find and link SchoolClass
+            String currentClassName = student.getCurrentClass();
+            Optional<SchoolClass> schoolClass = schoolClassRepository.findByName(currentClassName);
+
+            if (schoolClass.isPresent()) {
+                // Found a matching class - link it
+                student.setSchoolClassByEntity(schoolClass.get());
+                studentRepository.save(student);
+                linked++;
+                logger.info("Linked student {} to class {} (ID: {})", 
+                    student.getStudentId(), currentClassName, schoolClass.get().getId());
+            } else {
+                // No matching class found
+                unmatched++;
+                Map<String, String> unmatchedInfo = new HashMap<>();
+                unmatchedInfo.put("studentId", student.getStudentId());
+                unmatchedInfo.put("studentName", student.getFullName());
+                unmatchedInfo.put("currentClass", currentClassName);
+                unmatchedStudents.add(unmatchedInfo);
+                logger.warn("No matching class found for student {} with currentClass: {}", 
+                    student.getStudentId(), currentClassName);
+            }
+        }
+
+        // Build report
+        report.put("success", true);
+        report.put("message", "Student class migration completed");
+        report.put("totalStudents", totalStudents);
+        report.put("linked", linked);
+        report.put("unmatched", unmatched);
+        report.put("nullClass", nullClass);
+        report.put("unmatchedStudents", unmatchedStudents);
+        report.put("timestamp", LocalDateTime.now());
+
+        return report;
+    }
+
+    /**
+     * Link a single student to a specific class
+     * Used when migrating unmatched students after new classes are created
+     */
+    public Student linkStudentToClass(Long studentId, Long schoolClassId) {
+        Student student = studentRepository.findById(studentId)
+            .orElseThrow(() -> new RuntimeException("Student not found with id: " + studentId));
+
+        SchoolClass schoolClass = schoolClassRepository.findById(schoolClassId)
+            .orElseThrow(() -> new RuntimeException("School class not found with id: " + schoolClassId));
+
+        // Use the syncing method to link properly
+        student.setSchoolClassByEntity(schoolClass);
+        Student saved = studentRepository.save(student);
+
+        logger.info("Manually linked student {} to class {}", 
+            student.getStudentId(), schoolClass.getName());
+
+        return saved;
+    }
+
+    /**
+     * Get list of students that need class assignment
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> getUnlinkedStudentsReport() {
+        Map<String, Object> report = new HashMap<>();
+        List<Student> allStudents = studentRepository.findAll();
+
+        List<Map<String, Object>> unlinked = new java.util.ArrayList<>();
+        List<Map<String, Object>> linked = new java.util.ArrayList<>();
+
+        for (Student student : allStudents) {
+            Map<String, Object> info = new HashMap<>();
+            info.put("id", student.getId());
+            info.put("studentId", student.getStudentId());
+            info.put("fullName", student.getFullName());
+            info.put("currentClass", student.getCurrentClass());
+            info.put("schoolClassId", student.getSchoolClass() != null ? student.getSchoolClass().getId() : null);
+
+            if (student.getSchoolClass() == null) {
+                unlinked.add(info);
+            } else {
+                info.put("schoolClassName", student.getSchoolClass().getName());
+                linked.add(info);
+            }
+        }
+
+        report.put("total", allStudents.size());
+        report.put("linked", linked.size());
+        report.put("unlinked", unlinked.size());
+        report.put("linkedStudents", linked);
+        report.put("unlinkedStudents", unlinked);
+
+        return report;
     }
 
     // Helper method to generate student ID

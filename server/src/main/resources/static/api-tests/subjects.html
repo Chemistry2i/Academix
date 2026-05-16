@@ -60,17 +60,23 @@
                 <p class="endpoint-desc">Create a new subject</p>
                 <div class="input-group">
                     <label>Request Body (JSON)</label>
-                    <textarea id="createSubjectBody">{
+                    <textarea id="createSubjectBody">
+                        {
   "code": "PHY",
   "name": "Physics",
-  "description": "Study of matter, energy, and forces",
   "category": "SCIENCES",
-  "levelType": "BOTH",
-  "isPrincipal": true,
-  "isSubsidiary": false,
-  "isCore": false,
-  "creditUnits": 3
-}</textarea>
+  "level": "BOTH",
+  "isCompulsory": false,
+  "isScience": true,
+  "isArts": false,
+  "paperCount": 3,
+  "maxMarksPerPaper": 100,
+  "creditUnits": 4,
+  "description": "Study of matter, energy, and forces",
+  "department": "Science Department",
+  "isActive": true
+}
+                    </textarea>
                 </div>
                 <button class="btn btn-primary" onclick="createSubject()">Send Request</button>
                 <div class="response-area" id="createSubjectResponse">Response will appear here...</div>

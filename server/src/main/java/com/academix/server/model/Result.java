@@ -5,14 +5,19 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -40,9 +45,19 @@ public class Result {
     @Column(name = "student_id", nullable = false)
     private Long studentId;
 
+    // Student entity relationship
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "student_id", insertable = false, updatable = false)
+    private Student student;
+
     // Student's registration number (for easy reference)
     @Column(name = "student_number", nullable = true, length = 20)
     private String studentNumber;
+
+    // Student's full name (for easy reference)
+    @Column(name = "student_name", nullable = true, length = 100)
+    private String studentName;
 
     // Exam ID (reference to Exam entity)
     @NotNull(message = "Exam ID is required")
@@ -54,7 +69,7 @@ public class Result {
     private String examCode;
 
     // Subject code
-    @Column(name = "subject_code", nullable = false, length = 10)
+    @Column(name = "subject_code", nullable = false, length = 100)
     private String subjectCode;
 
     // Subject name (for easy reference)
@@ -296,6 +311,16 @@ public class Result {
             this.percentage = (this.marksObtained * 100.0) / this.maxMarks;
             this.grade = String.format("%.0f%%", this.percentage);
             this.gradePoints = (int) Math.round(this.percentage / 10);
+        }
+    }
+
+    /**
+     * PostLoad method to populate studentName from student object if available
+     */
+    @jakarta.persistence.PostLoad
+    public void populateStudentName() {
+        if (this.student != null && (this.studentName == null || this.studentName.isEmpty())) {
+            this.studentName = this.student.getFullName();
         }
     }
 }

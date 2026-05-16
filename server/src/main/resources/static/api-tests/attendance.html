@@ -56,14 +56,15 @@
                 <div class="input-group">
                     <label>Request Body (JSON)</label>
                     <textarea id="markAttendanceBody">{
-  "studentId": 1,
-  "subjectId": 1,
-  "classId": 1,
-  "date": "2024-04-15",
+  "studentId": 2,
+  "className": "S3A",
+  "date": "2026-03-23",
   "status": "PRESENT",
   "checkInTime": "08:00:00",
-  "remarks": "On time",
-  "markedById": 1
+  "academicYear": "2026",
+  "term": 1,
+  "absenceNote": "On time",
+  "markedBy": 10
 }</textarea>
                 </div>
                 <button class="btn btn-primary" onclick="markAttendance()">Send Request</button>
@@ -80,9 +81,9 @@
                 <div class="input-group">
                     <label>Request Body (JSON Array)</label>
                     <textarea id="bulkAttendanceBody">[
-  {"studentId": 1, "subjectId": 1, "classId": 1, "date": "2024-04-15", "status": "PRESENT", "markedById": 1},
-  {"studentId": 2, "subjectId": 1, "classId": 1, "date": "2024-04-15", "status": "PRESENT", "markedById": 1},
-  {"studentId": 3, "subjectId": 1, "classId": 1, "date": "2024-04-15", "status": "ABSENT", "markedById": 1}
+  {"studentId": 1, "className": "S3A", "date": "2026-03-23", "status": "PRESENT", "academicYear": "2026", "term": 1, "markedBy": 10},
+  {"studentId": 2, "className": "S3A", "date": "2026-03-23", "status": "LATE", "academicYear": "2026", "term": 1, "markedBy": 10, "checkInTime": "08:15:00"},
+  {"studentId": 3, "className": "S3A", "date": "2026-03-23", "status": "ABSENT", "academicYear": "2026", "term": 1, "markedBy": 10, "absenceReason": "SICKNESS"}
 ]</textarea>
                 </div>
                 <button class="btn btn-primary" onclick="bulkMarkAttendance()">Send Request</button>

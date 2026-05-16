@@ -22,7 +22,7 @@ public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
 
-    @Value("${spring.mail.username:noreply@academix.com}")
+    @Value("${spring.mail.username:noreply@peculiarschool.com}")
     private String fromEmail;
 
     @Value("${app.frontend.url:http://localhost:5173}")
@@ -74,13 +74,13 @@ public class EmailService {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("Password Reset Request - Academix");
+            message.setSubject("Password Reset Request - Peculiar School Management System");
             
             String resetLink = frontendUrl + "/reset-password?token=" + resetToken;
             
             String emailBody = String.format(
                 "Dear %s,\n\n" +
-                "We received a request to reset your password for your Academix account.\n\n" +
+                "We received a request to reset your password for your Peculiar School Management System account.\n\n" +
                 "To reset your password, please click on the following link:\n" +
                 "%s\n\n" +
                 "This link will expire in 15 minutes for security purposes.\n\n" +
@@ -88,7 +88,7 @@ public class EmailService {
                 "Your password will remain unchanged.\n\n" +
                 "For security reasons, please do not share this link with anyone.\n\n" +
                 "Best regards,\n" +
-                "The Academix Team",
+                "The Peculiar School Management System Team",
                 fullName, resetLink
             );
             
@@ -128,19 +128,19 @@ public class EmailService {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("Email Verification - Academix");
+            message.setSubject("Email Verification - Peculiar School Management System");
             
             String verificationLink = frontendUrl + "/verify-email?token=" + verificationToken;
             
             String emailBody = String.format(
                 "Dear %s,\n\n" +
-                "Welcome to Academix! Please verify your email address to complete your registration.\n\n" +
+                "Welcome to Peculiar School Management System! Please verify your email address to complete your registration.\n\n" +
                 "To verify your email, please click on the following link:\n" +
                 "%s\n\n" +
                 "This link will expire in 24 hours.\n\n" +
-                "If you did not create an account with Academix, please ignore this email.\n\n" +
+                "If you did not create an account with Peculiar School Management System, please ignore this email.\n\n" +
                 "Best regards,\n" +
-                "The Academix Team",
+                "The Peculiar School Management System Team",
                 fullName, verificationLink
             );
             
@@ -182,16 +182,16 @@ public class EmailService {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("Welcome to Academix!");
+            message.setSubject("Welcome to Peculiar School Management System!");
             
             String emailBody = String.format(
                 "Dear %s,\n\n" +
-                "Welcome to Academix School Management System!\n\n" +
+                "Welcome to Peculiar School Management System!\n\n" +
                 "Your account has been successfully created and verified. You can now log in to access all features.\n\n" +
                 "Login URL: %s/login\n\n" +
                 "If you have any questions or need assistance, please don't hesitate to contact our support team.\n\n" +
                 "Best regards,\n" +
-                "The Academix Team",
+                "The Peculiar School Management System Team",
                 fullName, frontendUrl
             );
             
@@ -224,7 +224,7 @@ public class EmailService {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("Welcome to Academix - Your Student Account Details");
+            message.setSubject("Welcome to Peculiar School Management System - Your Student Account Details");
             
             String academicDetails = "";
             if (currentClass != null && !currentClass.trim().isEmpty()) {
@@ -236,7 +236,7 @@ public class EmailService {
             
             String emailBody = String.format(
                 "Dear %s,\n\n" +
-                "Welcome to Academix School Management System!\n\n" +
+                "Welcome to Peculiar School Management System!\n\n" +
                 "Your student account has been successfully created. Here are your account details:\n\n" +
                 "🆔 Student ID: %s\n" +
                 "📧 Email: %s\n" +
@@ -250,9 +250,9 @@ public class EmailService {
                 "4. Never share your password with anyone\n\n" +
                 "You can change your password anytime from your student portal.\n\n" +
                 "For any questions or support, please contact our student services.\n\n" +
-                "Welcome to the Academix family!\n\n" +
+                "Welcome to the Peculiar School Management System family!\n\n" +
                 "Best regards,\n" +
-                "The Academix Administrative Team",
+                "The Peculiar School Management System Administrative Team",
                 fullName, studentId, toEmail, generatedPassword, academicDetails, frontendUrl
             );
             
@@ -297,11 +297,11 @@ public class EmailService {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("Academix Account - Your Login Credentials");
+            message.setSubject("Peculiar School Management System Account - Your Login Credentials");
             
             String emailBody = String.format(
                 "Dear %s,\n\n" +
-                "Welcome to Academix School Management System!\n\n" +
+                "Welcome to Peculiar School Management System!\n\n" +
                 "Your account has been successfully created. Here are your login credentials:\n\n" +
                 "📧 Email: %s\n" +
                 "🔐 Password: %s\n" +
@@ -314,7 +314,7 @@ public class EmailService {
                 "You can change your password anytime after logging in.\n\n" +
                 "For any questions or support, please contact our support team.\n\n" +
                 "Best regards,\n" +
-                "The Academix Team",
+                "The Peculiar School Management System Team",
                 fullName, toEmail, generatedPassword, frontendUrl
             );
             
@@ -358,7 +358,7 @@ public class EmailService {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("Welcome to Academix - Your Teacher Account Details");
+            message.setSubject("Welcome to Peculiar School Management System - Your Teacher Account Details");
             
             String academicDetails = "";
             if (department != null && !department.trim().isEmpty()) {
@@ -370,7 +370,7 @@ public class EmailService {
             
             String emailBody = String.format(
                 "Dear %s,\n\n" +
-                "Welcome to Academix School Management System!\n\n" +
+                "Welcome to Peculiar School Management System!\n\n" +
                 "Your teacher account has been successfully created. Here are your account details:\n\n" +
                 "\ud83c\udd94 Teacher ID: %s\n" +
                 "\ud83d\udce7 Email: %s\n" +
@@ -384,9 +384,9 @@ public class EmailService {
                 "4. Never share your password with anyone\n\n" +
                 "You can change your password anytime from your staff portal.\n\n" +
                 "For any questions or support, please contact the administration.\n\n" +
-                "Welcome to the Academix family!\n\n" +
+                "Welcome to the Peculiar School Management System family!\n\n" +
                 "Best regards,\n" +
-                "The Academix Administrative Team",
+                "The Peculiar School Management System Administrative Team",
                 fullName, teacherId, toEmail, generatedPassword, academicDetails, frontendUrl
             );
             
@@ -431,7 +431,7 @@ public class EmailService {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(staff.getEmail());
-            message.setSubject("Welcome to Academix - Your Staff Account Details");
+            message.setSubject("Welcome to Peculiar School Management System - Your Staff Account Details");
             
             String staffDetails = "";
             if (staff.getDepartment() != null && !staff.getDepartment().trim().isEmpty()) {
@@ -446,7 +446,7 @@ public class EmailService {
             
             String emailBody = String.format(
                 "Dear %s,\n\n" +
-                "Welcome to Academix School Management System!\n\n" +
+                "Welcome to Peculiar School Management System!\n\n" +
                 "Your staff account has been successfully created. Here are your account details:\n\n" +
                 "\ud83c\udd94 Staff ID: %s\n" +
                 "\ud83d\udce7 Email: %s\n" +
@@ -460,9 +460,9 @@ public class EmailService {
                 "4. Never share your password with anyone\n\n" +
                 "You can change your password anytime from your staff portal.\n\n" +
                 "For any questions or support, please contact the administration.\n\n" +
-                "Welcome to the Academix family!\n\n" +
+                "Welcome to the Peculiar School Management System family!\n\n" +
                 "Best regards,\n" +
-                "The Academix Administrative Team",
+                "The Peculiar School Management System Administrative Team",
                 staff.getFullName(), staff.getStaffId(), staff.getEmail(), generatedPassword, staffDetails, frontendUrl
             );
             

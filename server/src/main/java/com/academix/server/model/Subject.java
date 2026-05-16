@@ -19,6 +19,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -49,11 +50,13 @@ public class Subject {
     private String name;
 
     // Subject category
+    @NotNull(message = "Subject category is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private SubjectCategory category;
 
     // Level - O-Level, A-Level, or Both
+    @NotNull(message = "Subject level is required")
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private SubjectLevel level;

@@ -330,6 +330,69 @@ public class StudentController {
         return createStudent(student);
     }
 
+    // ==================== DATA MIGRATION ENDPOINTS ====================
+
+    /**
+     * POST /api/students/migrate/link-to-classes - Migrate: Link unlinked students to SchoolClass entities
+     * This endpoint links students who have null school_class_id to their actual SchoolClass based on current_class
+     * @return Migration report with results
+     */
+    @PostMapping("/migrate/link-to-classes")
+    public ResponseEntity<?> migrateStudentsToLinks() {
+        try {
+            Map<String, Object> report = studentService.migrateStudentsToLinks();
+            logger.info("Student migration completed: {} linked, {} unmatched, {} null class",
+                report.get("linked"), report.get("unmatched"), report.get("nullClass"));
+            return ResponseEntity.ok(report);
+        } catch (Exception e) {
+            logger.error("Student migration failed: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(createErrorResponse("Migration failed: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * GET /api/students/migrate/report - Get unlinked students report
+     * Shows which students are not yet linked to SchoolClass entities
+     * @return Report with linked and unlinked student lists
+     */
+    @GetMapping("/migrate/report")
+    public ResponseEntity<?> getUnlinkedStudentsReport() {
+        try {
+            Map<String, Object> report = studentService.getUnlinkedStudentsReport();
+            return ResponseEntity.ok(report);
+        } catch (Exception e) {
+            logger.error("Failed to generate unlinked students report: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+        }
+    }
+
+    /**
+     * PUT /api/students/{studentId}/link-class/{classId} - Manually link a student to a class
+     * Use this after creating new classes to link previously unmatched students
+     * @param studentId Student ID
+     * @param classId   SchoolClass ID
+     * @return Updated student with class link
+     */
+    @PutMapping("/{studentId}/link-class/{classId}")
+    public ResponseEntity<?> linkStudentToClass(
+            @PathVariable Long studentId,
+            @PathVariable Long classId) {
+        try {
+            Student student = studentService.linkStudentToClass(studentId, classId);
+            Map<String, Object> response = createSuccessResponse(
+                "Student successfully linked to class!",
+                student
+            );
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            logger.error("Failed to link student {} to class {}: {}", studentId, classId, e.getMessage());
+            if (e.getMessage().contains("not found")) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+        }
+    }
+
     // ==================== HELPER METHODS ====================
 
     private Map<String, Object> createSuccessResponse(String message, Student student) {
@@ -363,13 +426,33 @@ public class StudentController {
         summary.put("nationality", student.getNationality());
         summary.put("nin", student.getNin());
         summary.put("disabilityStatus", student.getDisabilityStatus());
+        
+        // CLASS INFORMATION - PRIMARY FIELDS
+        // currentClass: Original string field (kept for backward compatibility)
         summary.put("currentClass", student.getCurrentClass());
+        
+        // className: Computed from schoolClass.name (source of truth) or currentClass fallback
+        summary.put("className", student.getClassName());
+        
+        // schoolClass: Full relationship object with id and name
+        if (student.getSchoolClass() != null) {
+            Map<String, Object> schoolClassMap = new HashMap<>();
+            schoolClassMap.put("id", student.getSchoolClass().getId());
+            schoolClassMap.put("name", student.getSchoolClass().getName());
+            schoolClassMap.put("formLevel", student.getSchoolClass().getFormLevel());
+            schoolClassMap.put("stream", student.getSchoolClass().getStream());
+            summary.put("schoolClass", schoolClassMap);
+        } else {
+            summary.put("schoolClass", null);
+        }
+        
         summary.put("stream", student.getStream());
         summary.put("residenceStatus", student.getResidenceStatus());
         summary.put("house", student.getHouse());
         summary.put("combination", student.getCombination());
         summary.put("isActive", student.getIsActive());
         summary.put("createdAt", student.getCreatedAt());
+        
         return summary;
     }
 

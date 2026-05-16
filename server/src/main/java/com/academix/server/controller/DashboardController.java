@@ -12,8 +12,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.academix.server.repository.DepartmentRepository;
 import com.academix.server.service.AttendanceService;
 import com.academix.server.service.ExamService;
+import com.academix.server.service.RoomService;
 import com.academix.server.service.SchoolClassService;
 import com.academix.server.service.StudentService;
 import com.academix.server.service.SubjectService;
@@ -44,6 +46,12 @@ public class DashboardController {
     @Autowired
     private AttendanceService attendanceService;
 
+    @Autowired
+    private RoomService roomService;
+
+    @Autowired
+    private DepartmentRepository departmentRepository;
+
     /**
      * GET /api/dashboard/stats - Get comprehensive dashboard statistics
      */
@@ -64,6 +72,10 @@ public class DashboardController {
             dashboardStats.put("totalTeachers", teacherStats.get("totalTeachers"));
             dashboardStats.put("totalSubjects", subjectStats.get("totalSubjects"));
             dashboardStats.put("totalClasses", classStats.get("totalClasses"));
+            
+            // Facility and organizational stats
+            dashboardStats.put("totalRooms", roomService.getAllRooms().size());
+            dashboardStats.put("totalDepartments", departmentRepository.count());
             
             // Student breakdown
             dashboardStats.put("activeStudents", studentStats.get("activeStudents"));
@@ -92,13 +104,13 @@ public class DashboardController {
                 Map<String, Object> attendanceStats = attendanceService.getAttendanceStatistics();
                 if (attendanceStats != null) {
                     dashboardStats.put("todayAttendance", attendanceStats.get("todayPresent"));
-                    dashboardStats.put("averageAttendance", attendanceStats.get("todayAttendanceRate"));
+                    dashboardStats.put("attendanceRate", attendanceStats.get("todayAttendanceRate"));
                 }
             } catch (Exception e) {
                 logger.warn("Could not fetch attendance statistics: {}", e.getMessage());
                 // Set defaults if attendance stats are not available
                 dashboardStats.put("todayAttendance", 0);
-                dashboardStats.put("averageAttendance", 0.0);
+                dashboardStats.put("attendanceRate", 0.0);
             }
             
             // Add metadata
