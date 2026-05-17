@@ -297,10 +297,33 @@ public class EnrollmentService {
      * Get subjects taught by a teacher
      */
     @Transactional(readOnly = true)
-    public List<Subject> getTeacherSubjects(Long teacherId) {
+    public List<Map<String, Object>> getTeacherSubjects(Long teacherId) {
         List<TeacherSubject> assignments = teacherSubjectRepository.findSubjectsTaughtByTeacher(teacherId);
         return assignments.stream()
-            .map(TeacherSubject::getSubject)
+            .map(assignment -> {
+                Subject subject = assignment.getSubject();
+                Map<String, Object> result = new HashMap<>();
+                result.put("assignmentId", assignment.getId());
+                result.put("subjectId", subject != null ? subject.getId() : null);
+                result.put("name", subject != null ? subject.getName() : null);
+                result.put("code", subject != null ? subject.getCode() : null);
+                result.put("assignedClasses", assignment.getAssignedClasses());
+                result.put("academicYear", assignment.getAcademicYear());
+                result.put("isPrimary", Boolean.TRUE.equals(assignment.getIsPrimary()));
+                result.put("isCertified", Boolean.TRUE.equals(assignment.getIsCertified()));
+                result.put("status", assignment.getStatus());
+
+                Map<String, Object> subjectSummary = new HashMap<>();
+                if (subject != null) {
+                    subjectSummary.put("id", subject.getId());
+                    subjectSummary.put("name", subject.getName());
+                    subjectSummary.put("code", subject.getCode());
+                    subjectSummary.put("department", subject.getDepartment());
+                    subjectSummary.put("level", subject.getLevel());
+                }
+                result.put("subject", subjectSummary);
+                return result;
+            })
             .collect(Collectors.toList());
     }
 

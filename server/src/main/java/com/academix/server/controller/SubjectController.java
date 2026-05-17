@@ -42,8 +42,10 @@ public class SubjectController {
      * GET /api/subjects
      */
     @GetMapping
-    public ResponseEntity<List<Subject>> getAllSubjects() {
-        return ResponseEntity.ok(subjectService.getAllSubjects());
+    public ResponseEntity<List<Map<String, Object>>> getAllSubjects() {
+        return ResponseEntity.ok(subjectService.getAllSubjects().stream()
+            .map(this::createSubjectSummary)
+            .toList());
     }
 
     /**
@@ -179,6 +181,19 @@ public class SubjectController {
     @PreAuthorize("hasRole('ADMIN') or hasRole('HEAD_TEACHER') or hasRole('TEACHER')")
     public ResponseEntity<Map<String, Object>> getSubjectStatistics() {
         return ResponseEntity.ok(subjectService.getSubjectStatistics());
+    }
+
+    private Map<String, Object> createSubjectSummary(Subject subject) {
+        Map<String, Object> summary = new java.util.HashMap<>();
+        summary.put("id", subject.getId());
+        summary.put("code", subject.getCode());
+        summary.put("name", subject.getName());
+        summary.put("category", subject.getCategory());
+        summary.put("level", subject.getLevel());
+        summary.put("department", subject.getDepartment());
+        summary.put("isActive", subject.getIsActive());
+        summary.put("isCompulsory", subject.getIsCompulsory());
+        return summary;
     }
 
     /**

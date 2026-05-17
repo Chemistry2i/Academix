@@ -240,6 +240,34 @@ public class SchoolClassService {
     }
 
     /**
+     * Remove class teacher assignment
+     */
+    public SchoolClass removeClassTeacher(Long classId, Long teacherId) {
+        SchoolClass schoolClass = schoolClassRepository.findById(classId)
+            .orElseThrow(() -> new RuntimeException("Class not found with id: " + classId));
+
+        Teacher teacher = teacherRepository.findById(teacherId)
+            .orElseThrow(() -> new RuntimeException("Teacher not found with id: " + teacherId));
+
+        if (schoolClass.getClassTeacher() == null || schoolClass.getClassTeacher().getId() == null || !schoolClass.getClassTeacher().getId().equals(teacherId)) {
+            throw new RuntimeException("Teacher is not assigned to this class");
+        }
+
+        schoolClass.setClassTeacher(null);
+
+        if (Boolean.TRUE.equals(teacher.getIsClassTeacher()) && schoolClass.getName() != null
+                && schoolClass.getName().equalsIgnoreCase(teacher.getClassResponsibility())) {
+            teacher.setIsClassTeacher(false);
+            teacher.setClassResponsibility(null);
+            teacher.removeClass(schoolClass.getName());
+            teacherRepository.save(teacher);
+        }
+
+        logger.info("Class teacher removed: {} from {}", teacher.getTeacherId(), schoolClass.getName());
+        return schoolClassRepository.save(schoolClass);
+    }
+
+    /**
      * Assign course to class (A-Level)
      */
     public SchoolClass assignCourse(Long classId, Long courseId) {

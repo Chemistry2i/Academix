@@ -207,7 +207,7 @@ public class EnrollmentController {
      * GET /api/enrollments/teacher/{teacherId}/subjects
      */
     @GetMapping("/teacher/{teacherId}/subjects")
-    public ResponseEntity<List<Subject>> getTeacherSubjects(@PathVariable Long teacherId) {
+    public ResponseEntity<?> getTeacherSubjects(@PathVariable Long teacherId) {
         return ResponseEntity.ok(enrollmentService.getTeacherSubjects(teacherId));
     }
 

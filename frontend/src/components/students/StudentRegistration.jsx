@@ -31,6 +31,33 @@ const StudentRegistration = ({
   const [courses, setCourses] = useState([])
   const [formErrors, setFormErrors] = useState({})
 
+  const normalizeStudentFormData = (student) => ({
+    firstName: student?.firstName || '',
+    lastName: student?.lastName || '',
+    otherNames: student?.otherNames || '',
+    email: student?.email || '',
+    phoneNumber: student?.phoneNumber || '',
+    dateOfBirth: student?.dateOfBirth || student?.dob || '',
+    gender: student?.gender || '',
+    nationality: student?.nationality || 'Ugandan',
+    nin: student?.nin || '',
+    disabilityStatus: student?.disabilityStatus || '',
+    currentClass: student?.currentClass || student?.schoolClass?.id?.toString() || '',
+    stream: student?.stream || student?.schoolClass?.stream || '',
+    house: student?.house || '',
+    residenceStatus: student?.residenceStatus || student?.residence || 'DAY',
+    combination: student?.combination || '',
+    studentId: student?.studentId || '',
+    linn: student?.linn || '',
+    district: student?.district || '',
+    county: student?.county || '',
+    subCounty: student?.subCounty || '',
+    parish: student?.parish || '',
+    village: student?.village || '',
+    profilePicture: null,
+    birthCertificate: null
+  })
+
   const [formData, setFormData] = useState({
     // Step 1: Personal Information
     firstName: '',
@@ -71,7 +98,7 @@ const StudentRegistration = ({
       loadClasses()
       loadCourses()
       if (editingStudent) {
-        setFormData(editingStudent)
+        setFormData(normalizeStudentFormData(editingStudent))
         setCurrentStep(1)
       } else {
         setFormData({

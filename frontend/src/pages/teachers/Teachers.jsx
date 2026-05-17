@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   PlusIcon,
@@ -11,14 +11,17 @@ import {
   PhoneIcon,
   MapPinIcon,
   BriefcaseIcon,
-  BookOpenIcon
+  BookOpenIcon,
+  ClipboardDocumentCheckIcon
 } from '@heroicons/react/24/outline'
 import Button from '../../components/common/Button'
 import StatCard from '../../components/common/StatCard'
 import DataTable from '../../components/common/DataTable'
 import TeacherRegistration from '../../components/teachers/TeacherRegistration'
+import TeacherWorkloadModal from '../../components/teachers/TeacherWorkloadModal'
 import { useAuth } from '../../contexts/AuthContext'
 import { teacherService } from '../../services/teacherService'
+import { workloadService } from '../../services/workloadService'
 import toast from 'react-hot-toast'
 import Swal from 'sweetalert2'
 
@@ -30,6 +33,14 @@ const Teachers = () => {
   const [editingTeacher, setEditingTeacher] = useState(null)
   const [viewTeacher, setViewTeacher] = useState(null)
   const [viewLoading, setViewLoading] = useState(false)
+  const [workloadTeacher, setWorkloadTeacher] = useState(null)
+  const [isWorkloadModalOpen, setIsWorkloadModalOpen] = useState(false)
+  const [filters, setFilters] = useState({
+    search: '',
+    department: '',
+    status: ''
+  })
+  const [statusUpdatingId, setStatusUpdatingId] = useState(null)
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -71,6 +82,79 @@ const Teachers = () => {
       setLoading(false)
     }
   }
+
+  const handleFilterChange = (key, value) => {
+    setFilters((current) => ({
+      ...current,
+      [key]: value
+    }))
+  }
+
+  const handleChangeTeacherStatus = async (teacher, employmentStatus) => {
+    const labelMap = {
+      ACTIVE: 'activate',
+      ON_LEAVE: 'mark as on leave',
+      SUSPENDED: 'suspend',
+      TERMINATED: 'terminate',
+      RETIRED: 'retire',
+      RESIGNED: 'mark as resigned'
+    }
+
+    const result = await Swal.fire({
+      title: 'Change teacher status?',
+      text: `This will ${labelMap[employmentStatus] || 'update'} ${teacher.firstName} ${teacher.lastName}.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#7c3aed',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, continue',
+      cancelButtonText: 'Cancel',
+      customClass: {
+        container: 'font-outfit',
+        popup: 'rounded-xl'
+      }
+    })
+
+    if (!result.isConfirmed) return
+
+    try {
+      setStatusUpdatingId(teacher.id)
+      await teacherService.updateTeacher(teacher.id, { employmentStatus })
+      toast.success(`Teacher status updated to ${employmentStatus}`)
+      loadTeachers()
+    } catch (error) {
+      console.error('Failed to update teacher status:', error)
+      toast.error(error.response?.data?.message || 'Failed to update teacher status')
+    } finally {
+      setStatusUpdatingId(null)
+    }
+  }
+
+  const departmentOptions = useMemo(() => {
+    const values = teachers
+      .map((teacher) => teacher.department?.name || teacher.department)
+      .filter(Boolean)
+    return [...new Set(values)]
+  }, [teachers])
+
+  const filteredTeachers = useMemo(() => {
+    const searchTerm = filters.search.trim().toLowerCase()
+
+    return teachers.filter((teacher) => {
+      const teacherDepartment = teacher.department?.name || teacher.department || ''
+      const teacherStatus = teacher.employmentStatus || 'ACTIVE'
+      const teacherName = `${teacher.firstName || ''} ${teacher.lastName || ''} ${teacher.otherNames || ''}`.toLowerCase()
+      const teacherId = (teacher.teacherId || '').toLowerCase()
+      const email = (teacher.email || '').toLowerCase()
+      const matchesSearch = !searchTerm || [teacherName, teacherId, email, teacherDepartment.toLowerCase()]
+        .some((value) => value.includes(searchTerm))
+
+      const matchesDepartment = !filters.department || teacherDepartment === filters.department
+      const matchesStatus = !filters.status || teacherStatus === filters.status
+
+      return matchesSearch && matchesDepartment && matchesStatus
+    })
+  }, [teachers, filters])
 
   const columns = [
     {
@@ -166,8 +250,27 @@ const Teachers = () => {
             <EyeIcon className="w-4 h-4" />
             View
           </button>
+          <button
+            onClick={() => handleManageAssignments(teacher)}
+            className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium border border-purple-200 rounded text-purple-600 hover:bg-purple-50 transition-colors"
+            title="Manage Assignments"
+          >
+            <ClipboardDocumentCheckIcon className="w-4 h-4" />
+            Assign
+          </button>
           {hasAnyRole(['ADMIN']) && (
             <>
+              <button
+                onClick={() => handleChangeTeacherStatus(
+                  teacher,
+                  teacher.employmentStatus === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE'
+                )}
+                disabled={statusUpdatingId === teacher.id}
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-indigo-200 rounded text-indigo-600 hover:bg-indigo-50 transition-colors disabled:opacity-60"
+                title={teacher.employmentStatus === 'ACTIVE' ? 'Suspend Teacher' : 'Activate Teacher'}
+              >
+                {teacher.employmentStatus === 'ACTIVE' ? 'Suspend' : 'Activate'}
+              </button>
               <button
                 onClick={() => handleEditTeacher(teacher)}
                 className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-yellow-200 rounded text-yellow-600 hover:bg-yellow-50 transition-colors"
@@ -195,13 +298,25 @@ const Teachers = () => {
     setViewTeacher(teacher)
     setViewLoading(true)
     try {
-      const detail = await teacherService.getTeacherById(teacher.id)
-      setViewTeacher(detail)
+      const [detail, workload] = await Promise.all([
+        teacherService.getTeacherById(teacher.id),
+        workloadService.getTeacherWorkload(teacher.id).catch(() => ({ subjects: [] }))
+      ])
+
+      setViewTeacher({
+        ...detail,
+        subjectAssignments: Array.isArray(workload.subjects) ? workload.subjects : []
+      })
     } catch (err) {
       console.error('Failed to load teacher details:', err)
     } finally {
       setViewLoading(false)
     }
+  }
+
+  const handleManageAssignments = (teacher) => {
+    setWorkloadTeacher(teacher)
+    setIsWorkloadModalOpen(true)
   }
 
   const handleEditTeacher = (teacher) => {
@@ -282,6 +397,8 @@ const Teachers = () => {
         )}
       </div>
 
+      
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
@@ -304,10 +421,41 @@ const Teachers = () => {
         />
       </div>
 
+      {/* Filters */}
+      <div className="grid grid-cols-1 gap-3 rounded-xl border border-gray-200 bg-white p-4 md:grid-cols-3">
+        <input
+          type="text"
+          value={filters.search}
+          onChange={(e) => handleFilterChange('search', e.target.value)}
+          placeholder="Search name, ID, email, department..."
+          className="h-11 rounded-lg border border-gray-300 px-3 text-sm focus:border-primary-500 focus:ring-primary-500"
+        />
+        <select
+          value={filters.department}
+          onChange={(e) => handleFilterChange('department', e.target.value)}
+          className="h-11 rounded-lg border border-gray-300 px-3 text-sm focus:border-primary-500 focus:ring-primary-500"
+        >
+          <option value="">All Departments</option>
+          {departmentOptions.map((department) => (
+            <option key={department} value={department}>{department}</option>
+          ))}
+        </select>
+        <select
+          value={filters.status}
+          onChange={(e) => handleFilterChange('status', e.target.value)}
+          className="h-11 rounded-lg border border-gray-300 px-3 text-sm focus:border-primary-500 focus:ring-primary-500"
+        >
+          <option value="">All Status</option>
+          {['ACTIVE', 'ON_LEAVE', 'SUSPENDED', 'TERMINATED', 'RETIRED', 'RESIGNED'].map((status) => (
+            <option key={status} value={status}>{status.replace('_', ' ')}</option>
+          ))}
+        </select>
+      </div>
+
       {/* Teachers Table */}
-      {teachers.length > 0 ? (
+      {filteredTeachers.length > 0 ? (
         <DataTable
-          data={teachers}
+          data={filteredTeachers}
           columns={columns}
           searchable
           sortable
@@ -319,7 +467,9 @@ const Teachers = () => {
           <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No teachers found</h3>
           <p className="mt-1 text-sm text-gray-500">
-            Get started by adding your first teacher.
+            {filters.search || filters.department || filters.status
+              ? 'Try clearing the filters to see more teachers.'
+              : 'Get started by adding your first teacher.'}
           </p>
           {hasAnyRole(['ADMIN']) && (
             <div className="mt-6">
@@ -340,6 +490,14 @@ const Teachers = () => {
         editingTeacher={editingTeacher}
       />
 
+      {/* Teacher Workload Modal */}
+      <TeacherWorkloadModal
+        isOpen={isWorkloadModalOpen}
+        onClose={() => { setIsWorkloadModalOpen(false); setWorkloadTeacher(null); }}
+        teacher={workloadTeacher}
+        onUpdate={loadTeachers}
+      />
+
       {/* View Teacher Modal */}
       <AnimatePresence>
         {viewTeacher && (
@@ -350,7 +508,7 @@ const Teachers = () => {
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-white rounded-xl shadow-2xl w-full max-w-3xl flex flex-col overflow-hidden"
+              className="bg-white rounded-xl shadow-2xl w-full max-w-5xl flex flex-col overflow-hidden"
               style={{ maxHeight: 'calc(100vh - 3rem)' }}
               initial={{ opacity: 0, y: 40, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -467,7 +625,7 @@ const Teachers = () => {
                 </div>
 
                 {/* Subjects & Classes */}
-                {(viewTeacher.subjects?.length > 0 || viewTeacher.assignedClasses?.length > 0) && (
+                {(viewTeacher.subjectAssignments?.length > 0 || viewTeacher.subjects?.length > 0 || viewTeacher.assignedClasses?.length > 0) && (
                   <div className="rounded-lg border border-gray-200 overflow-hidden">
                     <div className="flex items-center gap-2 px-4 py-2.5 bg-sky-50 border-b border-gray-200">
                       <span className="w-5 h-5 rounded bg-sky-600 flex items-center justify-center">
@@ -476,7 +634,48 @@ const Teachers = () => {
                       <h3 className="text-sm font-semibold text-sky-800">Subjects & Classes</h3>
                     </div>
                     <div className="p-4 space-y-3">
-                      {viewTeacher.subjects?.length > 0 && (
+                      {viewTeacher.subjectAssignments?.length > 0 ? (
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Subject-Class Map</p>
+                          <div className="space-y-2">
+                            {viewTeacher.subjectAssignments.map((assignment) => {
+                              const subject = assignment.subject || assignment
+                              const classNames = Array.isArray(assignment.assignedClasses)
+                                ? assignment.assignedClasses
+                                : String(assignment.assignedClasses || '')
+                                    .split(',')
+                                    .map((item) => item.trim())
+                                    .filter(Boolean)
+
+                              return (
+                                <div key={assignment.assignmentId || assignment.id || subject.id} className="rounded-lg border border-gray-200 bg-white p-3">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="text-sm font-semibold text-gray-900">
+                                      {subject.name || subject.subjectName || 'Subject'}
+                                      {subject.code ? ` (${subject.code})` : ''}
+                                    </span>
+                                    {assignment.isPrimary && (
+                                      <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-800">Primary</span>
+                                    )}
+                                    {assignment.academicYear && (
+                                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-700">{assignment.academicYear}</span>
+                                    )}
+                                  </div>
+                                  <div className="mt-2 flex flex-wrap gap-1.5">
+                                    {classNames.length > 0 ? classNames.map((className) => (
+                                      <span key={className} className="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                                        {className}
+                                      </span>
+                                    )) : (
+                                      <span className="text-xs text-gray-400">No class mapped</span>
+                                    )}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      ) : viewTeacher.subjects?.length > 0 && (
                         <div>
                           <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Subjects</p>
                           <div className="flex flex-wrap gap-1.5">
@@ -492,7 +691,7 @@ const Teachers = () => {
                           </div>
                         </div>
                       )}
-                      {viewTeacher.assignedClasses?.length > 0 && (
+                      {!viewTeacher.subjectAssignments?.length && viewTeacher.assignedClasses?.length > 0 && (
                         <div>
                           <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Assigned Classes</p>
                           <div className="flex flex-wrap gap-1.5">

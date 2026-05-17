@@ -157,6 +157,26 @@ public class SchoolClassController {
     }
 
     /**
+     * Remove class teacher
+     * DELETE /api/classes/{classId}/teacher/{teacherId}
+     */
+    @DeleteMapping("/{classId}/teacher/{teacherId}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('HEAD_TEACHER')")
+    public ResponseEntity<?> removeClassTeacher(
+            @PathVariable Long classId,
+            @PathVariable Long teacherId) {
+        try {
+            SchoolClass updated = schoolClassService.removeClassTeacher(classId, teacherId);
+            return ResponseEntity.ok(Map.of(
+                "message", "Class teacher removed successfully",
+                "class", updated
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
      * Assign course to class (A-Level)
      * POST /api/classes/{classId}/course/{courseId}
      */
