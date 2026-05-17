@@ -12,9 +12,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.academix.server.dto.PaginatedResponse;
 import com.academix.server.model.SchoolClass;
 import com.academix.server.model.Student;
 import com.academix.server.model.Result;
@@ -23,6 +28,7 @@ import com.academix.server.repository.SchoolClassRepository;
 import com.academix.server.repository.StaffRepository;
 import com.academix.server.repository.StudentRepository;
 import com.academix.server.repository.TeacherRepository;
+import com.academix.server.util.PaginationUtils;
 
 @Service
 @Transactional
@@ -191,6 +197,42 @@ public class StudentService {
     @Transactional(readOnly = true)
     public List<Student> getActiveStudents() {
         return studentRepository.findByIsActiveTrue();
+    }
+
+    /**
+     * Get all students with pagination and sorting
+     */
+    @Transactional(readOnly = true)
+    public PaginatedResponse<Map<String, Object>> getAllStudentsPaginated(
+            int page,
+            int size,
+            String sortBy,
+            String sortDirection) {
+
+        Pageable pageable = buildPageable(page, size, sortBy, sortDirection);
+        Page<Map<String, Object>> pagedData = studentRepository
+            .findAll(pageable)
+            .map(this::createStudentSummary);
+
+        return PaginationUtils.toPagedResponse(pagedData, "Students retrieved successfully");
+    }
+
+    /**
+     * Get active students with pagination and sorting
+     */
+    @Transactional(readOnly = true)
+    public PaginatedResponse<Map<String, Object>> getActiveStudentsPaginated(
+            int page,
+            int size,
+            String sortBy,
+            String sortDirection) {
+
+        Pageable pageable = buildPageable(page, size, sortBy, sortDirection);
+        Page<Map<String, Object>> pagedData = studentRepository
+            .findByIsActiveTrue(pageable)
+            .map(this::createStudentSummary);
+
+        return PaginationUtils.toPagedResponse(pagedData, "Active students retrieved successfully");
     }
 
     /**
@@ -702,5 +744,66 @@ public class StudentService {
         int randomNum = (int) (Math.random() * 100);
 
         return classCode + year + String.format("%03d%02d", count, randomNum);
+    }
+
+    private Pageable buildPageable(int page, int size, String sortBy, String sortDirection) {
+        String resolvedSortBy = normalizeSortField(sortBy);
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDirection)
+            ? Sort.Direction.ASC
+            : Sort.Direction.DESC;
+
+        return PageRequest.of(page, size, Sort.by(direction, resolvedSortBy));
+    }
+
+    private String normalizeSortField(String sortBy) {
+        if (sortBy == null || sortBy.isBlank()) {
+            return "createdAt";
+        }
+
+        return switch (sortBy) {
+            case "id", "studentId", "firstName", "lastName", "email", "currentClass", "stream", "house", "isActive", "createdAt", "updatedAt" -> sortBy;
+            case "className" -> "currentClass";
+            default -> "createdAt";
+        };
+    }
+
+    private Map<String, Object> createStudentSummary(Student student) {
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("id", student.getId());
+        summary.put("studentId", student.getStudentId());
+        summary.put("linn", student.getLinn());
+        summary.put("firstName", student.getFirstName());
+        summary.put("lastName", student.getLastName());
+        summary.put("otherNames", student.getOtherNames());
+        summary.put("email", student.getEmail());
+        summary.put("fullName", student.getFullName());
+        summary.put("gender", student.getGender());
+        summary.put("phoneNumber", student.getPhoneNumber());
+        summary.put("dateOfBirth", student.getDateOfBirth());
+        summary.put("nationality", student.getNationality());
+        summary.put("nin", student.getNin());
+        summary.put("disabilityStatus", student.getDisabilityStatus());
+        summary.put("currentClass", student.getCurrentClass());
+        summary.put("className", student.getClassName());
+
+        if (student.getSchoolClass() != null) {
+            Map<String, Object> schoolClassMap = new HashMap<>();
+            schoolClassMap.put("id", student.getSchoolClass().getId());
+            schoolClassMap.put("name", student.getSchoolClass().getName());
+            schoolClassMap.put("formLevel", student.getSchoolClass().getFormLevel());
+            schoolClassMap.put("stream", student.getSchoolClass().getStream());
+            summary.put("schoolClass", schoolClassMap);
+        } else {
+            summary.put("schoolClass", null);
+        }
+
+        summary.put("stream", student.getStream());
+        summary.put("residenceStatus", student.getResidenceStatus());
+        summary.put("house", student.getHouse());
+        summary.put("combination", student.getCombination());
+        summary.put("isActive", student.getIsActive());
+        summary.put("createdAt", student.getCreatedAt());
+
+        return summary;
     }
 }

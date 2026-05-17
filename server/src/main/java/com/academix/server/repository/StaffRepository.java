@@ -3,6 +3,8 @@ package com.academix.server.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -35,6 +37,10 @@ public interface StaffRepository extends JpaRepository<Staff, Long> {
 
     // Find by status
     List<Staff> findByStatus(Staff.StaffStatus status);
+
+    // Pageable queries
+    Page<Staff> findAll(Pageable pageable);
+    Page<Staff> findByStatus(Staff.StaffStatus status, Pageable pageable);
 
     // Find by contract type
     List<Staff> findByContractType(Staff.ContractType contractType);

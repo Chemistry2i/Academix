@@ -93,11 +93,11 @@ const VerifyEmailPage = () => {
           Continue to Login
         </Button>
         <Button
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/login')}
           variant="outline"
           className="w-full"
         >
-          Go to Dashboard
+          Back to Login
         </Button>
       </div>
     </div>

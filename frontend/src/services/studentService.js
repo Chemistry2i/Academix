@@ -5,14 +5,35 @@ export const studentService = {
   async getStudents(activeOnly = false) {
     try {
       const response = await apiClient.get(`/students?activeOnly=${activeOnly}`)
-      // Handle backend response format - either direct array or wrapped in data object
-      if (response.data.students) {
-        return response.data // { totalStudents: number, students: array }
-      } else if (Array.isArray(response.data)) {
-        return { students: response.data, totalStudents: response.data.length }
-      } else {
-        return { students: [], totalStudents: 0 }
+      const payload = response.data
+
+      // Legacy format: { students: [...], totalStudents: n }
+      if (payload?.students && Array.isArray(payload.students)) {
+        return {
+          students: payload.students,
+          totalStudents: payload.totalStudents ?? payload.students.length
+        }
       }
+
+      // Paginated format: { data: [...], totalElements: n, ... }
+      if (payload?.data && Array.isArray(payload.data)) {
+        return {
+          students: payload.data,
+          totalStudents: payload.totalElements ?? payload.data.length,
+          pageNumber: payload.pageNumber,
+          pageSize: payload.pageSize,
+          totalPages: payload.totalPages,
+          hasNext: payload.hasNext,
+          hasPrevious: payload.hasPrevious
+        }
+      }
+
+      // Direct array format
+      if (Array.isArray(payload)) {
+        return { students: payload, totalStudents: payload.length }
+      }
+
+      return { students: [], totalStudents: 0 }
     } catch (error) {
       console.error('Error fetching students:', error)
       throw error

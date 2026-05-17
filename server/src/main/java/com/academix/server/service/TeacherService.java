@@ -11,12 +11,18 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.academix.server.model.Teacher;
+import com.academix.server.dto.PaginatedResponse;
 import com.academix.server.repository.DepartmentRepository;
 import com.academix.server.repository.TeacherRepository;
+import com.academix.server.util.PaginationUtils;
 
 @Service
 @Transactional
@@ -135,6 +141,42 @@ public class TeacherService {
     @Transactional(readOnly = true)
     public List<Teacher> getActiveTeachers() {
         return teacherRepository.findByIsActiveTrue();
+    }
+
+    /**
+     * Get all teachers with pagination and sorting
+     */
+    @Transactional(readOnly = true)
+    public PaginatedResponse<Map<String, Object>> getAllTeachersPaginated(
+            int page,
+            int size,
+            String sortBy,
+            String sortDirection) {
+
+        Pageable pageable = buildPageable(page, size, sortBy, sortDirection);
+        Page<Map<String, Object>> pagedData = teacherRepository
+            .findAll(pageable)
+            .map(this::createTeacherSummary);
+
+        return PaginationUtils.toPagedResponse(pagedData, "Teachers retrieved successfully");
+    }
+
+    /**
+     * Get active teachers with pagination and sorting
+     */
+    @Transactional(readOnly = true)
+    public PaginatedResponse<Map<String, Object>> getActiveTeachersPaginated(
+            int page,
+            int size,
+            String sortBy,
+            String sortDirection) {
+
+        Pageable pageable = buildPageable(page, size, sortBy, sortDirection);
+        Page<Map<String, Object>> pagedData = teacherRepository
+            .findByIsActiveTrue(pageable)
+            .map(this::createTeacherSummary);
+
+        return PaginationUtils.toPagedResponse(pagedData, "Active teachers retrieved successfully");
     }
 
     /**
@@ -609,5 +651,51 @@ public class TeacherService {
         int randomNum = (int) (Math.random() * 100);
 
         return deptCode + year + String.format("%03d%02d", count, randomNum);
+    }
+
+    private Pageable buildPageable(int page, int size, String sortBy, String sortDirection) {
+        String resolvedSortBy = normalizeSortField(sortBy);
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDirection)
+            ? Sort.Direction.ASC
+            : Sort.Direction.DESC;
+
+        return PageRequest.of(page, size, Sort.by(direction, resolvedSortBy));
+    }
+
+    private String normalizeSortField(String sortBy) {
+        if (sortBy == null || sortBy.isBlank()) {
+            return "createdAt";
+        }
+
+        return switch (sortBy) {
+            case "id", "teacherId", "firstName", "lastName", "email", "department", "primarySubject", "isActive", "createdAt", "updatedAt" -> sortBy;
+            case "departmentName" -> "department";
+            default -> "createdAt";
+        };
+    }
+
+    private Map<String, Object> createTeacherSummary(Teacher teacher) {
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("id", teacher.getId());
+        summary.put("teacherId", teacher.getTeacherId());
+        summary.put("firstName", teacher.getFirstName());
+        summary.put("lastName", teacher.getLastName());
+        summary.put("otherNames", teacher.getOtherNames());
+        summary.put("email", teacher.getEmail());
+        summary.put("fullName", teacher.getFullName());
+        summary.put("gender", teacher.getGender());
+        summary.put("phoneNumber", teacher.getPhoneNumber());
+        summary.put("dateOfBirth", teacher.getDateOfBirth());
+        summary.put("primarySubject", teacher.getPrimarySubject());
+        summary.put("department", teacher.getDepartment() != null ? teacher.getDepartment().getName() : null);
+        summary.put("employmentStatus", teacher.getEmploymentStatus());
+        summary.put("isClassTeacher", teacher.getIsClassTeacher());
+        summary.put("isDepartmentHead", teacher.getIsDepartmentHead());
+        summary.put("subjects", teacher.getSubjects());
+        summary.put("assignedClasses", teacher.getAssignedClasses());
+        summary.put("isActive", teacher.getIsActive());
+        summary.put("createdAt", teacher.getCreatedAt());
+
+        return summary;
     }
 }

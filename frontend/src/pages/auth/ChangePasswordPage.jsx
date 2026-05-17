@@ -32,7 +32,7 @@ const ChangePasswordPage = () => {
   const onSubmit = async (data) => {
     setIsLoading(true)
     try {
-      const result = await authService.changePassword(data.currentPassword, data.newPassword)
+      const result = await authService.changePassword(user?.email, data.currentPassword, data.newPassword)
       if (result.success) {
         setIsSuccess(true)
         toast.success(result.message || 'Password changed successfully')

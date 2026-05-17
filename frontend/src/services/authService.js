@@ -4,7 +4,12 @@ import { tokenService } from './tokenService'
 class AuthService {
   async login(credentials) {
     try {
-      const response = await apiClient.post('/auth/login', credentials)
+      const identifier = credentials.identifier || credentials.email
+      const response = await apiClient.post('/auth/login', {
+        identifier,
+        email: credentials.email || identifier,
+        password: credentials.password
+      })
       return {
         success: true,
         data: {
@@ -101,11 +106,13 @@ class AuthService {
     }
   }
 
-  async changePassword(currentPassword, newPassword) {
+  async changePassword(userEmail, currentPassword, newPassword) {
     try {
       const response = await apiClient.put('/auth/change-password', {
         currentPassword,
         newPassword
+      }, {
+        params: { userEmail }
       })
       return {
         success: true,
@@ -136,7 +143,10 @@ class AuthService {
 
   async resendVerificationEmail(email) {
     try {
-      const response = await apiClient.post('/auth/resend-verification', { email })
+      const response = await apiClient.post('/auth/resend-token', {
+        email,
+        tokenType: 'verification'
+      })
       return {
         success: true,
         message: response.data.message

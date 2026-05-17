@@ -3,6 +3,8 @@ package com.academix.server.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -41,6 +43,10 @@ public interface TeacherRepository extends JpaRepository<Teacher, Long> {
 
     // Find active teachers
     List<Teacher> findByIsActiveTrue();
+
+    // Pageable queries
+    Page<Teacher> findAll(Pageable pageable);
+    Page<Teacher> findByIsActiveTrue(Pageable pageable);
 
     // Find class teachers
     List<Teacher> findByIsClassTeacherTrue();

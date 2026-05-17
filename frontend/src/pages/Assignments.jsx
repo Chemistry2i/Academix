@@ -625,12 +625,12 @@ const Assignments = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                  <textarea name="description" rows="3" value={formData.description} onChange={handleInputChange} className="w-full border border-gray-300 rounded-lg px-3 py-2" />
+                  <textarea name="description" rows="2" value={formData.description} onChange={handleInputChange} className="w-full border border-gray-300 rounded-lg px-3 py-2" />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Instructions</label>
-                  <textarea name="instructions" rows="4" value={formData.instructions} onChange={handleInputChange} className="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="What should the student submit, format, marking notes, references..." />
+                  <textarea name="instructions" rows="3" value={formData.instructions} onChange={handleInputChange} className="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="What should the student submit, format, marking notes, references..." />
                 </div>
 
                 <label className="inline-flex items-center gap-2 text-sm text-gray-700">

@@ -2,9 +2,10 @@ import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './contexts/AuthContext'
-import { useAuth } from './contexts/AuthContext'
+import { useAuth, getHomePathForUser } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { PublicRoute } from './components/auth/PublicRoute'
+import LoadingSpinner from './components/common/LoadingSpinner'
 
 // Import pages
 import LoginPage from './pages/auth/LoginPage'
@@ -61,17 +62,31 @@ import StudentLayout from './components/layout/StudentLayout'
 import TeacherLayout from './components/layout/TeacherLayout'
 
 function App() {
+  const RootRedirect = () => {
+    const { isAuthenticated, isLoading, user } = useAuth()
+
+    if (isLoading) {
+      return <LoadingSpinner />
+    }
+
+    if (!isAuthenticated) {
+      return <Navigate to="/login" replace />
+    }
+
+    return <Navigate to={getHomePathForUser(user)} replace />
+  }
+
   return (
     <AuthProvider>
       <Routes>
         {/* Auth routes - accessible at any time for development */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+        <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
+        <Route path="/verify-email" element={<PublicRoute><VerifyEmailPage /></PublicRoute>} />
         
-        {/* Student routes - Open Access for Development */}
-        <Route path="/student" element={<StudentLayout />}>
+        {/* Student routes */}
+        <Route path="/student" element={<ProtectedRoute roles={['STUDENT']}><StudentLayout /></ProtectedRoute>}>
           <Route index element={<Navigate to="/student/dashboard" replace />} />
           <Route path="dashboard" element={<StudentDashboard />} />
           <Route path="courses" element={<StudentCourses />} />
@@ -89,8 +104,8 @@ function App() {
             <Route path="notifications" element={<Notifications />} />
         </Route>
 
-        {/* Teacher routes - Open Access */}
-        <Route path="/teacher" element={<TeacherLayout />}>
+        {/* Teacher routes */}
+        <Route path="/teacher" element={<ProtectedRoute roles={['TEACHER', 'CLASS_TEACHER', 'HEAD_TEACHER', 'DIRECTOR_OF_STUDIES', 'ADMIN']}><TeacherLayout /></ProtectedRoute>}>
           <Route index element={<Navigate to="/teacher/dashboard" replace />} />
           <Route path="dashboard" element={<TeacherDashboard />} />
           <Route path="classes" element={<TeacherClasses />} />
@@ -111,8 +126,8 @@ function App() {
           <Route path="change-password" element={<ChangePasswordPage />} />
         </Route>
         
-        {/* Admin routes - Open Access */}
-        <Route path="/admin" element={<Layout />}>
+        {/* Admin routes */}
+        <Route path="/admin" element={<ProtectedRoute roles={['ADMIN', 'HEAD_TEACHER', 'DIRECTOR_OF_STUDIES']}><Layout /></ProtectedRoute>}>
           <Route index element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="students" element={<Students />} />
@@ -138,10 +153,10 @@ function App() {
         </Route>
 
         {/* Default route - redirect to admin dashboard */}
-        <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/" element={<RootRedirect />} />
         
         {/* Legacy dashboard route - redirect to admin */}
-        <Route path="/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/dashboard" element={<RootRedirect />} />
         
         {/* 404 page */}
         <Route path="*" element={<NotFound />} />

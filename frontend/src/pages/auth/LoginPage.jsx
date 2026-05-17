@@ -8,7 +8,8 @@ import { GraduationCap } from 'lucide-react'
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false)
-  const { login, isLoading } = useAuth()
+  const [isLoading, setIsLoading] = useState(false)
+  const { login } = useAuth()
   const navigate = useNavigate()
   
   const {
@@ -19,12 +20,17 @@ const LoginPage = () => {
   } = useForm()
 
   const onSubmit = async (data) => {
-    const result = await login(data)
-    if (!result.success) {
-      setError('email', {
-        type: 'manual',
-        message: result.message
-      })
+    setIsLoading(true)
+    try {
+      const result = await login(data)
+      if (!result.success) {
+        setError('email', {
+          type: 'manual',
+          message: result.message
+        })
+      }
+    } finally {
+      setIsLoading(false)
     }
   }
 

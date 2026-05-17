@@ -9,11 +9,17 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.academix.server.model.Staff;
+import com.academix.server.dto.PaginatedResponse;
 import com.academix.server.repository.StaffRepository;
+import com.academix.server.util.PaginationUtils;
 
 @Service
 @Transactional
@@ -126,6 +132,43 @@ public class StaffService {
      */
     public List<Staff> getAllStaff() {
         return staffRepository.findAll();
+    }
+
+    /**
+     * Get all staff with pagination and sorting
+     */
+    @Transactional(readOnly = true)
+    public PaginatedResponse<Map<String, Object>> getAllStaffPaginated(
+            int page,
+            int size,
+            String sortBy,
+            String sortDirection) {
+
+        Pageable pageable = buildPageable(page, size, sortBy, sortDirection);
+        Page<Map<String, Object>> pagedData = staffRepository
+            .findAll(pageable)
+            .map(this::createStaffSummary);
+
+        return PaginationUtils.toPagedResponse(pagedData, "Staff retrieved successfully");
+    }
+
+    /**
+     * Get staff by status with pagination
+     */
+    @Transactional(readOnly = true)
+    public PaginatedResponse<Map<String, Object>> getStaffByStatusPaginated(
+            Staff.StaffStatus status,
+            int page,
+            int size,
+            String sortBy,
+            String sortDirection) {
+
+        Pageable pageable = buildPageable(page, size, sortBy, sortDirection);
+        Page<Map<String, Object>> pagedData = staffRepository
+            .findByStatus(status, pageable)
+            .map(this::createStaffSummary);
+
+        return PaginationUtils.toPagedResponse(pagedData, "Staff by status retrieved successfully");
     }
 
     /**
@@ -259,5 +302,48 @@ public class StaffService {
      */
     public List<Staff> getStaffByExperienceRange(Integer minExperience, Integer maxExperience) {
         return staffRepository.findByExperienceBetween(minExperience, maxExperience);
+    }
+
+    private Pageable buildPageable(int page, int size, String sortBy, String sortDirection) {
+        String resolvedSortBy = normalizeSortField(sortBy);
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDirection)
+            ? Sort.Direction.ASC
+            : Sort.Direction.DESC;
+
+        return PageRequest.of(page, size, Sort.by(direction, resolvedSortBy));
+    }
+
+    private String normalizeSortField(String sortBy) {
+        if (sortBy == null || sortBy.isBlank()) {
+            return "createdAt";
+        }
+
+        return switch (sortBy) {
+            case "id", "staffId", "firstName", "lastName", "email", "department", "position", "status", "createdAt", "updatedAt" -> sortBy;
+            default -> "createdAt";
+        };
+    }
+
+    private Map<String, Object> createStaffSummary(Staff staff) {
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("id", staff.getId());
+        summary.put("staffId", staff.getStaffId());
+        summary.put("firstName", staff.getFirstName());
+        summary.put("lastName", staff.getLastName());
+        summary.put("otherNames", staff.getOtherNames());
+        summary.put("email", staff.getEmail());
+        summary.put("fullName", staff.getFullName());
+        summary.put("gender", staff.getGender());
+        summary.put("phoneNumber", staff.getPhoneNumber());
+        summary.put("dateOfBirth", staff.getDateOfBirth());
+        summary.put("department", staff.getDepartment());
+        summary.put("position", staff.getPosition());
+        summary.put("status", staff.getStatus());
+        summary.put("contractType", staff.getContractType());
+        summary.put("qualification", staff.getQualification());
+        summary.put("experience", staff.getExperience());
+        summary.put("createdAt", staff.getCreatedAt());
+
+        return summary;
     }
 }

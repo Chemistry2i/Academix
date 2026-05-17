@@ -5,6 +5,87 @@ import { authService } from '../services/authService'
 import { tokenService } from '../services/tokenService'
 
 const AuthContext = createContext({})
+const USER_STORAGE_KEY = 'academix_user'
+
+const normalizeRole = (role) => String(role || '').trim().toUpperCase()
+
+const normalizeUser = (user) => {
+  if (!user) return null
+
+  const role = normalizeRole(user.role || user.roles?.[0])
+  const roles = Array.isArray(user.roles) && user.roles.length
+    ? user.roles.map(normalizeRole).filter(Boolean)
+    : role
+      ? [role]
+      : []
+
+  return {
+    ...user,
+    id: user.id ?? user.userId ?? null,
+    email: user.email || '',
+    role,
+    roles,
+    fullName: user.fullName || [user.firstName, user.lastName].filter(Boolean).join(' ').trim() || user.email || '',
+    firstName: user.firstName || '',
+    lastName: user.lastName || '',
+    emailVerified: Boolean(user.emailVerified),
+    isActive: user.isActive !== false
+  }
+}
+
+const userFromToken = (token) => {
+  const claims = tokenService.getTokenClaims(token)
+  if (!claims) return null
+
+  const role = normalizeRole(claims.role)
+  return normalizeUser({
+    id: claims.userId ?? null,
+    email: claims.sub || claims.email || '',
+    role,
+    roles: role ? [role] : [],
+    fullName: claims.fullName || '',
+    emailVerified: true,
+    isActive: true
+  })
+}
+
+const readStoredUser = () => {
+  try {
+    const value = localStorage.getItem(USER_STORAGE_KEY)
+    return value ? normalizeUser(JSON.parse(value)) : null
+  } catch (error) {
+    return null
+  }
+}
+
+const writeStoredUser = (user) => {
+  if (!user) {
+    localStorage.removeItem(USER_STORAGE_KEY)
+    return
+  }
+
+  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(normalizeUser(user)))
+}
+
+export const getHomePathForRole = (role) => {
+  const normalizedRole = normalizeRole(role)
+
+  if (normalizedRole === 'STUDENT') {
+    return '/student/dashboard'
+  }
+
+  if (['TEACHER', 'CLASS_TEACHER'].includes(normalizedRole)) {
+    return '/teacher/dashboard'
+  }
+
+  if (['HEAD_TEACHER', 'DIRECTOR_OF_STUDIES', 'ADMIN'].includes(normalizedRole)) {
+    return '/admin/dashboard'
+  }
+
+  return '/login'
+}
+
+export const getHomePathForUser = (user) => getHomePathForRole(user?.role || user?.roles?.[0])
 
 export const useAuth = () => {
   const context = useContext(AuthContext)
@@ -20,47 +101,32 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const navigate = useNavigate()
 
-  // Development bypass - set to true to skip authentication
-  // TODO: Set to false for production deployment
-  const DEV_BYPASS_AUTH = true
-
   // Check authentication status on app load
   useEffect(() => {
     const initAuth = async () => {
       try {
-        // Development bypass
-        if (DEV_BYPASS_AUTH) {
-          const mockUser = {
-            id: 1,
-            firstName: 'Admin',
-            lastName: 'User',
-            email: 'admin@academix.com',
-            role: 'ADMIN',
-            roles: ['ADMIN'],
-            isActive: true,
-            emailVerified: true
-          }
-          setUser(mockUser)
-          setIsAuthenticated(true)
-          setIsLoading(false)
-          return
-        }
-
         const token = tokenService.getAccessToken()
         if (token) {
-          // Verify token validity and get user info
-          const userInfo = await authService.getCurrentUser()
-          if (userInfo.success) {
-            setUser(userInfo.data)
-            setIsAuthenticated(true)
+          if (tokenService.isTokenExpired(token)) {
+            tokenService.clearTokens()
+            writeStoredUser(null)
           } else {
-            // Token might be expired
-            await logout()
+            const storedUser = readStoredUser()
+            const fallbackUser = storedUser || userFromToken(token)
+            if (fallbackUser) {
+              setUser(fallbackUser)
+              setIsAuthenticated(true)
+            }
           }
+        } else {
+          writeStoredUser(null)
         }
       } catch (error) {
         console.error('Auth initialization error:', error)
-        await logout()
+        tokenService.clearTokens()
+        writeStoredUser(null)
+        setUser(null)
+        setIsAuthenticated(false)
       } finally {
         setIsLoading(false)
       }
@@ -71,27 +137,6 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
-      setIsLoading(true)
-      
-      // Development bypass - simulate successful login
-      if (DEV_BYPASS_AUTH) {
-        const mockUser = {
-          id: 1,
-          firstName: 'Admin',
-          lastName: 'User',
-          email: credentials.email || 'admin@academix.com',
-          role: 'ADMIN',
-          roles: ['ADMIN'],
-          isActive: true,
-          emailVerified: true
-        }
-        setUser(mockUser)
-        setIsAuthenticated(true)
-        toast.success(`Welcome back, ${mockUser.firstName}!`)
-        navigate('/dashboard')
-        return { success: true }
-      }
-      
       const response = await authService.login(credentials)
       
       if (response.success) {
@@ -101,11 +146,13 @@ export const AuthProvider = ({ children }) => {
         tokenService.setTokens(accessToken, refreshToken)
         
         // Set user state
-        setUser(userData)
+        const normalizedUser = normalizeUser(userData)
+        setUser(normalizedUser)
         setIsAuthenticated(true)
+        writeStoredUser(normalizedUser)
         
-        toast.success(`Welcome back, ${userData.firstName}!`)
-        navigate('/dashboard')
+        toast.success(`Welcome back, ${normalizedUser.fullName || normalizedUser.email}!`)
+        navigate(getHomePathForUser(normalizedUser))
         
         return { success: true }
       } else {
@@ -116,22 +163,18 @@ export const AuthProvider = ({ children }) => {
       const message = error.response?.data?.message || 'Login failed. Please try again.'
       toast.error(message)
       return { success: false, message }
-    } finally {
-      setIsLoading(false)
     }
   }
 
   const logout = async () => {
     try {
-      // Skip API call if in dev bypass mode
-      if (!DEV_BYPASS_AUTH) {
-        await authService.logout()
-      }
+      await authService.logout()
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
       // Clear local state regardless of API call result
       tokenService.clearTokens()
+      writeStoredUser(null)
       setUser(null)
       setIsAuthenticated(false)
       navigate('/login')
@@ -162,7 +205,8 @@ export const AuthProvider = ({ children }) => {
   }
 
   const hasRole = (role) => {
-    return user?.role?.toLowerCase() === role.toLowerCase()
+    const currentRoles = user?.roles?.length ? user.roles : [user?.role]
+    return currentRoles.filter(Boolean).some((currentRole) => normalizeRole(currentRole) === normalizeRole(role))
   }
 
   const hasAnyRole = (roles) => {
@@ -178,6 +222,8 @@ export const AuthProvider = ({ children }) => {
     refreshAuth,
     hasRole,
     hasAnyRole,
+    getHomePathForUser,
+    getHomePathForRole,
   }
 
   return (

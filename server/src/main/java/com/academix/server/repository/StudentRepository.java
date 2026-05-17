@@ -3,6 +3,8 @@ package com.academix.server.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -96,6 +98,9 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     
     // Find active students
     List<Student> findByIsActiveTrue();
+
+    // Find active students with pagination
+    Page<Student> findByIsActiveTrue(Pageable pageable);
     
     // Count active students
     long countByIsActiveTrue();

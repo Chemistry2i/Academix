@@ -23,6 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.academix.server.model.Student;
 import com.academix.server.service.StudentService;
+import com.academix.server.dto.PaginatedResponse;
+import com.academix.server.util.PaginationUtils;
 
 import jakarta.validation.Valid;
 
@@ -61,16 +63,21 @@ public class StudentController {
      */
     @GetMapping
     public ResponseEntity<?> getAllStudents(
-            @RequestParam(required = false, defaultValue = "false") boolean activeOnly) {
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "10") int size,
+            @RequestParam(required = false, defaultValue = "false") boolean activeOnly,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortDirection) {
         try {
-            List<Student> students = activeOnly 
-                ? studentService.getActiveStudents() 
-                : studentService.getAllStudents();
+            if (!PaginationUtils.isValidPaginationParams(page, size)) {
+                return ResponseEntity.badRequest().body(createErrorResponse("Invalid pagination parameters"));
+            }
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("totalStudents", students.size());
-            response.put("students", students.stream().map(this::createStudentSummary).toList());
-            return ResponseEntity.ok(response);
+            PaginatedResponse<Map<String, Object>> paginatedResponse = activeOnly 
+                ? studentService.getActiveStudentsPaginated(page, size, sortBy, sortDirection) 
+                : studentService.getAllStudentsPaginated(page, size, sortBy, sortDirection);
+            
+            return ResponseEntity.ok(paginatedResponse);
         } catch (Exception e) {
             logger.error("Failed to get students: {}", e.getMessage());
             return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));

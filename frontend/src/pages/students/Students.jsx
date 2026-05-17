@@ -63,8 +63,14 @@ const Students = () => {
         isTeacherPortal ? classService.getClasses().catch(() => []) : Promise.resolve([])
       ])
       
-      // Handle different response formats from backend
-      const studentsList = data.students || data || []
+      // Handle different response formats from backend defensively
+      const studentsList = Array.isArray(data?.students)
+        ? data.students
+        : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data)
+            ? data
+            : []
       let scopedStudents = studentsList
 
       if (isTeacherPortal) {
