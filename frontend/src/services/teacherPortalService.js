@@ -45,6 +45,8 @@ class TeacherPortalService {
       return _contextCache.get(cacheKey)
     }
 
+    console.debug('[TeacherPortal] Loading context for user:', user?.email)
+
     const classList = options.classes?.length
       ? options.classes
       : normalizeArray(await classService.getClasses().catch(() => []), ['classes', 'data'])
@@ -52,8 +54,14 @@ class TeacherPortalService {
     const teacherPayload = await teacherService.getTeachers(true).catch(() => ({ teachers: [] }))
     const teachers = normalizeArray(teacherPayload, ['teachers', 'data'])
 
+    console.debug('[TeacherPortal] Found teachers:', teachers.length, 'classes:', classList.length)
+
     // Primary match: exact email match
     let teacher = teachers.find((item) => matchesTeacher(item, user)) || null
+
+    if (teacher) {
+      console.debug('[TeacherPortal] ✓ Teacher found by email:', teacher.email, 'ID:', teacher.id)
+    }
 
     // Secondary: match by first+last name when email is unreliable
     if (!teacher && (user?.firstName || user?.lastName)) {
@@ -64,16 +72,52 @@ class TeacherPortalService {
         const tLast = normalizeString(item?.lastName || '')
         return (firstName && tFirst === firstName) && (lastName && tLast === lastName)
       }) || null
+      
+      if (teacher) {
+        console.debug('[TeacherPortal] ✓ Teacher found by name:', teacher.email, 'ID:', teacher.id)
+      }
+    }
+
+    if (!teacher) {
+      console.warn('[TeacherPortal] ✗ No teacher record found for user:', user?.email)
     }
 
     let assignedClasses = []
 
     if (teacher?.id) {
-      const classPayload = await teacherService.getTeacherClasses(teacher.id).catch(() => [])
-      assignedClasses = normalizeArray(classPayload, ['classes', 'data'])
+      const classPayload = await teacherService.getTeacherClasses(teacher.id).catch((err) => {
+        console.error('[TeacherPortal] Error fetching teacher classes:', err)
+        return []
+      })
+      
+      console.debug('[TeacherPortal] Class payload response:', classPayload)
+      
+      // First, try to use full class objects from backend's 'classes' field
+      if (classPayload?.classes && Array.isArray(classPayload.classes) && classPayload.classes.length > 0) {
+        // Backend returned full class objects
+        assignedClasses = classPayload.classes
+        console.debug('[TeacherPortal] ✓ Using full class objects from backend:', assignedClasses.length)
+      } 
+      // Fallback: If we have class names, match them to class objects
+      else if (classPayload?.assignedClasses && Array.isArray(classPayload.assignedClasses)) {
+        const classNames = classPayload.assignedClasses
+        console.debug('[TeacherPortal] Matching class names:', classNames)
+        assignedClasses = classList.filter((item) => 
+          classNames.some((name) => normalizeString(name) === normalizeString(getClassName(item)))
+        )
+        console.debug('[TeacherPortal] ✓ Matched to class objects:', assignedClasses.length)
+      } 
+      // Final fallback: try to extract array from response
+      else {
+        assignedClasses = normalizeArray(classPayload, ['classes', 'data'])
+        if (assignedClasses.length) {
+          console.debug('[TeacherPortal] ✓ Using normalized array:', assignedClasses.length)
+        }
+      }
     }
 
-    if (!assignedClasses.length) {
+    // If still no classes, try filtering by classTeacher or explicit assignment
+    if (!assignedClasses.length && teacher?.id) {
       assignedClasses = classList.filter((item) => {
         const classTeacher = item.classTeacher || item.teacher || {}
         const teacherMatch = matchByIdOrName({
@@ -89,6 +133,15 @@ class TeacherPortalService {
 
         return teacherMatch || explicitAssignment
       })
+    }
+    
+    // Last resort: if teacher has assignedClasses field, match those names to class objects
+    if (!assignedClasses.length && teacher?.assignedClasses?.length) {
+      assignedClasses = classList.filter((item) =>
+        teacher.assignedClasses.some((name) => 
+          normalizeString(name) === normalizeString(getClassName(item))
+        )
+      )
     }
 
     const assignedClassIds = uniqueValues(assignedClasses.map((item) => getClassId(item)))

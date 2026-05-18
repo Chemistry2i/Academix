@@ -19,9 +19,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.academix.server.model.Teacher;
+import com.academix.server.model.SchoolClass;
 import com.academix.server.dto.PaginatedResponse;
 import com.academix.server.repository.DepartmentRepository;
 import com.academix.server.repository.TeacherRepository;
+import com.academix.server.repository.SchoolClassRepository;
 import com.academix.server.util.PaginationUtils;
 
 @Service
@@ -35,6 +37,9 @@ public class TeacherService {
 
     @Autowired
     private DepartmentRepository departmentRepository;
+
+    @Autowired
+    private SchoolClassRepository schoolClassRepository;
 
     @Autowired
     private UserService userService;
@@ -424,7 +429,34 @@ public class TeacherService {
         result.put("teacherName", teacher.getFullName());
         result.put("isClassTeacher", teacher.getIsClassTeacher());
         result.put("classResponsibility", teacher.getClassResponsibility());
-        result.put("assignedClasses", teacher.getAssignedClasses());
+        
+        // Get assigned class names and look them up as full objects
+        List<String> assignedClassNames = teacher.getAssignedClasses();
+        List<Map<String, Object>> classObjects = new ArrayList<>();
+        
+        if (assignedClassNames != null && !assignedClassNames.isEmpty()) {
+            // Try to find each class by name
+            for (String className : assignedClassNames) {
+                Optional<SchoolClass> schoolClass = schoolClassRepository.findByName(className);
+                if (schoolClass.isPresent()) {
+                    Map<String, Object> classInfo = new HashMap<>();
+                    SchoolClass cls = schoolClass.get();
+                    classInfo.put("id", cls.getId());
+                    classInfo.put("name", cls.getName());
+                    classInfo.put("formLevel", cls.getFormLevel());
+                    classInfo.put("stream", cls.getStream());
+                    classInfo.put("levelType", cls.getLevelType());
+                    classInfo.put("currentCount", cls.getCurrentCount());
+                    classInfo.put("maxCapacity", cls.getMaxCapacity());
+                    classInfo.put("classroom", cls.getClassroom());
+                    classObjects.add(classInfo);
+                }
+            }
+        }
+        
+        result.put("assignedClasses", assignedClassNames);  // Keep for backward compatibility
+        result.put("classes", classObjects);  // New field with full class objects
+        result.put("totalClasses", classObjects.size());
 
         return result;
     }
